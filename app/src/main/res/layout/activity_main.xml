@@ -1,18 +1,138 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
-<LinearLayout android:orientation="vertical" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-<TextView android:text="IP Pulse Scanner" android:textSize="26sp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<TextView android:text="IPها را یکی در هر خط وارد کن" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"/>
-<EditText android:id="@+id/ipInput" android:hint="92.223.124.97\n93.119.170.214" android:inputType="textMultiLine" android:gravity="top" android:minLines="5" android:layout_width="match_parent" android:layout_height="140dp"/>
-<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
-<EditText android:id="@+id/packetInput" android:hint="300" android:text="300" android:inputType="number" android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content"/>
-<EditText android:id="@+id/intervalInput" android:hint="200" android:text="200" android:inputType="number" android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content"/>
-<EditText android:id="@+id/timeoutInput" android:hint="1500" android:text="1500" android:inputType="number" android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content"/>
-</LinearLayout>
-<TextView android:text="پکت | فاصله ارسال (ms) | Timeout (ms)" android:textSize="12sp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/startButton" android:text="شروع Benchmark" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"/>
-<Button android:id="@+id/stopButton" android:text="توقف" android:enabled="false" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<ProgressBar android:id="@+id/progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"/>
-<TextView android:id="@+id/status" android:text="آماده" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="8dp"/>
-<TextView android:id="@+id/results" android:typeface="monospace" android:textSize="12sp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="12dp"/>
-</LinearLayout></ScrollView>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F172A"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⚡ IP Pulse Scanner Pro"
+            android:textColor="#38BDF8"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="آدرس تک یا رنج آی‌پی (مثال: 93.119.170.0 - 93.119.170.255):"
+            android:textColor="#94A3B8"
+            android:textSize="12sp"
+            android:gravity="right"
+            android:paddingBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/ipInput"
+            android:layout_width="match_parent"
+            android:layout_height="90dp"
+            android:background="#1E293B"
+            android:textColor="#F8FAFC"
+            android:padding="10dp"
+            android:gravity="top|left"
+            android:hint="93.119.170.0 - 93.119.170.255"
+            android:textColorHint="#475569"
+            android:textSize="14sp"
+            android:fontFamily="monospace"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="2dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="تعداد پکت" android:textColor="#94A3B8" android:textSize="10sp" android:gravity="center"/>
+                <EditText android:id="@+id/packetInput" android:layout_width="match_parent" android:layout_height="40dp" android:background="#1E293B" android:textColor="#F8FAFC" android:text="300" android:inputType="number" android:gravity="center" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="2dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="فاصله (ms)" android:textColor="#94A3B8" android:textSize="10sp" android:gravity="center"/>
+                <EditText android:id="@+id/intervalInput" android:layout_width="match_parent" android:layout_height="40dp" android:background="#1E293B" android:textColor="#F8FAFC" android:text="1" android:inputType="number" android:gravity="center" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="2dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="تایم‌اوت (ms)" android:textColor="#94A3B8" android:textSize="10sp" android:gravity="center"/>
+                <EditText android:id="@+id/timeoutInput" android:layout_width="match_parent" android:layout_height="40dp" android:background="#1E293B" android:textColor="#F8FAFC" android:text="1000" android:inputType="number" android:gravity="center" android:textSize="13sp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp">
+
+            <Button
+                android:id="@+id/btnStart"
+                android:layout_width="0dp"
+                android:layout_height="45dp"
+                android:layout_weight="2"
+                android:text="شروع بنچمارک"
+                android:backgroundTint="#0284C7"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnStop"
+                android:layout_width="0dp"
+                android:layout_height="45dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="توقف"
+                android:backgroundTint="#EF4444"
+                android:textColor="#FFFFFF"
+                android:enabled="false" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="آماده برای اسکن"
+            android:textColor="#38BDF8"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"/>
+
+        <!-- Result Table -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1E293B"
+            android:padding="1dp">
+
+            <TableLayout
+                android:id="@+id/resultTable"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:stretchColumns="*">
+            </TableLayout>
+        </HorizontalScrollView>
+
+    </LinearLayout>
+</ScrollView>
