@@ -157,7 +157,6 @@ public class MainActivity extends Activity {
         btnStop.setEnabled(false);
         statusText.setText("اسکن کامل شد! در حال مرتب‌سازی...");
 
-        // استفاده از Comparator استاندارد بدون نیاز به قابلیت‌های جدید جاوا
         Collections.sort(allResults, new Comparator<ScanResult>() {
             @Override
             public int compare(ScanResult a, ScanResult b) {
