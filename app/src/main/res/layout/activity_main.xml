@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
+<LinearLayout android:orientation="vertical" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+<TextView android:text="IP Pulse Scanner" android:textSize="26sp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<TextView android:text="IPها را یکی در هر خط وارد کن" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"/>
+<EditText android:id="@+id/ipInput" android:hint="92.223.124.97\n93.119.170.214" android:inputType="textMultiLine" android:gravity="top" android:minLines="5" android:layout_width="match_parent" android:layout_height="140dp"/>
+<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+<EditText android:id="@+id/packetInput" android:hint="300" android:text="300" android:inputType="number" android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content"/>
+<EditText android:id="@+id/intervalInput" android:hint="200" android:text="200" android:inputType="number" android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content"/>
+<EditText android:id="@+id/timeoutInput" android:hint="1500" android:text="1500" android:inputType="number" android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content"/>
+</LinearLayout>
+<TextView android:text="پکت | فاصله ارسال (ms) | Timeout (ms)" android:textSize="12sp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<Button android:id="@+id/startButton" android:text="شروع Benchmark" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"/>
+<Button android:id="@+id/stopButton" android:text="توقف" android:enabled="false" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<ProgressBar android:id="@+id/progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"/>
+<TextView android:id="@+id/status" android:text="آماده" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="8dp"/>
+<TextView android:id="@+id/results" android:typeface="monospace" android:textSize="12sp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="12dp"/>
+</LinearLayout></ScrollView>
