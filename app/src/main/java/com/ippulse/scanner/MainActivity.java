@@ -1,12 +1,12 @@
 package com.ippulse.scanner;
 
+import android.app.Activity;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
-import android.app.Activity;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -24,6 +24,7 @@ public class MainActivity extends Activity {
     private volatile boolean isStopped = false;
     private int totalIPs = 0;
     private int scannedCount = 0;
+    private List<ScanResult> allResults = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,16 +46,10 @@ public class MainActivity extends Activity {
 
     private void startScanning() {
         String inputStr = ipInput.getText().toString().trim();
-        if (inputStr.isEmpty()) {
-            Toast.makeText(this, "لطفاً آی‌پی یا رنج وارد کنید", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (inputStr.isEmpty()) return;
 
         List<String> ipList = parseIPList(inputStr);
-        if (ipList.isEmpty()) {
-            Toast.makeText(this, "فرمت آی‌پی نامعتبر است", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (ipList.isEmpty()) return;
 
         int packets = parseNumber(packetInput, 300);
         int interval = parseNumber(intervalInput, 1);
@@ -65,12 +60,14 @@ public class MainActivity extends Activity {
         btnStop.setEnabled(true);
         resultTable.removeAllViews();
         addTableHeader();
+        allResults.clear();
 
         totalIPs = ipList.size();
         scannedCount = 0;
         statusText.setText("در حال اسکن... 0 / " + totalIPs);
 
-        executor = Executors.newFixedThreadPool(10);
+        // استفاده از ۲۰ رشته همزمان برای سرعت وحشتناک اسکن
+        executor = Executors.newFixedThreadPool(20);
 
         final int fPackets = packets;
         final int fInterval = interval;
@@ -81,12 +78,16 @@ public class MainActivity extends Activity {
                 if (isStopped) break;
                 executor.submit(() -> {
                     if (isStopped) return;
-                    ScanResult res = pingIP(ip, fPackets, fInterval, fTimeout);
+                    ScanResult res = runCustomEngine(ip, fPackets, fInterval, fTimeout);
                     runOnUiThread(() -> {
                         if (!isStopped && res != null) {
-                            addTableRow(res);
+                            allResults.add(res);
                             scannedCount++;
                             statusText.setText("اسکن شده: " + scannedCount + " / " + totalIPs);
+                            
+                            // نمایش لایو در انتهای لیست هنگام اسکن
+                            addTableRow(res, allResults.size(), false);
+
                             if (scannedCount >= totalIPs) {
                                 finishScanning();
                             }
@@ -107,14 +108,98 @@ public class MainActivity extends Activity {
         runOnUiThread(() -> {
             btnStart.setEnabled(true);
             btnStop.setEnabled(false);
-            statusText.setText("اسکن کامل شد (" + scannedCount + " آی‌پی)");
+            
+            if (allResults.isEmpty()) {
+                statusText.setText("متوقف شد.");
+                return;
+            }
+            
+            statusText.setText("در حال مرتب‌سازی و رتبه‌بندی نتایج...");
+
+            // سورت کردن فوق‌دقیق: اول پکت‌لاس، بعد پینگ، بعد جیتر
+            Collections.sort(allResults, (a, b) -> {
+                if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
+                if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
+                return Float.compare(a.jitter, b.jitter);
+            });
+
+            resultTable.removeAllViews();
+            addTableHeader();
+            
+            // بازسازی جدول با هایلایت 55 برنده برتر
+            for (int i = 0; i < allResults.size(); i++) {
+                boolean isWinner = i < 55 && allResults.get(i).loss < 100;
+                addTableRow(allResults.get(i), i + 1, isWinner);
+            }
+
+            statusText.setText("لیدربورد کامل شد! (۵۵ آی‌پی برتر مشخص شدند)");
         });
+    }
+
+    // موتور کاستوم برای دور زدن لیمیت روت و اعمال دقیق Interval
+    private ScanResult runCustomEngine(String ip, int packets, int intervalMs, int timeoutMs) {
+        List<Float> rttList = new ArrayList<>();
+        int lost = 0;
+
+        for (int i = 0; i < packets; i++) {
+            if (isStopped) break;
+            try {
+                Process proc = Runtime.getRuntime().exec("ping -c 1 -W 1 " + ip);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+                String line;
+                float rtt = -1;
+                
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("time=")) {
+                        String timeStr = line.substring(line.indexOf("time=") + 5).replace(" ms", "").trim();
+                        String[] parts = timeStr.split(" ");
+                        rtt = Float.parseFloat(parts[0]);
+                        break;
+                    }
+                }
+                proc.waitFor();
+
+                if (rtt != -1) {
+                    rttList.add(rtt);
+                } else {
+                    lost++;
+                }
+
+                // توقف دقیق میلی‌ثانیه‌ای (بدون کرش کردن پروسه پینگ)
+                if (intervalMs > 0 && i < packets - 1) {
+                    Thread.sleep(intervalMs);
+                }
+            } catch (Exception e) {
+                lost++;
+            }
+        }
+
+        if (rttList.isEmpty()) {
+            return new ScanResult(ip, 0, 0, 0, 0, 100f);
+        }
+
+        float min = Collections.min(rttList);
+        float max = Collections.max(rttList);
+        float sum = 0;
+        for (float f : rttList) sum += f;
+        float avg = sum / rttList.size();
+
+        float jitter = 0;
+        if (rttList.size() > 1) {
+            float jSum = 0;
+            for (int i = 1; i < rttList.size(); i++) {
+                jSum += Math.abs(rttList.get(i) - rttList.get(i - 1));
+            }
+            jitter = jSum / (rttList.size() - 1);
+        }
+
+        float lossPct = (lost / (float) packets) * 100f;
+        return new ScanResult(ip, avg, min, max, jitter, lossPct);
     }
 
     private List<String> parseIPList(String input) {
         List<String> list = new ArrayList<>();
         String[] lines = input.split("\n");
-
         for (String line : lines) {
             line = line.trim();
             if (line.contains("-")) {
@@ -151,10 +236,7 @@ public class MainActivity extends Activity {
     }
 
     private String longToIP(long ip) {
-        return ((ip >> 24) & 0xFF) + "." +
-               ((ip >> 16) & 0xFF) + "." +
-               ((ip >> 8) & 0xFF) + "." +
-               (ip & 0xFF);
+        return ((ip >> 24) & 0xFF) + "." + ((ip >> 16) & 0xFF) + "." + ((ip >> 8) & 0xFF) + "." + (ip & 0xFF);
     }
 
     private int parseNumber(EditText et, int def) {
@@ -162,44 +244,6 @@ public class MainActivity extends Activity {
             return Integer.parseInt(et.getText().toString().trim());
         } catch (Exception e) {
             return def;
-        }
-    }
-
-    private ScanResult pingIP(String ip, int packets, int intervalMs, int timeoutMs) {
-        try {
-            float secInterval = intervalMs / 1000.0f;
-            float secTimeout = timeoutMs / 1000.0f;
-
-            Process proc = Runtime.getRuntime().exec(
-                String.format(Locale.US, "ping -c %d -i %.3f -W %.3f %s", packets, secInterval, secTimeout, ip)
-            );
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-            String line;
-            float loss = 100f, min = 0, avg = 0, max = 0, jitter = 0;
-
-            while ((line = reader.readLine()) != null) {
-                if (line.contains("packet loss")) {
-                    String[] parts = line.split(",");
-                    for (String p : parts) {
-                        if (p.contains("packet loss")) {
-                            String lStr = p.replace("% packet loss", "").trim();
-                            loss = Float.parseFloat(lStr.substring(lStr.lastIndexOf(" ") + 1));
-                        }
-                    }
-                } else if (line.contains("rtt min/avg/max/mdev") || line.contains("round-trip")) {
-                    String stats = line.split("=")[1].trim().split(" ")[0];
-                    String[] val = stats.split("/");
-                    min = Float.parseFloat(val[0]);
-                    avg = Float.parseFloat(val[1]);
-                    max = Float.parseFloat(val[2]);
-                    jitter = Float.parseFloat(val[3]);
-                }
-            }
-            proc.waitFor();
-            return new ScanResult(ip, avg, min, max, jitter, loss);
-        } catch (Exception e) {
-            return new ScanResult(ip, 0, 0, 0, 0, 100f);
         }
     }
 
@@ -216,14 +260,21 @@ public class MainActivity extends Activity {
         resultTable.addView(header);
     }
 
-    private void addTableRow(ScanResult res) {
+    private void addTableRow(ScanResult res, int rank, boolean isWinner) {
         TableRow row = new TableRow(this);
         row.setPadding(4, 6, 4, 6);
-        row.setBackgroundColor(Color.parseColor("#1E293B"));
+
+        // رنگ‌بندی طلایی برای 55 نفر اول
+        if (isWinner) {
+            row.setBackgroundColor(Color.parseColor("#451A03")); 
+        } else {
+            row.setBackgroundColor(Color.parseColor("#1E293B"));
+        }
 
         int pingColor = res.loss == 100 ? Color.parseColor("#EF4444") : (res.avg < 80 ? Color.parseColor("#4ADE80") : Color.parseColor("#FACC15"));
 
-        row.addView(createCell(res.ip, false, Color.parseColor("#F8FAFC")));
+        String ipText = rank + ". " + res.ip;
+        row.addView(createCell(ipText, false, isWinner ? Color.parseColor("#FBBF24") : Color.parseColor("#F8FAFC")));
         row.addView(createCell(String.format(Locale.US, "%.1f", res.avg), false, pingColor));
         row.addView(createCell(String.format(Locale.US, "%.1f", res.min), false, Color.parseColor("#94A3B8")));
         row.addView(createCell(String.format(Locale.US, "%.1f", res.max), false, Color.parseColor("#94A3B8")));
