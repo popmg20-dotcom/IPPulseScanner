@@ -62,8 +62,8 @@ public class MainActivity extends Activity {
                     ipInput.setText(selected);
                 }
             }
+
             @Override
-            public void NothingSelected(AdapterView<?> parent) {}
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
@@ -116,7 +116,6 @@ public class MainActivity extends Activity {
                     completedIPs++;
                 }
                 
-                // به‌روزرسانی زنده لاگ‌ها در صفحه
                 runOnUiThread(() -> {
                     statusText.setText("در حال پردازش: " + completedIPs + " / " + totalIPs);
                     if (topListLayout != null) {
@@ -163,7 +162,6 @@ public class MainActivity extends Activity {
                     lost++;
                 }
 
-                // سیستم هوشمند رد کردن سریع آی‌پی‌های کاملاً مرده برای بالا بردن سرعت کل اسکن
                 if (i == 19 && rttList.isEmpty() && totalPackets > 20) {
                     lost = totalPackets;
                     break;
@@ -197,7 +195,6 @@ public class MainActivity extends Activity {
             jitter = jSum / (rttList.size() - 1);
         }
 
-        // دریافت داینامیک کشور و پرچم از طریق سرویس آنلاین سبک
         String country = "Unknown";
         String flag = "🏳️";
         try {
@@ -227,7 +224,6 @@ public class MainActivity extends Activity {
         btnStop.setEnabled(false);
         statusText.setText("اسکن کامل شد! مرتب‌سازی نهایی بر اساس پایداری گیمینگ...");
 
-        // معیار لیست دقیق گیمینگ: اولویت کمترین Jitter، بعد درصد Packet Loss و بعد میانگین پینگ
         Collections.sort(allResults, new Comparator<ScanResult>() {
             @Override
             public int compare(ScanResult a, ScanResult b) {
@@ -273,7 +269,6 @@ public class MainActivity extends Activity {
         TableRow row = new TableRow(this);
         row.setBackgroundColor(rank <= 5 ? Color.parseColor("#332200") : Color.parseColor("#1E293B"));
         
-        // امکان کپی کردن آی‌پی با کلیک روی ردیف
         row.setOnClickListener(v -> {
             ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             ClipData clip = ClipData.newPlainText("IP Address", res.ip);
