@@ -1,138 +1,288 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0F172A"
-    android:padding="12dp">
+    android:fillViewport="true"
+    android:background="#070709">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="14dp">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="⚡ IP Pulse Scanner Pro"
-            android:textColor="#38BDF8"
-            android:textSize="22sp"
+            android:text="IP PULSE SCANNER"
+            android:textColor="#FFFFFF"
+            android:textSize="25sp"
             android:textStyle="bold"
             android:gravity="center"
-            android:paddingBottom="12dp" />
+            android:paddingTop="8dp"/>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="آدرس تک یا رنج آی‌پی (مثال: 93.119.170.0 - 93.119.170.255):"
-            android:textColor="#94A3B8"
+            android:text="Gaming Network Benchmark"
+            android:textColor="#8E8E96"
             android:textSize="12sp"
-            android:gravity="right"
-            android:paddingBottom="4dp"/>
+            android:gravity="center"
+            android:paddingBottom="14dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="IP های موردنظر"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:paddingBottom="6dp"/>
 
         <EditText
             android:id="@+id/ipInput"
             android:layout_width="match_parent"
-            android:layout_height="90dp"
-            android:background="#1E293B"
-            android:textColor="#F8FAFC"
-            android:padding="10dp"
-            android:gravity="top|left"
-            android:hint="93.119.170.0 - 93.119.170.255"
-            android:textColorHint="#475569"
-            android:textSize="14sp"
-            android:fontFamily="monospace"/>
+            android:layout_height="135dp"
+            android:background="#131317"
+            android:textColor="#FFFFFF"
+            android:hintTextColor="#66666E"
+            android:hint="92.223.124.97&#10;93.119.170.214&#10;3.122.114.40"
+            android:gravity="top|start"
+            android:inputType="textMultiLine"
+            android:padding="12dp"/>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="10dp">
+            android:paddingTop="10dp">
 
-            <LinearLayout
+            <EditText
+                android:id="@+id/packetInput"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="50dp"
                 android:layout_weight="1"
-                android:orientation="vertical"
-                android:padding="2dp">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="تعداد پکت" android:textColor="#94A3B8" android:textSize="10sp" android:gravity="center"/>
-                <EditText android:id="@+id/packetInput" android:layout_width="match_parent" android:layout_height="40dp" android:background="#1E293B" android:textColor="#F8FAFC" android:text="300" android:inputType="number" android:gravity="center" android:textSize="13sp"/>
-            </LinearLayout>
+                android:background="#131317"
+                android:textColor="#FFFFFF"
+                android:hintTextColor="#66666E"
+                android:text="300"
+                android:hint="Packets"
+                android:gravity="center"
+                android:inputType="number"/>
 
-            <LinearLayout
+            <Space
+                android:layout_width="6dp"
+                android:layout_height="1dp"/>
+
+            <EditText
+                android:id="@+id/intervalInput"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="50dp"
                 android:layout_weight="1"
-                android:orientation="vertical"
-                android:padding="2dp">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="فاصله (ms)" android:textColor="#94A3B8" android:textSize="10sp" android:gravity="center"/>
-                <EditText android:id="@+id/intervalInput" android:layout_width="match_parent" android:layout_height="40dp" android:background="#1E293B" android:textColor="#F8FAFC" android:text="200" android:inputType="number" android:gravity="center" android:textSize="13sp"/>
-            </LinearLayout>
+                android:background="#131317"
+                android:textColor="#FFFFFF"
+                android:hintTextColor="#66666E"
+                android:text="50"
+                android:hint="Interval ms"
+                android:gravity="center"
+                android:inputType="number"/>
 
-            <LinearLayout
+            <Space
+                android:layout_width="6dp"
+                android:layout_height="1dp"/>
+
+            <EditText
+                android:id="@+id/timeoutInput"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="50dp"
                 android:layout_weight="1"
-                android:orientation="vertical"
-                android:padding="2dp">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="تایم‌اوت (ms)" android:textColor="#94A3B8" android:textSize="10sp" android:gravity="center"/>
-                <EditText android:id="@+id/timeoutInput" android:layout_width="match_parent" android:layout_height="40dp" android:background="#1E293B" android:textColor="#F8FAFC" android:text="1000" android:inputType="number" android:gravity="center" android:textSize="13sp"/>
-            </LinearLayout>
-
+                android:background="#131317"
+                android:textColor="#FFFFFF"
+                android:hintTextColor="#66666E"
+                android:text="1000"
+                android:hint="Timeout"
+                android:gravity="center"
+                android:inputType="number"/>
         </LinearLayout>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Packets / Interval(ms) / Timeout(ms)"
+            android:textColor="#77777F"
+            android:textSize="10sp"
+            android:paddingTop="4dp"/>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="12dp">
+            android:paddingTop="10dp">
 
             <Button
                 android:id="@+id/btnStart"
                 android:layout_width="0dp"
-                android:layout_height="45dp"
-                android:layout_weight="2"
-                android:text="شروع بنچمارک"
-                android:backgroundTint="#0284C7"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="▶ START"
                 android:textColor="#FFFFFF"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:backgroundTint="#1976FF"/>
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="1dp"/>
 
             <Button
                 android:id="@+id/btnStop"
                 android:layout_width="0dp"
-                android:layout_height="45dp"
+                android:layout_height="52dp"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="توقف"
-                android:backgroundTint="#EF4444"
+                android:text="■ STOP"
                 android:textColor="#FFFFFF"
-                android:enabled="false" />
+                android:textStyle="bold"
+                android:backgroundTint="#D43A45"/>
         </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_marginTop="12dp"
+            android:progress="0"
+            android:max="100"
+            android:progressTint="#39D978"/>
 
         <TextView
             android:id="@+id/statusText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="آماده برای اسکن"
-            android:textColor="#38BDF8"
-            android:textSize="12sp"
-            android:gravity="center"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"/>
+            android:text="آماده تست"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:paddingTop="10dp"
+            android:paddingBottom="6dp"/>
 
-        <!-- Result Table -->
+        <TextView
+            android:id="@+id/processText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Engine: Android system ping"
+            android:textColor="#72B4FF"
+            android:textSize="12sp"
+            android:background="#111116"
+            android:padding="10dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🏆 TOP 3"
+            android:textColor="#FFFFFF"
+            android:textSize="19sp"
+            android:textStyle="bold"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/top3Text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="هنوز نتیجه‌ای ثبت نشده"
+            android:textColor="#FFC107"
+            android:textSize="14sp"
+            android:typeface="monospace"
+            android:background="#121217"
+            android:padding="14dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📊 RESULT TABLE"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"/>
+
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#1E293B"
-            android:padding="1dp">
+            android:background="#121217">
 
             <TableLayout
                 android:id="@+id/resultTable"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:stretchColumns="*">
+                android:stretchColumns="*"
+                android:padding="6dp">
+
+                <TableRow
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:text="Rank"
+                        android:textColor="#8E8E96"
+                        android:textStyle="bold"
+                        android:padding="10dp"/>
+
+                    <TextView
+                        android:text="IP"
+                        android:textColor="#8E8E96"
+                        android:textStyle="bold"
+                        android:padding="10dp"/>
+
+                    <TextView
+                        android:text="Avg"
+                        android:textColor="#8E8E96"
+                        android:textStyle="bold"
+                        android:padding="10dp"/>
+
+                    <TextView
+                        android:text="Jitter"
+                        android:textColor="#8E8E96"
+                        android:textStyle="bold"
+                        android:padding="10dp"/>
+
+                    <TextView
+                        android:text="Min"
+                        android:textColor="#8E8E96"
+                        android:textStyle="bold"
+                        android:padding="10dp"/>
+
+                    <TextView
+                        android:text="Max"
+                        android:textColor="#8E8E96"
+                        android:textStyle="bold"
+                        android:padding="10dp"/>
+
+                    <TextView
+                        android:text="StdDev"
+                        android:textColor="#8E8E96"
+                        android:textStyle="bold"
+                        android:padding="10dp"/>
+
+                    <TextView
+                        android:text="Loss"
+                        android:textColor="#8E8E96"
+                        android:textStyle="bold"
+                        android:padding="10dp"/>
+
+                    <TextView
+                        android:text="Rx/Tx"
+                        android:textColor="#8E8E96"
+                        android:textStyle="bold"
+                        android:padding="10dp"/>
+
+                </TableRow>
+
             </TableLayout>
         </HorizontalScrollView>
 
     </LinearLayout>
+
 </ScrollView>
