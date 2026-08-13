@@ -111,6 +111,10 @@ public class MainActivity extends Activity {
         interval = Math.max(20, Math.min(5000, interval));
         timeout = Math.max(100, Math.min(10000, timeout));
 
+        final int finalPackets = packets;
+        final int finalInterval = interval;
+        final int finalTimeout = timeout;
+
         List<String> ips = new ArrayList<>();
 
         for (String line : raw.split("\\r?\\n")) {
@@ -189,9 +193,9 @@ public class MainActivity extends Activity {
                 Result result =
                         performPing(
                                 ip,
-                                packets,
-                                interval,
-                                timeout
+                                finalPackets,
+                                finalInterval,
+                                finalTimeout
                         );
 
                 if (result != null) {
@@ -367,7 +371,7 @@ public class MainActivity extends Activity {
 
         return buildResult(
                 ip,
-                packets,
+                                finalPackets,
                 rtts
         );
     }
