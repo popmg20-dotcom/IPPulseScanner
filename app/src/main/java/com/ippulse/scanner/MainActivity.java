@@ -34,7 +34,7 @@ public class MainActivity extends android.app.Activity {
         stopped=false; all.clear(); results.setText(""); progress.setMax(ips.size()); progress.setProgress(0);
         startButton.setEnabled(false); stopButton.setEnabled(true); status.setText("در حال تست "+ips.size()+" مقصد...");
         pool=Executors.newFixedThreadPool(Math.min(4,ips.size()));
-        for(String ip:ips) pool.submit(() -> { if(!stopped){ Result r=ping(ip,packets,interval,timeout); all.add(r); render(ips.size()); }});
+        final int fPackets=packets; final int fInterval=interval; final int fTimeout=timeout; for(String ip:ips) pool.submit(() -> { if(!stopped){ Result r=ping(ip,fPackets,fInterval,fTimeout); all.add(r); render(ips.size()); }});
     }
     void stop(){stopped=true; if(pool!=null) pool.shutdownNow(); startButton.setEnabled(true); stopButton.setEnabled(false); status.setText("متوقف شد");}
     int parse(EditText e,int d){try{return Integer.parseInt(e.getText().toString().trim());}catch(Exception x){return d;}}
