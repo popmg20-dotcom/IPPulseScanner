@@ -56,9 +56,9 @@ public class MainActivity extends Activity {
             return;
         }
 
-        int packets = parseNum(packetInput, 30);
+        int packets = parseNum(packetInput, 50);
         int interval = parseNum(intervalInput, 1);
-        int timeout = parseNum(timeoutInput, 1000);
+        int timeout = parseNum(timeoutInput, 800);
 
         isCancelled = false;
         btnStart.setEnabled(false);
@@ -69,9 +69,8 @@ public class MainActivity extends Activity {
 
         totalIPs = ipList.size();
         completedIPs = 0;
-        statusText.setText("شروع اسکن همزمان (Turbo Mode)... 0 / " + totalIPs);
+        statusText.setText("اسکن توربو گیمینگ... 0 / " + totalIPs);
 
-        // استفاده از موتور پردازش موازی نامحدود برای ارسال همزمان پکت‌ها به تمام آی‌پی‌ها
         executor = Executors.newCachedThreadPool();
 
         for (String ip : ipList) {
@@ -122,6 +121,12 @@ public class MainActivity extends Activity {
                     lost++;
                 }
 
+                // سیستم هوشمند حذف سریع آی‌پی‌های مرده برای افزایش سرعت کل اسکن
+                if (i == 9 && rttList.isEmpty() && totalPackets > 10) {
+                    lost = totalPackets;
+                    break;
+                }
+
                 if (intervalMs > 0 && i < totalPackets - 1) {
                     Thread.sleep(intervalMs);
                 }
@@ -156,14 +161,26 @@ public class MainActivity extends Activity {
     private void finishScanning() {
         btnStart.setEnabled(true);
         btnStop.setEnabled(false);
-        statusText.setText("اسکن کامل شد! مرتب‌سازی نتایج...");
+        statusText.setText("اسکن کامل شد! فیلتر و مرتب‌سازی گیمینگ...");
 
+        // فیلتر هوشمند و مرتب‌سازی مخصوص گیمینگ (اولویت اول: Loss صفر، اولویت دوم: کمترین Jitter، اولویت سوم: پینگ)
         Collections.sort(allResults, new Comparator<ScanResult>() {
             @Override
             public int compare(ScanResult a, ScanResult b) {
+                // اگر آی‌پی مرده (Loss 100) است بفرست ته لیست
+                if (a.loss >= 99f && b.loss < 99f) return 1;
+                if (b.loss >= 99f && a.loss < 99f) return -1;
+
+                // اولویت اول: درصد پاکت لاس
                 if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
-                if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
-                return Float.compare(a.jitter, b.jitter);
+
+                // اولویت دوم: کمترین جیتر (پایداری)
+                if (Math.abs(a.jitter - b.jitter) > 0.3f) {
+                    return Float.compare(a.jitter, b.jitter);
+                }
+
+                // اولویت سوم: میانگین پینگ
+                return Float.compare(a.avg, b.avg);
             }
         });
 
@@ -172,6 +189,7 @@ public class MainActivity extends Activity {
             int topCount = Math.min(5, allResults.size());
             for (int i = 0; i < topCount; i++) {
                 ScanResult res = allResults.get(i);
+                if (res.loss >= 99f) continue;
                 TextView tv = new TextView(this);
                 tv.setText(String.format(Locale.US, "🏆 #%d -> %s | Avg: %.1fms | Jitter: %.1f | Loss: %.0f%%", 
                         (i + 1), res.ip, res.avg, res.jitter, res.loss));
@@ -184,11 +202,14 @@ public class MainActivity extends Activity {
 
         resultTable.removeAllViews();
         addTableHeader();
-        for (int i = 0; i < allResults.size(); i++) {
-            addTableRow(allResults.get(i), i + 1);
+        int rank = 1;
+        for (ScanResult res : allResults) {
+            if (res.loss < 99f) {
+                addTableRow(res, rank++);
+            }
         }
 
-        statusText.setText("نتایج از بهترین به بدترین مرتب شدند.");
+        statusText.setText("بهترین سرورهای گیمینگ شناسایی شدند.");
     }
 
     private void addTableHeader() {
