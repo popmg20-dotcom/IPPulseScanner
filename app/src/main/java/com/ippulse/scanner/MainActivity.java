@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
         if (ipList.isEmpty()) return;
 
         int packets = parseNumber(packetInput, 300);
-        int interval = parseNumber(intervalInput, 1);
+        int interval = parseNumber(intervalInput, 200);
         int timeout = parseNumber(timeoutInput, 1000);
 
         isStopped = false;
@@ -126,9 +126,9 @@ public class MainActivity extends Activity {
             resultTable.removeAllViews();
             addTableHeader();
             
-            // بازسازی جدول با هایلایت 55 برنده برتر
+            // بازسازی جدول با هایلایت 5 برنده برتر
             for (int i = 0; i < allResults.size(); i++) {
-                boolean isWinner = i < 55 && allResults.get(i).loss < 100;
+                boolean isWinner = i < 5 && allResults.get(i).loss < 100;
                 addTableRow(allResults.get(i), i + 1, isWinner);
             }
 
@@ -249,7 +249,7 @@ public class MainActivity extends Activity {
 
     private void addTableHeader() {
         TableRow header = new TableRow(this);
-        header.setBackgroundColor(Color.parseColor("#334155"));
+        header.setBackgroundColor(Color.parseColor("#33415"));
         header.setPadding(4, 8, 4, 8);
 
         String[] cols = {"IP Address", "Avg", "Min", "Max", "Jitter", "Loss"};
@@ -264,7 +264,7 @@ public class MainActivity extends Activity {
         TableRow row = new TableRow(this);
         row.setPadding(4, 6, 4, 6);
 
-        // رنگ‌بندی طلایی برای 55 نفر اول
+        // رنگ‌بندی طلایی برای 5 نفر اول
         if (isWinner) {
             row.setBackgroundColor(Color.parseColor("#451A03")); 
         } else {
