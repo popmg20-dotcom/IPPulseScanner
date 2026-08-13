@@ -13,9 +13,9 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="IP PULSE SCANNER"
+            android:text="IP PULSE SCANNER (TURBO)"
             android:textColor="#38BDF8"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:gravity="center"
             android:layout_marginBottom="12dp"/>
@@ -23,15 +23,57 @@
         <EditText
             android:id="@+id/ipInput"
             android:layout_width="match_parent"
-            android:layout_height="90dp"
+            android:layout_height="75dp"
             android:background="#1E293B"
             android:textColor="#FFFFFF"
             android:textColorHint="#94A3B8"
-            android:hint="93.119.170.0 - 93.119.170.255"
+            android:hint="وارد کردن IP یا رنج (مثال: 3.122.114.0 - 3.122.114.255)"
             android:gravity="top"
             android:padding="8dp"
-            android:textSize="14sp"
+            android:textSize="13sp"
+            android:layout_marginBottom="6dp"/>
+
+        <!-- تاریخچه جستجوها -->
+        <Spinner
+            android:id="@+id/historySpinner"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="#1E293B"
             android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Packets"
+                android:textColor="#38BDF8"
+                android:textSize="11sp"
+                android:gravity="center"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Interval (ms)"
+                android:textColor="#38BDF8"
+                android:textSize="11sp"
+                android:gravity="center"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Timeout (ms)"
+                android:textColor="#38BDF8"
+                android:textSize="11sp"
+                android:gravity="center"/>
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -58,7 +100,7 @@
                 android:layout_height="wrap_content"
                 android:background="#1E293B"
                 android:textColor="#FFFFFF"
-                android:text="200"
+                android:text="1"
                 android:gravity="center"
                 android:inputType="number"
                 android:padding="8dp"
@@ -108,18 +150,23 @@
             android:id="@+id/statusText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="آماده برای اسکن..."
+            android:text="آماده برای اسکن دقیق..."
             android:textColor="#94A3B8"
-            android:layout_marginBottom="8dp"/>
+            android:layout_marginBottom="6dp"/>
 
-        <LinearLayout
-            android:id="@+id/topListLayout"
+        <!-- لاگ‌های زنده در حال پردازش و ارزیابی پکت‌ها -->
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_height="110dp"
             android:background="#1E293B"
-            android:padding="8dp"
-            android:layout_marginBottom="12dp"/>
+            android:padding="6dp"
+            android:layout_marginBottom="12dp">
+            <LinearLayout
+                android:id="@+id/topListLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+        </ScrollView>
 
         <HorizontalScrollView
             android:layout_width="match_parent"
