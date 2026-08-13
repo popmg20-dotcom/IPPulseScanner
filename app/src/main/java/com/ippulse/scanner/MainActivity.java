@@ -37,8 +37,6 @@ public class MainActivity extends Activity {
         btnStop = findViewById(R.id.btnStop);
         statusText = findViewById(R.id.statusText);
         resultTable = findViewById(R.id.resultTable);
-        
-        // پیدا کردن یا ایجاد بخش Top 3/5
         topListLayout = findViewById(R.id.topListLayout);
 
         btnStart.setOnClickListener(v -> startScanning());
@@ -159,14 +157,16 @@ public class MainActivity extends Activity {
         btnStop.setEnabled(false);
         statusText.setText("اسکن کامل شد! در حال مرتب‌سازی...");
 
-        // مرتب‌سازی: اول پکت لاس کمتر، بعد میانگین پینگ کمتر، بعد جیتر کمتر
-        Collections.sort(allResults, (a, b) => {
-            if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
-            if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
-            return Float.compare(a.jitter, b.jitter);
+        // استفاده از Comparator استاندارد بدون نیاز به قابلیت‌های جدید جاوا
+        Collections.sort(allResults, new Comparator<ScanResult>() {
+            @Override
+            public int compare(ScanResult a, ScanResult b) {
+                if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
+                if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
+                return Float.compare(a.jitter, b.jitter);
+            }
         });
 
-        // نمایش ۵ برنده برتر در بخش بالا
         if (topListLayout != null) {
             topListLayout.removeAllViews();
             int topCount = Math.min(5, allResults.size());
@@ -182,7 +182,6 @@ public class MainActivity extends Activity {
             }
         }
 
-        // ساخت جدول نتایج کامل
         resultTable.removeAllViews();
         addTableHeader();
         for (int i = 0; i < allResults.size(); i++) {
