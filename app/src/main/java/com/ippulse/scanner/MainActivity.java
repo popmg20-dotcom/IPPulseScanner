@@ -56,8 +56,8 @@ public class MainActivity extends Activity {
             return;
         }
 
-        int packets = parseNum(packetInput, 200);
-        int interval = parseNum(intervalInput, 200);
+        int packets = parseNum(packetInput, 30);
+        int interval = parseNum(intervalInput, 1);
         int timeout = parseNum(timeoutInput, 1000);
 
         isCancelled = false;
@@ -69,9 +69,10 @@ public class MainActivity extends Activity {
 
         totalIPs = ipList.size();
         completedIPs = 0;
-        statusText.setText("در حال اسکن... 0 / " + totalIPs);
+        statusText.setText("شروع اسکن همزمان (Turbo Mode)... 0 / " + totalIPs);
 
-        executor = Executors.newFixedThreadPool(10);
+        // استفاده از موتور پردازش موازی نامحدود برای ارسال همزمان پکت‌ها به تمام آی‌پی‌ها
+        executor = Executors.newCachedThreadPool();
 
         for (String ip : ipList) {
             if (isCancelled) break;
@@ -83,7 +84,7 @@ public class MainActivity extends Activity {
                     completedIPs++;
                 }
                 runOnUiThread(() -> {
-                    statusText.setText("در حال اسکن... " + completedIPs + " / " + totalIPs);
+                    statusText.setText("در حال پردازش: " + completedIPs + " / " + totalIPs);
                     if (completedIPs >= totalIPs) {
                         finishScanning();
                     }
@@ -155,7 +156,7 @@ public class MainActivity extends Activity {
     private void finishScanning() {
         btnStart.setEnabled(true);
         btnStop.setEnabled(false);
-        statusText.setText("اسکن کامل شد! در حال مرتب‌سازی...");
+        statusText.setText("اسکن کامل شد! مرتب‌سازی نتایج...");
 
         Collections.sort(allResults, new Comparator<ScanResult>() {
             @Override
