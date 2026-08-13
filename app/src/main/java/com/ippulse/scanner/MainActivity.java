@@ -5,7 +5,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.widget.*;
 import android.view.*;
-import androidx.annotation.Nullable;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -21,7 +20,7 @@ public class MainActivity extends android.app.Activity {
     Handler main = new Handler(Looper.getMainLooper());
     final List<Result> all = Collections.synchronizedList(new ArrayList<>());
 
-    @Override public void onCreate(@Nullable Bundle b) {
+    @Override public void onCreate(Bundle b) {
         super.onCreate(b); setContentView(R.layout.activity_main);
         ipInput=findViewById(R.id.ipInput); packetInput=findViewById(R.id.packetInput); intervalInput=findViewById(R.id.intervalInput); timeoutInput=findViewById(R.id.timeoutInput);
         startButton=findViewById(R.id.startButton); stopButton=findViewById(R.id.stopButton); progress=findViewById(R.id.progress); status=findViewById(R.id.status); results=findViewById(R.id.results);
