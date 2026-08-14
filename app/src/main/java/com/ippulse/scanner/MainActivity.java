@@ -301,6 +301,7 @@ public class MainActivity extends Activity {
         for (int i = 1; i <= totalPkts; i++) {
             if (isCancelled) break;
             attempted = i;
+            final int seq = i;
             float rtt = -1f;
             try {
                 long startNs = System.nanoTime();
@@ -345,7 +346,7 @@ public class MainActivity extends Activity {
                 float curJitter = jitter(rttList);
                 float curLoss = ((i - curReceived) * 100f) / i;
                 runOnUiThread(() -> {
-                    liveCells[1].setText(String.valueOf(i));
+                    liveCells[1].setText(String.valueOf(seq));
                     liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
                     liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
                     liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
