@@ -24,7 +24,7 @@ import java.util.concurrent.*;
 
 public class MainActivity extends Activity {
 
-    private static final int FAST_FAIL_THRESHOLD = 2;
+    private static final int FAST_FAIL_THRESHOLD = 3; // بعد از ۳ پکت بی‌پاسخ
     private static final String PREFS_NAME = "ippulse_history";
     private static final String HISTORY_KEY = "history";
 
@@ -56,7 +56,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Init Tab 1
         tab1Container = findViewById(R.id.tab1Container);
         btnTab1 = findViewById(R.id.btnTab1);
         btnTab2 = findViewById(R.id.btnTab2);
@@ -71,7 +70,6 @@ public class MainActivity extends Activity {
         logScroll1 = findViewById(R.id.logScroll1);
         table1 = findViewById(R.id.table1);
 
-        // Init Tab 2
         tab2Container = findViewById(R.id.tab2Container);
         top5Container = findViewById(R.id.top5Container);
         status2 = findViewById(R.id.status2);
@@ -80,18 +78,14 @@ public class MainActivity extends Activity {
         table2Live = findViewById(R.id.table2Live);
         btnStop2 = findViewById(R.id.btnStop2);
 
-        // History buttons
         btnHistory = findViewById(R.id.btnHistory);
         btnClearHistory = findViewById(R.id.btnClearHistory);
 
-        // Tab Switching
         btnTab1.setOnClickListener(v -> switchTab(1));
         btnTab2.setOnClickListener(v -> switchTab(2));
-
         btnStart1.setOnClickListener(v -> startRangeScan());
         btnStop1.setOnClickListener(v -> stopRangeScan());
         btnStop2.setOnClickListener(v -> stopDeepTest());
-
         btnHistory.setOnClickListener(v -> showHistoryDialog());
         btnClearHistory.setOnClickListener(v -> clearHistory());
     }
@@ -146,7 +140,6 @@ public class MainActivity extends Activity {
         }
 
         int pkts = parseNum(inputPackets, 100);
-        int interv = parseNum(inputInterval, 1);
         int timeo = parseNum(inputTimeout, 1000);
 
         allResults.clear();
@@ -166,7 +159,7 @@ public class MainActivity extends Activity {
         for (String ip : ips) {
             executor.execute(() -> {
                 if (isCancelled) return;
-                ScanResult res = pingLogic(ip, pkts, interv, timeo, false, null);
+                ScanResult res = pingLogic(ip, pkts, timeo, false, null);
                 synchronized (allResults) {
                     allResults.add(res);
                     completed[0]++;
@@ -187,10 +180,11 @@ public class MainActivity extends Activity {
         btnStart1.setEnabled(true);
 
         Collections.sort(allResults, (a, b) -> {
-            // اول جیتر (کمتر بهتر برای گیم)، بعد لاس، بعد میانگین
+            // معیار: اول میانگین، بعد جیتر، بعد لاس، بعد مکس
+            if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
             if (Math.abs(a.jitter - b.jitter) > 0.1f) return Float.compare(a.jitter, b.jitter);
             if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
-            return Float.compare(a.avg, b.avg);
+            return Float.compare(a.max, b.max);
         });
 
         table1.removeAllViews();
@@ -248,11 +242,10 @@ public class MainActivity extends Activity {
         table2Live.removeAllViews();
         addTableHeader(table2Live, true);
         int pkts = parseNum(inputPackets, 100);
-        int interv = parseNum(inputInterval, 1);
         int timeo = parseNum(inputTimeout, 1000);
         status2.setText("Deep Testing: " + ip);
         deepTestThread = new Thread(() -> {
-            pingLogic(ip, pkts, interv, timeo, true, table2Live);
+            pingLogic(ip, pkts, timeo, true, table2Live);
             runOnUiThread(() -> {
                 if (!isCancelled) status2.setText("Deep Test Finished: " + ip);
             });
@@ -260,12 +253,12 @@ public class MainActivity extends Activity {
         deepTestThread.start();
     }
 
-    // ✅ موتور تست سالم بر پایه ping تک‌پکتی (همون نسخه‌ای که جواب می‌داد)
-    private ScanResult pingLogic(String ip, int totalPkts, int interv, int timeo, boolean isDeepLive, TableLayout liveTable) {
+    // ✅ موتور نهایی: ping -c total با Fast-Fail هوشمند
+    private ScanResult pingLogic(String ip, int totalPkts, int timeo, boolean isDeepLive, TableLayout liveTable) {
         List<Float> rttList = new ArrayList<>();
-        int lost = 0;
+        int received = 0;
+        int sent = 0;
         int consecutiveLost = 0;
-        int attempted = 0;
         int tSec = Math.max(1, timeo / 1000);
 
         TableRow liveRow = null;
@@ -285,10 +278,11 @@ public class MainActivity extends Activity {
             }
             final TableRow rowToAdd = liveRow;
             final TextView[] cells = liveCells;
+            final String ipFinal = ip;
             runOnUiThread(() -> {
                 liveTable.addView(rowToAdd);
-                cells[0].setText(ip);
-                cells[1].setText("0");
+                cells[0].setText(ipFinal);
+                cells[1].setText(String.valueOf(totalPkts));
                 cells[2].setText("0");
                 cells[3].setText("0");
                 cells[4].setText("0");
@@ -298,81 +292,95 @@ public class MainActivity extends Activity {
             });
         }
 
-        for (int i = 1; i <= totalPkts; i++) {
-            if (isCancelled) break;
-            attempted = i;
-            final int seq = i;
-            float rtt = -1f;
-            try {
-                long startNs = System.nanoTime();
-                Process p = new ProcessBuilder("ping", "-c", "1", "-W", String.valueOf(tSec), ip)
-                        .redirectErrorStream(true)
-                        .start();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String line;
-                while ((line = reader.readLine()) != null) {
+        Process process = null;
+        BufferedReader reader = null;
+        boolean killedEarly = false;
+        try {
+            ProcessBuilder pb = new ProcessBuilder("ping", "-c", String.valueOf(totalPkts), "-W", String.valueOf(tSec), ip);
+            pb.redirectErrorStream(true);
+            process = pb.start();
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null && !isCancelled) {
+                // هر خطی که شامل icmp_seq باشد یک پکت ارسال شده را نشان می‌دهد
+                int seqIdx = line.indexOf("icmp_seq=");
+                if (seqIdx != -1) {
+                    // شماره سکانس را استخراج می‌کنیم
+                    int start = seqIdx + "icmp_seq=".length();
+                    int end = start;
+                    while (end < line.length() && Character.isDigit(line.charAt(end))) end++;
+                    if (end > start) {
+                        try {
+                            int seq = Integer.parseInt(line.substring(start, end));
+                            sent = Math.max(sent, seq);
+                        } catch (Exception ignored) {}
+                    }
+
+                    // اگر خط حاوی time= باشد یعنی پاسخ آمده
                     if (line.contains("time=")) {
-                        int idx = line.indexOf("time=");
-                        String sub = line.substring(idx + 5).trim();
+                        int timeIdx = line.indexOf("time=");
+                        String sub = line.substring(timeIdx + 5).trim();
                         String[] parts = sub.split(" ");
                         if (parts.length > 0) {
-                            rtt = Float.parseFloat(parts[0].trim());
-                            break;
+                            float rtt = Float.parseFloat(parts[0].trim());
+                            rttList.add(rtt);
+                            received++;
                         }
+                        consecutiveLost = 0;
+                    } else {
+                        // پکت گم شده یا timeout
+                        consecutiveLost++;
+                    }
+
+                    // اگر تعداد شکست‌های متوالی به آستانه رسید، فرآیند را می‌کشیم
+                    if (consecutiveLost >= FAST_FAIL_THRESHOLD) {
+                        killedEarly = true;
+                        process.destroy();
+                        break;
+                    }
+
+                    // آپدیت زنده در Deep Test
+                    if (isDeepLive && liveRow != null) {
+                        int curReceived = received;
+                        int curSent = sent;
+                        float curAvg = avg(rttList);
+                        float curMin = min(rttList);
+                        float curMax = max(rttList);
+                        float curJitter = jitter(rttList);
+                        float curLoss = curSent > 0 ? ((curSent - curReceived) * 100f) / curSent : 0f;
+                        runOnUiThread(() -> {
+                            liveCells[1].setText(String.valueOf(curSent));
+                            liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
+                            liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
+                            liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
+                            liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
+                            liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
+                            liveCells[7].setText(curReceived > 0 ? "ALIVE" : "TESTING");
+                        });
+                        appendDeepLog(ip + " seq=" + sent + " rtt=" + (line.contains("time=") ? rttList.get(rttList.size()-1) + "ms" : "lost"));
                     }
                 }
-                p.waitFor();
-                p.destroy();
-            } catch (Exception e) {
-                rtt = -1f;
             }
-
-            if (rtt >= 0) {
-                rttList.add(rtt);
-                consecutiveLost = 0;
-            } else {
-                lost++;
-                consecutiveLost++;
-                if (consecutiveLost >= FAST_FAIL_THRESHOLD) {
-                    break;
-                }
+            if (!killedEarly) {
+                process.waitFor();
             }
-
-            if (isDeepLive && liveRow != null) {
-                int curReceived = rttList.size();
-                float curAvg = avg(rttList);
-                float curMin = min(rttList);
-                float curMax = max(rttList);
-                float curJitter = jitter(rttList);
-                float curLoss = ((i - curReceived) * 100f) / i;
-                runOnUiThread(() -> {
-                    liveCells[1].setText(String.valueOf(seq));
-                    liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
-                    liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
-                    liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
-                    liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
-                    liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
-                    liveCells[7].setText(curReceived > 0 ? "ALIVE" : "DEAD");
-                });
-                appendDeepLog(ip + " seq=" + i + " rtt=" + (rtt >= 0 ? rtt + "ms" : "lost"));
-            }
-
-            if (i < totalPkts && !isCancelled) {
-                try {
-                    Thread.sleep(interv);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
+        } catch (Exception e) {
+            // خطا در اجرای ping
+        } finally {
+            if (process != null) process.destroy();
+            if (reader != null) try { reader.close(); } catch (Exception e) {}
         }
 
-        float lossPct = attempted == 0 ? 100f : (lost * 100f) / attempted;
-        boolean alive = rttList.size() > 0 && lost < attempted;
+        // محاسبه آمار نهایی
+        if (sent == 0) sent = totalPkts; // اگر به هر دلیلی sent صفر بود
+        int lost = sent - received;
+        float lossPct = sent > 0 ? (lost * 100f) / sent : 100f;
+        boolean alive = received > 0 && lossPct < 100f;
         float avg = avg(rttList);
         float min = min(rttList);
         float max = max(rttList);
         float jit = jitter(rttList);
-        return new ScanResult(ip, avg, min, max, jit, lossPct, alive, attempted);
+        return new ScanResult(ip, avg, min, max, jit, lossPct, alive, sent);
     }
 
     private float avg(List<Float> list) {
@@ -496,28 +504,34 @@ public class MainActivity extends Activity {
     private String getCountryFlag(String ip) {
         HttpURLConnection conn = null;
         try {
-            URL url = new URL("http://ip-api.com/json/" + ip + "?fields=countryCode");
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(3000);
-            conn.setReadTimeout(3000);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) sb.append(line);
-            reader.close();
-            JSONObject json = new JSONObject(sb.toString());
-            String code = json.optString("countryCode", "");
+            String code = queryCountryCode("http://ip-api.com/json/" + ip + "?fields=countryCode");
+            if (!code.isEmpty()) return countryCodeToFlag(code);
+            code = queryCountryCode("https://ipinfo.io/" + ip + "/json");
             if (!code.isEmpty()) return countryCodeToFlag(code);
         } catch (Exception e) {
             // ignore
-        } finally {
-            if (conn != null) conn.disconnect();
         }
         return "🌐";
     }
 
+    private String queryCountryCode(String urlStr) throws Exception {
+        HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
+        conn.setConnectTimeout(3000);
+        conn.setReadTimeout(3000);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) sb.append(line);
+        reader.close();
+        conn.disconnect();
+        JSONObject json = new JSONObject(sb.toString());
+        String code = json.optString("countryCode", "");
+        if (code.isEmpty()) code = json.optString("country", "");
+        return code;
+    }
+
     private String countryCodeToFlag(String code) {
-        if (code.length() != 2) return "🌐";
+        if (code == null || code.length() != 2) return "🌐";
         int base = 0x1F1E6;
         int first = base + (code.charAt(0) - 'A');
         int second = base + (code.charAt(1) - 'A');
@@ -583,7 +597,6 @@ public class MainActivity extends Activity {
                 (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, (ip >> 8) & 0xFF, ip & 0xFF);
     }
 
-    // History
     private void saveHistory(String entry) {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         Set<String> history = new LinkedHashSet<>(prefs.getStringSet(HISTORY_KEY, new LinkedHashSet<>()));
@@ -618,7 +631,6 @@ public class MainActivity extends Activity {
                 .show();
     }
 
-    // ScanResult class
     private static class ScanResult {
         String ip;
         float avg, min, max, jitter, loss;
