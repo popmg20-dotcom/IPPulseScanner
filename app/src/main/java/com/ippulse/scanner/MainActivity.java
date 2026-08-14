@@ -57,14 +57,19 @@ public class MainActivity extends Activity {
         tab2Container = findViewById(R.id.tab2Container);
         logScrollView = findViewById(R.id.logScrollView);
 
-        tab1Btn.setOnClickListener(v -> { tab1Container.setVisibility(View.VISIBLE); tab2Container.setVisibility(View.GONE); });
-        tab2Btn.setOnClickListener(v -> { tab1Container.setVisibility(View.GONE); tab2Container.setVisibility(View.VISIBLE); });
+        if (tab1Btn != null && tab1Container != null && tab2Container != null) {
+            tab1Btn.setOnClickListener(v -> { tab1Container.setVisibility(View.VISIBLE); tab2Container.setVisibility(View.GONE); });
+        }
+        if (tab2Btn != null && tab1Container != null && tab2Container != null) {
+            tab2Btn.setOnClickListener(v -> { tab1Container.setVisibility(View.GONE); tab2Container.setVisibility(View.VISIBLE); });
+        }
         
-        btnStart1.setOnClickListener(v -> startRangeScan());
-        btnStart2.setOnClickListener(v -> startDeepTest());
+        if (btnStart1 != null) btnStart1.setOnClickListener(v -> startRangeScan());
+        if (btnStart2 != null) btnStart2.setOnClickListener(v -> startDeepTest());
     }
 
     private void startRangeScan() {
+        if (ipInput == null) return;
         String query = ipInput.getText().toString().trim();
         List<String> ips = parseIPList(query);
         if (ips.isEmpty()) {
@@ -77,16 +82,16 @@ public class MainActivity extends Activity {
         int timeout = parseNum(timeoutInput1, 1000);
 
         allResults.clear();
-        resultTable.removeAllViews();
-        logLayout.removeAllViews();
+        if (resultTable != null) resultTable.removeAllViews();
+        if (logLayout != null) logLayout.removeAllViews();
         isCancelled = false;
-        btnStart1.setEnabled(false);
+        if (btnStart1 != null) btnStart1.setEnabled(false);
 
         executor = Executors.newFixedThreadPool(4);
         int total = ips.size();
         final int[] completed = {0};
 
-        addTableHeader(resultTable);
+        if (resultTable != null) addTableHeader(resultTable);
 
         for (String ip : ips) {
             executor.execute(() -> {
@@ -98,16 +103,18 @@ public class MainActivity extends Activity {
                 }
 
                 runOnUiThread(() -> {
-                    statusText1.setText("اسکن پیشرفت: " + completed[0] + " / " + total);
-                    TextView tv = new TextView(this);
-                    tv.setText(String.format(Locale.US, "IP: %s | Avg: %s | Loss: %.0f%%", ip, res.loss >= 100 ? "DEAD" : String.format("%.1fms", res.avg), res.loss));
-                    tv.setTextColor(res.loss < 50 ? Color.parseColor("#34D399") : Color.parseColor("#F87171"));
-                    tv.setTextSize(11);
-                    logLayout.addView(tv);
-                    logScrollView.fullScroll(View.FOCUS_DOWN);
+                    if (statusText1 != null) statusText1.setText("اسکن پیشرفت: " + completed[0] + " / " + total);
+                    if (logLayout != null && logScrollView != null) {
+                        TextView tv = new TextView(this);
+                        tv.setText(String.format(Locale.US, "IP: %s | Avg: %s | Loss: %.0f%%", ip, res.loss >= 100 ? "DEAD" : String.format("%.1fms", res.avg), res.loss));
+                        tv.setTextColor(res.loss < 50 ? Color.parseColor("#34D399") : Color.parseColor("#F87171"));
+                        tv.setTextSize(11);
+                        logLayout.addView(tv);
+                        logScrollView.fullScroll(View.FOCUS_DOWN);
+                    }
 
                     if (completed[0] >= total) {
-                        btnStart1.setEnabled(true);
+                        if (btnStart1 != null) btnStart1.setEnabled(true);
                         finishRangeScan();
                     }
                 });
@@ -129,10 +136,10 @@ public class MainActivity extends Activity {
                 if (top5Candidates.size() < 5) {
                     top5Candidates.add(res);
                 }
-                addTableRow(resultTable, res, rank++);
+                if (resultTable != null) addTableRow(resultTable, res, rank++);
             }
         }
-        statusText1.setText("اسکن رنج کامل شد! ۵ آی‌پی برتر به تب دوم منتقل شدند.");
+        if (statusText1 != null) statusText1.setText("اسکن رنج کامل شد! ۵ آی‌پی برتر به تب دوم منتقل شدند.");
     }
 
     private void startDeepTest() {
@@ -145,10 +152,12 @@ public class MainActivity extends Activity {
         int interval = parseNum(intervalInput2, 1);
         int timeout = parseNum(timeoutInput2, 1000);
 
-        top5Table.removeAllViews();
-        addTableHeader(top5Table);
-        btnStart2.setEnabled(false);
-        statusText2.setText("در حال تست تخصصی ۵ آی‌پی برتر...");
+        if (top5Table != null) {
+            top5Table.removeAllViews();
+            addTableHeader(top5Table);
+        }
+        if (btnStart2 != null) btnStart2.setEnabled(false);
+        if (statusText2 != null) statusText2.setText("در حال تست تخصصی ۵ آی‌پی برتر...");
 
         new Thread(() -> {
             List<ScanResult> deepResults = new ArrayList<>();
@@ -158,13 +167,15 @@ public class MainActivity extends Activity {
             }
 
             runOnUiThread(() -> {
-                top5Table.removeAllViews();
-                addTableHeader(top5Table);
-                for (int i = 0; i < deepResults.size(); i++) {
-                    addTableRow(top5Table, deepResults.get(i), i + 1);
+                if (top5Table != null) {
+                    top5Table.removeAllViews();
+                    addTableHeader(top5Table);
+                    for (int i = 0; i < deepResults.size(); i++) {
+                        addTableRow(top5Table, deepResults.get(i), i + 1);
+                    }
                 }
-                btnStart2.setEnabled(true);
-                statusText2.setText("تست تخصصی گیمینگ کامل شد.");
+                if (btnStart2 != null) btnStart2.setEnabled(true);
+                if (statusText2 != null) statusText2.setText("تست تخصصی گیمینگ کامل شد.");
             });
         }).start();
     }
@@ -352,6 +363,7 @@ public class MainActivity extends Activity {
     }
 
     private int parseNum(EditText et, int def) {
+        if (et == null) return def;
         try {
             return Integer.parseInt(et.getText().toString().trim());
         } catch (Exception e) {
