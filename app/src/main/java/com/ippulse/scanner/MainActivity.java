@@ -23,8 +23,8 @@ public class MainActivity extends Activity {
     private Button btnStart1, btnStart2, tab1Btn, tab2Btn;
     private TextView statusText1, statusText2;
     private TableLayout resultTable, top5Table;
-    private LinearLayout logLayout, tab1Container, tab2Container;
-    private ScrollView logScrollView;
+    private LinearLayout logLayout;
+    private ScrollView tab1Container, tab2Container, logScrollView;
     
     private ExecutorService executor;
     private List<ScanResult> allResults = new ArrayList<>();
@@ -198,7 +198,7 @@ public class MainActivity extends Activity {
                 } else {
                     lost++;
                     consecutiveLost++;
-                    if (consecutiveLost >= 3) { // قطع سریع بعد از ۳ پکت ناموفق متوالی برای آی‌پی مرده
+                    if (consecutiveLost >= 3) {
                         lost = totalPackets;
                         break;
                     }
@@ -228,7 +228,7 @@ public class MainActivity extends Activity {
         for (float v : rttList) sum += v;
         float avg = sum / rttList.size();
 
-                    float jitter = 0;
+        float jitter = 0;
         if (rttList.size() > 1) {
             float jSum = 0;
             for (int j = 1; j < rttList.size(); j++) {
