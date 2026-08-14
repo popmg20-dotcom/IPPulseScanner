@@ -7,9 +7,11 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.VpnService;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -30,6 +32,8 @@ public class MainActivity extends Activity {
     private static final String PREFS_NAME = "ippulse_history";
     private static final String HISTORY_KEY = "history";
     private static final String VPN_PREFS = "vpn_settings";
+    private static final int REQUEST_VPN = 1001;
+    private static final int REQUEST_NOTIFICATION = 1002;
 
     private View tab1Container, tab2Container, tab3Container;
     private Button btnTab1, btnTab2, btnTab3, btnStart1, btnStop1, btnHistory, btnClearHistory;
@@ -65,7 +69,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Tab 1
         tab1Container = findViewById(R.id.tab1Container);
         btnTab1 = findViewById(R.id.btnTab1);
         btnTab2 = findViewById(R.id.btnTab2);
@@ -82,7 +85,6 @@ public class MainActivity extends Activity {
         table1 = findViewById(R.id.table1);
         spinnerSort = findViewById(R.id.spinnerSort);
 
-        // Tab 2
         tab2Container = findViewById(R.id.tab2Container);
         top5Container = findViewById(R.id.top5Container);
         status2 = findViewById(R.id.status2);
@@ -91,7 +93,6 @@ public class MainActivity extends Activity {
         table2Live = findViewById(R.id.table2Live);
         btnStop2 = findViewById(R.id.btnStop2);
 
-        // Tab 3
         tab3Container = findViewById(R.id.tab3Container);
         vpnDns = findViewById(R.id.vpnDns);
         vpnMtu = findViewById(R.id.vpnMtu);
@@ -103,10 +104,8 @@ public class MainActivity extends Activity {
         btnHistory = findViewById(R.id.btnHistory);
         btnClearHistory = findViewById(R.id.btnClearHistory);
 
-        // Load VPN settings
         loadVpnSettings();
 
-        // Setup Spinner
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, sortOptions);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerSort.setAdapter(adapter);
@@ -122,21 +121,17 @@ public class MainActivity extends Activity {
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
-        // Tab switching
         btnTab1.setOnClickListener(v -> switchTab(1));
         btnTab2.setOnClickListener(v -> switchTab(2));
         btnTab3.setOnClickListener(v -> switchTab(3));
 
-        // Scan/Test
         btnStart1.setOnClickListener(v -> startRangeScan());
         btnStop1.setOnClickListener(v -> stopRangeScan());
         btnStop2.setOnClickListener(v -> stopDeepTest());
 
-        // VPN
         btnStartVpn.setOnClickListener(v -> startVpn());
         btnStopVpn.setOnClickListener(v -> stopVpn());
 
-        // History
         btnHistory.setOnClickListener(v -> showHistoryDialog());
         btnClearHistory.setOnClickListener(v -> clearHistory());
     }
@@ -173,18 +168,23 @@ public class MainActivity extends Activity {
         saveVpnSettings();
         String dns = vpnDns.getText().toString().trim();
         int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
-        // Request VPN permission (system dialog)
+
+        // اول مجوز اعلان (برای اندروید ۱۳ به بالا)
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQUEST_NOTIFICATION);
+                return;
+            }
+        }
+
+        // بعد مجوز VPN
         Intent intent = VpnService.prepare(this);
         if (intent != null) {
-            try {
-                startActivityForResult(intent, 1001);
-            } catch (Exception e) {
-                Toast.makeText(this, "Failed to request VPN permission", Toast.LENGTH_SHORT).show();
-            }
+            startActivityForResult(intent, REQUEST_VPN);
         } else {
             GamingVpnService.start(this, dns, mtu);
-            vpnStatus.setText("VPN: Starting...");
-            Toast.makeText(this, "VPN starting", Toast.LENGTH_SHORT).show();
+            vpnStatus.setText("VPN: Connected");
+            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -195,15 +195,28 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_NOTIFICATION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // مجوز اعلان گرفته شد، حالا VPN را شروع کن
+                startVpn();
+            } else {
+                Toast.makeText(this, "Notification permission required for VPN", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1001 && resultCode == RESULT_OK) {
+        if (requestCode == REQUEST_VPN && resultCode == RESULT_OK) {
             String dns = vpnDns.getText().toString().trim();
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
             GamingVpnService.start(this, dns, mtu);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
-        } else {
+        } else if (requestCode == REQUEST_VPN) {
             Toast.makeText(this, "VPN permission denied", Toast.LENGTH_SHORT).show();
         }
     }
@@ -212,7 +225,7 @@ public class MainActivity extends Activity {
         try { return Integer.parseInt(s); } catch (Exception e) { return defaultVal; }
     }
 
-    // ================= Existing scan/test methods (kept intact) =================
+    // ================= Existing scan/test methods (unchanged) =================
     private void stopRangeScan() {
         isCancelled = true;
         if (executor != null) executor.shutdownNow();

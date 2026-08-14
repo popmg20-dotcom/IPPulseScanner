@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
@@ -32,17 +33,29 @@ public class GamingVpnService extends VpnService {
             mtu = intent.getIntExtra("mtu", 1400);
         }
 
-        // Notification for foreground service
         createNotificationChannel();
-        startForeground(1, buildNotification("VPN Active"));
+        startForegroundCompatible();
         startVpn();
         return START_STICKY;
+    }
+
+    private void startForegroundCompatible() {
+        Notification notification = buildNotification("VPN Active");
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+            } else {
+                startForeground(1, notification);
+            }
+        } catch (Exception e) {
+            // اگر permission یا خطایی بود، بازم ادامه بده
+            e.printStackTrace();
+        }
     }
 
     private void startVpn() {
         try {
             if (vpnInterface != null) {
-                // Already running
                 return;
             }
             Builder builder = new Builder();
