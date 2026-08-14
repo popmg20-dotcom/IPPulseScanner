@@ -334,7 +334,7 @@ public class MainActivity extends Activity {
 
         saveHistory(query);
 
-        executor = Executors.newFixedThreadPool(80);
+        executor = Executors.newFixedThreadPool(30);
         final int[] completed = {0};
         status1.setText("Scanning " + ips.size() + " IPs concurrently...");
 
