@@ -35,6 +35,7 @@ public class MainActivity extends Activity {
     private LinearLayout logLayout1;
     private ScrollView logScroll1;
     private TableLayout table1;
+    private Spinner spinnerSort;
 
     private LinearLayout top5Container, logLayout2;
     private ScrollView logScroll2;
@@ -48,6 +49,10 @@ public class MainActivity extends Activity {
     private List<ScanResult> allResults = new ArrayList<>();
     private List<String> top5IPs = new ArrayList<>();
     private boolean rangeScanFinished = true;
+
+    // گزینه‌های مرتب‌سازی
+    private String[] sortOptions = {"Default", "Loss", "Jitter", "Average (Avg)", "Min (Low Ping)", "Max (High Ping)"};
+    private int currentSortIndex = 0; // 0 = Default
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +72,7 @@ public class MainActivity extends Activity {
         logLayout1 = findViewById(R.id.logLayout1);
         logScroll1 = findViewById(R.id.logScroll1);
         table1 = findViewById(R.id.table1);
+        spinnerSort = findViewById(R.id.spinnerSort);
 
         tab2Container = findViewById(R.id.tab2Container);
         top5Container = findViewById(R.id.top5Container);
@@ -78,6 +84,22 @@ public class MainActivity extends Activity {
 
         btnHistory = findViewById(R.id.btnHistory);
         btnClearHistory = findViewById(R.id.btnClearHistory);
+
+        // Setup Spinner
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, sortOptions);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerSort.setAdapter(adapter);
+        spinnerSort.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                currentSortIndex = position;
+                if (rangeScanFinished && !allResults.isEmpty()) {
+                    applySortAndRefreshTable();
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
 
         btnTab1.setOnClickListener(v -> switchTab(1));
         btnTab2.setOnClickListener(v -> switchTab(2));
@@ -176,20 +198,43 @@ public class MainActivity extends Activity {
     private void finishRangeScan() {
         rangeScanFinished = true;
         btnStart1.setEnabled(true);
+        applySortAndRefreshTable();
+    }
 
+    // ✅ مرتب‌سازی و بازسازی جدول بر اساس فیلتر انتخابی
+    private void applySortAndRefreshTable() {
         // فقط IPهای زنده
         List<ScanResult> aliveResults = new ArrayList<>();
         for (ScanResult res : allResults) {
             if (res.alive) aliveResults.add(res);
         }
 
-        // ✅ رتبه‌بندی: پکت‌لاس ← جیتر ← میانگین ← مکس
-        Collections.sort(aliveResults, (a, b) -> {
-            if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
-            if (Math.abs(a.jitter - b.jitter) > 0.1f) return Float.compare(a.jitter, b.jitter);
-            if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
-            return Float.compare(a.max, b.max);
-        });
+        // مرتب‌سازی بر اساس currentSortIndex
+        switch (currentSortIndex) {
+            case 0: // Default: Loss -> Jitter -> Avg -> Max
+                Collections.sort(aliveResults, (a, b) -> {
+                    if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
+                    if (Math.abs(a.jitter - b.jitter) > 0.1f) return Float.compare(a.jitter, b.jitter);
+                    if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
+                    return Float.compare(a.max, b.max);
+                });
+                break;
+            case 1: // Loss
+                Collections.sort(aliveResults, (a, b) -> Float.compare(a.loss, b.loss));
+                break;
+            case 2: // Jitter
+                Collections.sort(aliveResults, (a, b) -> Float.compare(a.jitter, b.jitter));
+                break;
+            case 3: // Average
+                Collections.sort(aliveResults, (a, b) -> Float.compare(a.avg, b.avg));
+                break;
+            case 4: // Min (Low Ping)
+                Collections.sort(aliveResults, (a, b) -> Float.compare(a.min, b.min));
+                break;
+            case 5: // Max (High Ping)
+                Collections.sort(aliveResults, (a, b) -> Float.compare(a.max, b.max));
+                break;
+        }
 
         table1.removeAllViews();
         addTableHeader(table1, false);
@@ -208,7 +253,7 @@ public class MainActivity extends Activity {
         }
 
         populateTab2();
-        status1.setText("Scan complete. Top 5 transferred to Tab 2.");
+        status1.setText("Sorted by: " + sortOptions[currentSortIndex]);
     }
 
     private void populateTab2() {
