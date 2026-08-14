@@ -19,8 +19,9 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -34,9 +35,10 @@ public class GamingVpnService extends VpnService {
     private String dns = "8.8.8.8";
     private int mtu = 1400;
     private HashMap<String, String> hostsMap = new HashMap<>();
+    private Set<String> routedIps = new HashSet<>();
     private Thread tunThread;
     private volatile boolean running = false;
-    private ExecutorService packetExecutor;
+    private ExecutorService udpExecutor;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -52,7 +54,6 @@ public class GamingVpnService extends VpnService {
                 hostsMap = serializableHosts.map;
             }
         }
-
         createNotificationChannel();
         startForegroundCompatible();
         startVpn();
@@ -79,14 +80,26 @@ public class GamingVpnService extends VpnService {
             Builder builder = new Builder();
             builder.setSession("Gaming VPN");
             builder.addAddress(VPN_ADDRESS, 32);
-            builder.addRoute("0.0.0.0", 0); // Full Tunnel
+            builder.addRoute(DNS_ADDRESS, 32);
             builder.addDnsServer(DNS_ADDRESS);
+
+            // اضافه کردن مسیرها برای IPهای مپ‌شده
+            routedIps.clear();
+            for (String ip : hostsMap.values()) {
+                try {
+                    builder.addRoute(ip, 32);
+                    routedIps.add(ip);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
             builder.setMtu(mtu);
             builder.setBlocking(true);
             vpnInterface = builder.establish();
 
             running = true;
-            packetExecutor = Executors.newFixedThreadPool(10);
+            udpExecutor = Executors.newFixedThreadPool(10);
             startTunReader();
         } catch (Exception e) {
             e.printStackTrace();
@@ -131,19 +144,18 @@ public class GamingVpnService extends VpnService {
             buf.get(dstIpBytes);
             InetAddress dstAddr = InetAddress.getByAddress(dstIpBytes);
 
-            if (protocol == 17) { // UDP
-                int srcPort = ((buf.get(headerLength) & 0xFF) << 8) | (buf.get(headerLength + 1) & 0xFF);
-                int dstPort = ((buf.get(headerLength + 2) & 0xFF) << 8) | (buf.get(headerLength + 3) & 0xFF);
+            int srcPort = ((buf.get(headerLength) & 0xFF) << 8) | (buf.get(headerLength + 1) & 0xFF);
+            int dstPort = ((buf.get(headerLength + 2) & 0xFF) << 8) | (buf.get(headerLength + 3) & 0xFF);
 
-                // DNS به سمت DNS_ADDRESS
-                if (dstAddr.getHostAddress().equals(DNS_ADDRESS) && dstPort == 53) {
-                    handleDns(packet, length, headerLength, srcAddr, srcPort, out);
-                } else {
-                    // UDP به مقصد دیگر
-                    handleUdp(packet, length, headerLength, srcAddr, srcPort, dstAddr, dstPort, out);
-                }
+            // DNS
+            if (protocol == 17 && dstAddr.getHostAddress().equals(DNS_ADDRESS) && dstPort == 53) {
+                handleDns(packet, length, headerLength, srcAddr, srcPort, out);
             }
-            // TCP فعلاً نادیده گرفته می‌شود
+            // UDP به IPهای مپ‌شده
+            else if (protocol == 17 && routedIps.contains(dstAddr.getHostAddress())) {
+                handleUdp(packet, length, headerLength, srcAddr, srcPort, dstAddr, dstPort, out);
+            }
+            // TCP فعلاً پشتیبانی نمی‌شود، فقط UDP
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -178,9 +190,10 @@ public class GamingVpnService extends VpnService {
     }
 
     private void handleUdp(byte[] packet, int length, int headerLength, InetAddress srcAddr, int srcPort, InetAddress dstAddr, int dstPort, FileOutputStream out) {
-        packetExecutor.execute(() -> {
+        udpExecutor.execute(() -> {
             try {
-                int udpLength = ((packet[headerLength + 4] & 0xFF) << 8) | (packet[headerLength + 5] & 0xFF);
+                ByteBuffer udpBuf = ByteBuffer.wrap(packet, headerLength, length - headerLength);
+                int udpLength = udpBuf.getShort(4) & 0xFFFF;
                 int udpPayloadOffset = headerLength + 8;
                 int udpPayloadLength = udpLength - 8;
                 if (udpPayloadLength <= 0) return;
@@ -189,7 +202,7 @@ public class GamingVpnService extends VpnService {
                 System.arraycopy(packet, udpPayloadOffset, udpPayload, 0, udpPayloadLength);
 
                 DatagramSocket socket = new DatagramSocket();
-                protect(socket); // جلوگیری از لوپ
+                protect(socket);
                 socket.setSoTimeout(10000);
                 DatagramPacket request = new DatagramPacket(udpPayload, udpPayloadLength, dstAddr, dstPort);
                 socket.send(request);
@@ -385,36 +398,19 @@ public class GamingVpnService extends VpnService {
 
     private void stopVpn() {
         running = false;
-        if (tunThread != null) {
-            tunThread.interrupt();
-            tunThread = null;
-        }
-        if (packetExecutor != null) {
-            packetExecutor.shutdownNow();
-            packetExecutor = null;
-        }
-        try {
-            if (vpnInterface != null) {
-                vpnInterface.close();
-                vpnInterface = null;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        if (tunThread != null) { tunThread.interrupt(); tunThread = null; }
+        if (udpExecutor != null) { udpExecutor.shutdownNow(); udpExecutor = null; }
+        try { if (vpnInterface != null) { vpnInterface.close(); vpnInterface = null; } } catch (IOException e) { e.printStackTrace(); }
         stopForeground(true);
         stopSelf();
     }
 
     @Override
-    public void onDestroy() {
-        stopVpn();
-        super.onDestroy();
-    }
+    public void onDestroy() { stopVpn(); super.onDestroy(); }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID, "Gaming VPN", NotificationManager.IMPORTANCE_LOW);
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Gaming VPN", NotificationManager.IMPORTANCE_LOW);
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) manager.createNotificationChannel(channel);
         }
@@ -422,8 +418,7 @@ public class GamingVpnService extends VpnService {
 
     private Notification buildNotification(String text) {
         Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent,
-                PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
         Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 ? new Notification.Builder(this, CHANNEL_ID)
                 : new Notification.Builder(this);
@@ -456,8 +451,6 @@ public class GamingVpnService extends VpnService {
 
     public static class SerializableHosts implements java.io.Serializable {
         public HashMap<String, String> map;
-        public SerializableHosts(HashMap<String, String> map) {
-            this.map = map;
-        }
+        public SerializableHosts(HashMap<String, String> map) { this.map = map; }
     }
 }
