@@ -20,10 +20,12 @@ import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private EditText ipInput, t1Packets, t1Interval, t1Timeout, t2Packets, t2Interval, t2Timeout;
-    private Button btnTab1, btnTab2, btnStart1, btnStart2;
-    private View tab1, tab2;
-    private TextView t1Status, t2Status;
+    private Button tab1Btn, tab2Btn, btnStart1, btnStop1, btnStart2, btnStop2;
+    private View tab1View, tab2View;
+    private TextView t1Status, t2Status, t2TargetText;
     private TableLayout t1Table, t2Table;
+    private LinearLayout t1LogLayout, t2LogLayout;
+    private ScrollView t1LogScroll, t2LogScroll;
     
     private ExecutorService executor;
     private List<ScanResult> allResults = new ArrayList<>();
@@ -42,38 +44,64 @@ public class MainActivity extends Activity {
         t2Packets = findViewById(R.id.t2Packets);
         t2Interval = findViewById(R.id.t2Interval);
         t2Timeout = findViewById(R.id.t2Timeout);
-        
-        btnTab1 = findViewById(R.id.btnTab1);
-        btnTab2 = findViewById(R.id.btnTab2);
+
+        tab1Btn = findViewById(R.id.tab1Btn);
+        tab2Btn = findViewById(R.id.tab2Btn);
         btnStart1 = findViewById(R.id.btnStart1);
+        btnStop1 = findViewById(R.id.btnStop1);
         btnStart2 = findViewById(R.id.btnStart2);
-        
-        tab1 = findViewById(R.id.tab1);
-        tab2 = findViewById(R.id.tab2);
+        btnStop2 = findViewById(R.id.btnStop2);
+
+        tab1View = findViewById(R.id.tab1View);
+        tab2View = findViewById(R.id.tab2View);
         t1Status = findViewById(R.id.t1Status);
         t2Status = findViewById(R.id.t2Status);
+        t2TargetText = findViewById(R.id.t2TargetText);
+
         t1Table = findViewById(R.id.t1Table);
         t2Table = findViewById(R.id.t2Table);
+        t1LogLayout = findViewById(R.id.t1LogLayout);
+        t2LogLayout = findViewById(R.id.t2LogLayout);
+        t1LogScroll = findViewById(R.id.t1LogScroll);
+        t2LogScroll = findViewById(R.id.t2LogScroll);
 
-        btnTab1.setOnClickListener(v -> { 
-            tab1.setVisibility(View.VISIBLE); tab2.setVisibility(View.GONE); 
-            btnTab1.setBackgroundColor(Color.parseColor("#334155"));
-            btnTab2.setBackgroundColor(Color.parseColor("#1E293B"));
+        tab1Btn.setOnClickListener(v -> {
+            tab1View.setVisibility(View.VISIBLE);
+            tab2View.setVisibility(View.GONE);
+            tab1Btn.setBackgroundColor(Color.parseColor("#0284C7"));
+            tab1Btn.setTextColor(Color.WHITE);
+            tab2Btn.setBackgroundColor(Color.parseColor("#1E293B"));
+            tab2Btn.setTextColor(Color.parseColor("#94A3B8"));
         });
-        btnTab2.setOnClickListener(v -> { 
-            tab1.setVisibility(View.GONE); tab2.setVisibility(View.VISIBLE); 
-            btnTab2.setBackgroundColor(Color.parseColor("#334155"));
-            btnTab1.setBackgroundColor(Color.parseColor("#1E293B"));
+
+        tab2Btn.setOnClickListener(v -> {
+            tab1View.setVisibility(View.GONE);
+            tab2View.setVisibility(View.VISIBLE);
+            tab2Btn.setBackgroundColor(Color.parseColor("#D97706"));
+            tab2Btn.setTextColor(Color.WHITE);
+            tab1Btn.setBackgroundColor(Color.parseColor("#1E293B"));
+            tab1Btn.setTextColor(Color.parseColor("#94A3B8"));
         });
-        
+
         btnStart1.setOnClickListener(v -> startRangeScan());
+        btnStop1.setOnClickListener(v -> stopScan());
         btnStart2.setOnClickListener(v -> startDeepTest());
+        btnStop2.setOnClickListener(v -> stopScan());
+    }
+
+    private void stopScan() {
+        isCancelled = true;
+        if (executor != null) executor.shutdownNow();
+        t1Status.setText("Scan stopped by user.");
+        t2Status.setText("Test stopped by user.");
+        btnStart1.setEnabled(true);
+        btnStart2.setEnabled(true);
     }
 
     private void startRangeScan() {
         String query = ipInput.getText().toString().trim();
         List<String> ips = parseIPList(query);
-        if (ips.isEmpty()) { Toast.makeText(this, "رنج نامعتبر", Toast.LENGTH_SHORT).show(); return; }
+        if (ips.isEmpty()) { Toast.makeText(this, "Invalid IP Range", Toast.LENGTH_SHORT).show(); return; }
 
         int packets = parseNum(t1Packets, 50);
         int interval = parseNum(t1Interval, 1);
@@ -81,22 +109,27 @@ public class MainActivity extends Activity {
 
         allResults.clear();
         t1Table.removeAllViews();
+        t1LogLayout.removeAllViews();
         addTableHeader(t1Table);
         btnStart1.setEnabled(false);
+        isCancelled = false;
 
-        executor = Executors.newFixedThreadPool(15);
+        executor = Executors.newFixedThreadPool(12);
         int total = ips.size();
         final int[] completed = {0};
 
-        t1Status.setText("در حال اسکن " + total + " آی‌پی...");
+        t1Status.setText("Scanning " + total + " IPs...");
 
         for (String ip : ips) {
             executor.execute(() -> {
+                if (isCancelled) return;
                 ScanResult res = performRealPing(ip, packets, interval, timeout);
                 synchronized(allResults) { allResults.add(res); completed[0]++; }
+
                 runOnUiThread(() -> {
-                    t1Status.setText("پیشرفت: " + completed[0] + " / " + total);
-                    if (completed[0] >= total) finishRangeScan();
+                    appendLiveLog(t1LogLayout, t1LogScroll, res);
+                    t1Status.setText("Progress: " + completed[0] + " / " + total);
+                    if (completed[0] >= total && !isCancelled) finishRangeScan();
                 });
             });
         }
@@ -109,6 +142,9 @@ public class MainActivity extends Activity {
             return Float.compare(a.avg, b.avg);
         });
 
+        t1Table.removeAllViews();
+        addTableHeader(t1Table);
+
         int rank = 1;
         top5IPs.clear();
         for (ScanResult res : allResults) {
@@ -117,32 +153,47 @@ public class MainActivity extends Activity {
             rank++;
         }
         btnStart1.setEnabled(true);
-        t1Status.setText("پایان اسکن. " + top5IPs.size() + " آی‌پی برتر به تب دوم منتقل شد.");
+        t1Status.setText("Results extracted and sorted successfully.");
+
+        if (!top5IPs.isEmpty()) {
+            StringBuilder sb = new StringBuilder("Top 5 Transferred IPs:\n");
+            for (String ip : top5IPs) sb.append(ip).append("  ");
+            t2TargetText.setText(sb.toString().trim());
+        } else {
+            t2TargetText.setText("No alive IPs found for Tab 2.");
+        }
     }
 
     private void startDeepTest() {
-        if (top5IPs.isEmpty()) { Toast.makeText(this, "رنج قبلی آی‌پی سالمی نداشت!", Toast.LENGTH_SHORT).show(); return; }
-        
+        if (top5IPs.isEmpty()) { Toast.makeText(this, "Run Tab 1 first to get Top 5 IPs!", Toast.LENGTH_SHORT).show(); return; }
+
         int packets = parseNum(t2Packets, 300);
         int interval = parseNum(t2Interval, 1);
         int timeout = parseNum(t2Timeout, 500);
 
         t2Table.removeAllViews();
+        t2LogLayout.removeAllViews();
         addTableHeader(t2Table);
         btnStart2.setEnabled(false);
-        t2Status.setText("تست تخصصی و دقیق در حال انجام...");
+        isCancelled = false;
+        t2Status.setText("Running deep gaming test on Top 5 IPs...");
 
         new Thread(() -> {
             List<ScanResult> deepResults = new ArrayList<>();
             for (String ip : top5IPs) {
-                deepResults.add(performRealPing(ip, packets, interval, timeout));
+                if (isCancelled) break;
+                ScanResult res = performRealPing(ip, packets, interval, timeout);
+                deepResults.add(res);
+                runOnUiThread(() -> appendLiveLog(t2LogLayout, t2LogScroll, res));
             }
             runOnUiThread(() -> {
-                for (int i = 0; i < deepResults.size(); i++) {
-                    addTableRow(t2Table, deepResults.get(i), i + 1);
+                if (!isCancelled) {
+                    for (int i = 0; i < deepResults.size(); i++) {
+                        addTableRow(t2Table, deepResults.get(i), i + 1);
+                    }
+                    t2Status.setText("Deep Gaming Test completed.");
                 }
                 btnStart2.setEnabled(true);
-                t2Status.setText("تست تخصصی با دقت ۱۰۰٪ سیستم عامل کامل شد.");
             });
         }).start();
     }
@@ -154,8 +205,8 @@ public class MainActivity extends Activity {
         int timeoutSec = Math.max(1, timeoutMs / 1000);
 
         for (int i = 0; i < totalPackets; i++) {
+            if (isCancelled) break;
             try {
-                // استفاده از پینگ نیتیو لینوکس اندروید برای دقت ۱۰۰ درصد گیمینگ
                 Process p = Runtime.getRuntime().exec("ping -c 1 -W " + timeoutSec + " " + ip);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
                 String line;
@@ -171,13 +222,12 @@ public class MainActivity extends Activity {
 
                 if (rtt >= 0) {
                     rttList.add(rtt);
-                    consecutiveLost = 0; // ریست کردن شمارنده مرده
+                    consecutiveLost = 0;
                 } else {
                     lost++;
                     consecutiveLost++;
                     if (consecutiveLost >= 3) {
-                        // دقیقاً خواسته شما: بعد از 3 پکت مرده رها شود
-                        lost = totalPackets; 
+                        lost = totalPackets;
                         break;
                     }
                 }
@@ -189,13 +239,13 @@ public class MainActivity extends Activity {
         }
 
         float lossPct = ((float) lost / totalPackets) * 100f;
-        if (rttList.isEmpty()) return new ScanResult(ip, "💀", 999f, 999f, 999f, 999f, 100f);
+        if (rttList.isEmpty()) return new ScanResult(ip, "🌐", 999f, 999f, 999f, 999f, 100f);
 
         float min = Collections.min(rttList);
         float max = Collections.max(rttList);
         float sum = 0; for (float v : rttList) sum += v;
         float avg = sum / rttList.size();
-        
+
         float jitter = 0;
         if (rttList.size() > 1) {
             float jSum = 0;
@@ -204,17 +254,31 @@ public class MainActivity extends Activity {
             }
             jitter = jSum / (rttList.size() - 1);
         }
-        
+
         return new ScanResult(ip, fetchFlag(ip), avg, min, max, jitter, lossPct);
+    }
+
+    private void appendLiveLog(LinearLayout layout, ScrollView scroll, ScanResult res) {
+        TextView tv = new TextView(this);
+        tv.setTextSize(11sp);
+        tv.setTypeface(Typeface.MONOSPACE);
+        if (res.loss >= 100) {
+            tv.setText("-> IP: " + res.ip + " | Avg: 999.0ms | Loss: 100%");
+            tv.setTextColor(Color.parseColor("#EF4444"));
+        } else {
+            tv.setText(String.format(Locale.US, "-> IP: %s | Avg: %.1fms | Loss: %.0f%%", res.ip, res.avg, res.loss));
+            tv.setTextColor(Color.parseColor("#10B981"));
+        }
+        layout.addView(tv);
+        scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
     }
 
     private String fetchFlag(String ip) {
         try {
-            // دریافت پرچم دقیقاً از api با پشتیبانی ترافیک کلیرتکست
             URL url = new URL("http://ip-api.com/json/" + ip + "?fields=countryCode");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(2000);
-            conn.setReadTimeout(2000);
+            conn.setConnectTimeout(1500);
+            conn.setReadTimeout(1500);
             BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             StringBuilder sb = new StringBuilder();
             String line;
@@ -233,11 +297,11 @@ public class MainActivity extends Activity {
     private void addTableHeader(TableLayout table) {
         TableRow header = new TableRow(this);
         header.setBackgroundColor(Color.parseColor("#334155"));
-        String[] cols = {"#", "آی‌پی/پرچم", "میانگین", "لرزش", "مینیمم", "حداکثر", "پکت‌لاس"};
+        String[] cols = {"#", "IP / Country", "Avg", "Min", "Max", "Jitter", "Loss"};
         for (String c : cols) {
             TextView tv = new TextView(this);
             tv.setText(c); tv.setTextColor(Color.parseColor("#38BDF8"));
-            tv.setPadding(12, 12, 12, 12); tv.setGravity(Gravity.CENTER);
+            tv.setPadding(12, 10, 12, 10); tv.setGravity(Gravity.CENTER);
             tv.setTypeface(null, Typeface.BOLD); tv.setTextSize(12);
             header.addView(tv);
         }
@@ -247,26 +311,29 @@ public class MainActivity extends Activity {
     private void addTableRow(TableLayout table, ScanResult res, int rank) {
         TableRow row = new TableRow(this);
         row.setBackgroundColor(rank % 2 == 0 ? Color.parseColor("#0F172A") : Color.parseColor("#1E293B"));
-        
+
         row.setOnClickListener(v -> {
             ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             clipboard.setPrimaryClip(ClipData.newPlainText("IP", res.ip));
-            Toast.makeText(this, "آی‌پی کپی شد: " + res.ip, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Copied IP: " + res.ip, Toast.LENGTH_SHORT).show();
         });
 
         String[] vals = {
-            String.valueOf(rank), res.flag + " " + res.ip, 
-            String.format(Locale.US, "%.1f", res.avg), String.format(Locale.US, "%.1f", res.jitter),
-            String.format(Locale.US, "%.1f", res.min), String.format(Locale.US, "%.1f", res.max),
+            String.valueOf(rank), res.flag + " " + res.ip,
+            String.format(Locale.US, "%.1f", res.avg), String.format(Locale.US, "%.1f", res.min),
+            String.format(Locale.US, "%.1f", res.max), String.format(Locale.US, "%.1f", res.jitter),
             String.format(Locale.US, "%.0f%%", res.loss)
         };
 
         for (int i = 0; i < vals.length; i++) {
             TextView tv = new TextView(this);
             tv.setText(vals[i]);
-            tv.setTextColor(res.loss >= 100 ? Color.parseColor("#F87171") : Color.WHITE);
-            if (i == 1 && rank <= 5) tv.setTextColor(Color.parseColor("#FBBF24"));
-            tv.setPadding(12, 12, 12, 12); tv.setGravity(Gravity.CENTER); tv.setTextSize(12);
+            tv.setPadding(12, 10, 12, 10); tv.setGravity(Gravity.CENTER); tv.setTextSize(12);
+            if (rank <= 5) {
+                tv.setTextColor(Color.parseColor("#FBBF24"));
+            } else {
+                tv.setTextColor(res.loss >= 100 ? Color.parseColor("#EF4444") : Color.WHITE);
+            }
             row.addView(tv);
         }
         table.addView(row);
