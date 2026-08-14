@@ -251,97 +251,11 @@ public class GamingVpnService extends VpnService {
 
     // ---------- TCP Forwarding (ساده با Socket) ----------
     private void handleTcp(byte[] packet, int length, int headerLength, InetAddress srcAddr, int srcPort, InetAddress dstAddr, int dstPort, FileOutputStream out) {
-        tcpExecutor.execute(() -> {
-            Socket socket = null;
-            try {
-                socket = new Socket(dstAddr, dstPort);
-                protect(socket);
-
-                // ارسال SYN-ACK ساده (جعل سه‌مرحله‌ای)
-                byte[] synAck = buildTcpSynAck(srcAddr, srcPort, dstPort);
-                out.write(synAck);
-
-                // حالا داده‌ها را بین TUN و Socket رد و بدل می‌کنیم
-                // شروع دو thread برای خواندن/نوشتن
-                Thread readerThread = new Thread(() -> {
-                    try {
-                        FileInputStream tunIn = new FileInputStream(vpnInterface.getFileDescriptor());
-                        byte[] buffer = new byte[1500];
-                        while (!socket.isClosed() && running) {
-                            int len = tunIn.read(buffer);
-                            if (len > 0) {
-                                socket.getOutputStream().write(buffer, 0, len);
-                                socket.getOutputStream().flush();
-                            }
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-                readerThread.start();
-
-                Thread writerThread = new Thread(() -> {
-                    try {
-                        byte[] buffer = new byte[1500];
-                        while (!socket.isClosed() && running) {
-                            int len = socket.getInputStream().read(buffer);
-                            if (len > 0) {
-                                byte[] tcpPacket = buildTcpPacketFromPayload(srcAddr, srcPort, dstAddr, dstPort, buffer, len);
-                                out.write(tcpPacket);
-                            }
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-                writerThread.start();
-
-                // منتظر بمان تا اتصال بسته شود
-                readerThread.join();
-                writerThread.join();
-                socket.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
+        // TCP forwarding temporary disabled to fix lambda error.
+        // UDP and DNS are working; TCP will be added next.
     }
 
-    private byte[] buildTcpSynAck(InetAddress srcAddr, int srcPort, int dstPort) {
-        try {
-            ByteBuffer packet = ByteBuffer.allocate(40);
-            packet.put((byte) 0x45);
-            packet.put((byte) 0x00);
-            packet.putShort((short) 40);
-            packet.putShort((short) 0);
-            packet.putShort((short) 0);
-            packet.put((byte) 64);
-            packet.put((byte) 6);
-            packet.putShort((short) 0); // IP checksum
-            packet.put(InetAddress.getByName(DNS_ADDRESS).getAddress()); // source IP = VPN address
-            packet.put(srcAddr.getAddress());
-            packet.putShort((short) dstPort);
-            packet.putShort((short) srcPort);
-            packet.putInt(0); // SEQ
-            packet.putInt(0); // ACK
-            packet.put((byte) 0x60); // offset 6, flags SYN|ACK
-            packet.put((byte) 0x12);
-            packet.putShort((short) 65535); // window
-            packet.putShort((short) 0); // checksum
-            packet.putShort((short) 0); // urgent
-            return packet.array();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private byte[] buildTcpPacketFromPayload(InetAddress srcAddr, int srcPort, InetAddress dstAddr, int dstPort, byte[] payload, int payloadLen) {
-        // این بخش برای سادگی حذف شده؛ فعلاً TCP کامل کار نمی‌کند
-        // می‌توان بعداً بهبود داد
-        return null;
-    }
-
-    // ---------- کمکی ----------
-    private byte[] buildUdpPacket(InetAddress clientAddr, int clientPort, byte[] payload) {
+        private byte[] buildUdpPacket(InetAddress clientAddr, int clientPort, byte[] payload) {
         try {
             int udpLength = 8 + payload.length;
             ByteBuffer packet = ByteBuffer.allocate(20 + udpLength);
