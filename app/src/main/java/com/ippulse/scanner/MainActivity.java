@@ -24,7 +24,7 @@ import java.util.concurrent.*;
 
 public class MainActivity extends Activity {
 
-    private static final int FAST_FAIL_THRESHOLD = 3; // بعد از ۳ پکت بی‌پاسخ
+    private static final int FAST_FAIL_THRESHOLD = 3;
     private static final String PREFS_NAME = "ippulse_history";
     private static final String HISTORY_KEY = "history";
 
@@ -253,12 +253,12 @@ public class MainActivity extends Activity {
         deepTestThread.start();
     }
 
-    // ✅ موتور نهایی: ping -c total با Fast-Fail هوشمند
+    // ✅ موتور اصلی (per-packet) با fast-fail
     private ScanResult pingLogic(String ip, int totalPkts, int timeo, boolean isDeepLive, TableLayout liveTable) {
         List<Float> rttList = new ArrayList<>();
-        int received = 0;
-        int sent = 0;
+        int lost = 0;
         int consecutiveLost = 0;
+        int attempted = 0;
         int tSec = Math.max(1, timeo / 1000);
 
         TableRow liveRow = null;
@@ -282,7 +282,7 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> {
                 liveTable.addView(rowToAdd);
                 cells[0].setText(ipFinal);
-                cells[1].setText(String.valueOf(totalPkts));
+                cells[1].setText("0");
                 cells[2].setText("0");
                 cells[3].setText("0");
                 cells[4].setText("0");
@@ -292,95 +292,82 @@ public class MainActivity extends Activity {
             });
         }
 
-        Process process = null;
-        BufferedReader reader = null;
-        boolean killedEarly = false;
-        try {
-            ProcessBuilder pb = new ProcessBuilder("ping", "-c", String.valueOf(totalPkts), "-W", String.valueOf(tSec), ip);
-            pb.redirectErrorStream(true);
-            process = pb.start();
-            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null && !isCancelled) {
-                // هر خطی که شامل icmp_seq باشد یک پکت ارسال شده را نشان می‌دهد
-                int seqIdx = line.indexOf("icmp_seq=");
-                if (seqIdx != -1) {
-                    // شماره سکانس را استخراج می‌کنیم
-                    int start = seqIdx + "icmp_seq=".length();
-                    int end = start;
-                    while (end < line.length() && Character.isDigit(line.charAt(end))) end++;
-                    if (end > start) {
-                        try {
-                            int seq = Integer.parseInt(line.substring(start, end));
-                            sent = Math.max(sent, seq);
-                        } catch (Exception ignored) {}
-                    }
-
-                    // اگر خط حاوی time= باشد یعنی پاسخ آمده
+        for (int i = 1; i <= totalPkts; i++) {
+            if (isCancelled) break;
+            attempted = i;
+            float rtt = -1f;
+            try {
+                Process p = new ProcessBuilder("ping", "-c", "1", "-W", String.valueOf(tSec), ip)
+                        .redirectErrorStream(true)
+                        .start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
                     if (line.contains("time=")) {
-                        int timeIdx = line.indexOf("time=");
-                        String sub = line.substring(timeIdx + 5).trim();
+                        int idx = line.indexOf("time=");
+                        String sub = line.substring(idx + 5).trim();
                         String[] parts = sub.split(" ");
                         if (parts.length > 0) {
-                            float rtt = Float.parseFloat(parts[0].trim());
-                            rttList.add(rtt);
-                            received++;
+                            rtt = Float.parseFloat(parts[0].trim());
+                            break;
                         }
-                        consecutiveLost = 0;
-                    } else {
-                        // پکت گم شده یا timeout
-                        consecutiveLost++;
-                    }
-
-                    // اگر تعداد شکست‌های متوالی به آستانه رسید، فرآیند را می‌کشیم
-                    if (consecutiveLost >= FAST_FAIL_THRESHOLD) {
-                        killedEarly = true;
-                        process.destroy();
-                        break;
-                    }
-
-                    // آپدیت زنده در Deep Test
-                    if (isDeepLive && liveRow != null) {
-                        int curReceived = received;
-                        int curSent = sent;
-                        float curAvg = avg(rttList);
-                        float curMin = min(rttList);
-                        float curMax = max(rttList);
-                        float curJitter = jitter(rttList);
-                        float curLoss = curSent > 0 ? ((curSent - curReceived) * 100f) / curSent : 0f;
-                        runOnUiThread(() -> {
-                            liveCells[1].setText(String.valueOf(curSent));
-                            liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
-                            liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
-                            liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
-                            liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
-                            liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
-                            liveCells[7].setText(curReceived > 0 ? "ALIVE" : "TESTING");
-                        });
-                        appendDeepLog(ip + " seq=" + sent + " rtt=" + (line.contains("time=") ? rttList.get(rttList.size()-1) + "ms" : "lost"));
                     }
                 }
+                p.waitFor();
+                p.destroy();
+            } catch (Exception e) {
+                rtt = -1f;
             }
-            if (!killedEarly) {
-                process.waitFor();
+
+            if (rtt >= 0) {
+                rttList.add(rtt);
+                consecutiveLost = 0;
+            } else {
+                lost++;
+                consecutiveLost++;
+                if (consecutiveLost >= FAST_FAIL_THRESHOLD) {
+                    break; // قطع زودهنگام برای IP مرده
+                }
             }
-        } catch (Exception e) {
-            // خطا در اجرای ping
-        } finally {
-            if (process != null) process.destroy();
-            if (reader != null) try { reader.close(); } catch (Exception e) {}
+
+            if (isDeepLive && liveRow != null) {
+                int curReceived = rttList.size();
+                float curAvg = avg(rttList);
+                float curMin = min(rttList);
+                float curMax = max(rttList);
+                float curJitter = jitter(rttList);
+                float curLoss = ((i - curReceived) * 100f) / i;
+                final int seq = i;
+                final float finalRtt = rtt;
+                runOnUiThread(() -> {
+                    liveCells[1].setText(String.valueOf(seq));
+                    liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
+                    liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
+                    liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
+                    liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
+                    liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
+                    liveCells[7].setText(curReceived > 0 ? "ALIVE" : "DEAD");
+                });
+                appendDeepLog(ip + " seq=" + seq + " rtt=" + (finalRtt >= 0 ? finalRtt + "ms" : "lost"));
+            }
+
+            // فاصله بین پکت‌ها (اختیاری)
+            if (i < totalPkts && !isCancelled && consecutiveLost < FAST_FAIL_THRESHOLD) {
+                try {
+                    Thread.sleep(10); // 10ms برای کاهش فشار CPU
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
         }
 
-        // محاسبه آمار نهایی
-        if (sent == 0) sent = totalPkts; // اگر به هر دلیلی sent صفر بود
-        int lost = sent - received;
-        float lossPct = sent > 0 ? (lost * 100f) / sent : 100f;
-        boolean alive = received > 0 && lossPct < 100f;
+        float lossPct = attempted == 0 ? 100f : (lost * 100f) / attempted;
+        boolean alive = rttList.size() > 0 && lossPct < 100f;
         float avg = avg(rttList);
         float min = min(rttList);
         float max = max(rttList);
         float jit = jitter(rttList);
-        return new ScanResult(ip, avg, min, max, jit, lossPct, alive, sent);
+        return new ScanResult(ip, avg, min, max, jit, lossPct, alive, attempted);
     }
 
     private float avg(List<Float> list) {
