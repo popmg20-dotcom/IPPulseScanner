@@ -11,17 +11,14 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class GamingVpnService extends VpnService {
     private static final String ACTION_START = "com.ippulse.scanner.START";
@@ -31,9 +28,8 @@ public class GamingVpnService extends VpnService {
     private String dns = "8.8.8.8";
     private int mtu = 1400;
     private HashMap<String, String> hostsMap = new HashMap<>();
-    private ExecutorService dnsExecutor;
+    private Thread tunThread;
     private volatile boolean running = false;
-    private DatagramSocket dnsSocket;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -44,7 +40,6 @@ public class GamingVpnService extends VpnService {
             }
             dns = intent.getStringExtra("dns");
             mtu = intent.getIntExtra("mtu", 1400);
-            // دریافت hosts map
             SerializableHosts serializableHosts = (SerializableHosts) intent.getSerializableExtra("hosts");
             if (serializableHosts != null) {
                 hostsMap = serializableHosts.map;
@@ -72,103 +67,145 @@ public class GamingVpnService extends VpnService {
 
     private void startVpn() {
         try {
-            if (vpnInterface != null) {
-                return;
-            }
+            if (vpnInterface != null) return;
+
             Builder builder = new Builder();
             builder.setSession("Gaming VPN");
-            builder.addAddress("10.0.0.2", 32);
-            builder.addRoute("0.0.0.0", 0);
-            // DNS server is set to 10.0.0.1 where our DNS proxy will listen
+            builder.addAddress("10.0.0.1", 32);
+            builder.addRoute("10.0.0.1", 32); // فقط DNS server از تونل رد بشه
             builder.addDnsServer("10.0.0.1");
             builder.setMtu(mtu);
             builder.setBlocking(true);
             vpnInterface = builder.establish();
 
-            // شروع DNS proxy
             running = true;
-            startDnsProxy();
+            startTunReader();
         } catch (Exception e) {
             e.printStackTrace();
             stopVpn();
         }
     }
 
-    private void startDnsProxy() {
-        dnsExecutor = Executors.newSingleThreadExecutor();
-        dnsExecutor.execute(() -> {
-            try {
-                dnsSocket = new DatagramSocket(53, InetAddress.getByName("10.0.0.1"));
-                byte[] buffer = new byte[1024];
-                while (running && !dnsSocket.isClosed()) {
-                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                    try {
-                        dnsSocket.receive(packet);
-                        handleDnsRequest(packet);
-                    } catch (IOException e) {
-                        if (running) e.printStackTrace();
+    private void startTunReader() {
+        tunThread = new Thread(() -> {
+            try (FileInputStream in = new FileInputStream(vpnInterface.getFileDescriptor());
+                 FileOutputStream out = new FileOutputStream(vpnInterface.getFileDescriptor())) {
+                byte[] buffer = new byte[32767];
+                while (running && !Thread.currentThread().isInterrupted()) {
+                    int length = in.read(buffer);
+                    if (length > 0) {
+                        handlePacket(buffer, length, out);
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
+        tunThread.start();
     }
 
-    private void handleDnsRequest(DatagramPacket packet) {
+    private void handlePacket(byte[] packet, int length, FileOutputStream out) {
         try {
-            byte[] data = packet.getData();
-            int length = packet.getLength();
-            // استخراج دامنه از کوئری
-            String domain = extractDomain(data, length);
+            ByteBuffer buf = ByteBuffer.wrap(packet, 0, length);
+
+            int versionIHL = buf.get(0) & 0xFF;
+            int version = (versionIHL >> 4) & 0xF;
+            if (version != 4) return;
+
+            int headerLength = (versionIHL & 0xF) * 4;
+            int protocol = buf.get(9) & 0xFF;
+            if (protocol != 17) return; // فقط UDP
+
+            byte[] srcIpBytes = new byte[4];
+            buf.position(12);
+            buf.get(srcIpBytes);
+            InetAddress srcAddr = InetAddress.getByAddress(srcIpBytes);
+
+            byte[] dstIpBytes = new byte[4];
+            buf.get(dstIpBytes);
+            InetAddress dstAddr = InetAddress.getByAddress(dstIpBytes);
+
+            int srcPort = ((buf.get(headerLength) & 0xFF) << 8) | (buf.get(headerLength + 1) & 0xFF);
+            int dstPort = ((buf.get(headerLength + 2) & 0xFF) << 8) | (buf.get(headerLength + 3) & 0xFF);
+            if (dstPort != 53 || !dstAddr.getHostAddress().equals("10.0.0.1")) return;
+
+            int udpLength = ((buf.get(headerLength + 4) & 0xFF) << 8) | (buf.get(headerLength + 5) & 0xFF);
+            int dnsPayloadOffset = headerLength + 8;
+            int dnsPayloadLength = udpLength - 8;
+            if (dnsPayloadLength <= 0) return;
+
+            byte[] dnsQuery = new byte[dnsPayloadLength];
+            System.arraycopy(packet, dnsPayloadOffset, dnsQuery, 0, dnsPayloadLength);
+
+            String domain = extractDomain(dnsQuery);
+            byte[] dnsResponse;
             if (domain != null && hostsMap.containsKey(domain)) {
-                String mappedIp = hostsMap.get(domain);
-                byte[] response = buildDnsResponse(data, length, mappedIp);
-                DatagramPacket responsePacket = new DatagramPacket(response, response.length,
-                        packet.getAddress(), packet.getPort());
-                dnsSocket.send(responsePacket);
+                dnsResponse = buildDnsResponse(dnsQuery, hostsMap.get(domain));
             } else {
-                // فوروارد به DNS بالا
-                forwardDnsRequest(packet);
+                dnsResponse = forwardDns(dnsQuery);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
+            if (dnsResponse != null) {
+                byte[] responsePacket = buildUdpPacket(srcAddr, srcPort, dnsResponse);
+                out.write(responsePacket);
+            }
+        } catch (Exception ignored) {}
     }
 
-    private void forwardDnsRequest(DatagramPacket packet) {
+    private byte[] forwardDns(byte[] query) {
         try {
-            DatagramSocket forwardSocket = new DatagramSocket();
-            forwardSocket.setSoTimeout(5000);
-            DatagramPacket request = new DatagramPacket(packet.getData(), packet.getLength(),
-                    InetAddress.getByName(dns), 53);
-            forwardSocket.send(request);
+            DatagramSocket socket = new DatagramSocket();
+            socket.setSoTimeout(5000);
+            DatagramPacket request = new DatagramPacket(query, query.length, InetAddress.getByName(dns), 53);
+            socket.send(request);
             byte[] responseBuffer = new byte[1024];
             DatagramPacket response = new DatagramPacket(responseBuffer, responseBuffer.length);
-            forwardSocket.receive(response);
-            DatagramPacket reply = new DatagramPacket(response.getData(), response.getLength(),
-                    packet.getAddress(), packet.getPort());
-            dnsSocket.send(reply);
-            forwardSocket.close();
+            socket.receive(response);
+            byte[] data = new byte[response.getLength()];
+            System.arraycopy(response.getData(), 0, data, 0, response.getLength());
+            socket.close();
+            return data;
         } catch (Exception e) {
-            e.printStackTrace();
+            return null;
         }
     }
 
-    private String extractDomain(byte[] data, int length) {
+    private byte[] buildUdpPacket(InetAddress srcAddr, int srcPort, byte[] dnsPayload) {
         try {
-            // skip header (12 bytes)
+            ByteBuffer packet = ByteBuffer.allocate(20 + 8 + dnsPayload.length);
+            packet.put((byte) 0x45); // version/IHL
+            packet.put((byte) 0x00); // DSCP/ECN
+            int totalLength = 20 + 8 + dnsPayload.length;
+            packet.putShort((short) totalLength);
+            packet.putShort((short) 0); // identification
+            packet.putShort((short) 0); // flags/fragment
+            packet.put((byte) 64); // TTL
+            packet.put((byte) 17); // protocol UDP
+            packet.putShort((short) 0); // checksum (zero)
+            packet.put(InetAddress.getByName("10.0.0.1").getAddress());
+            packet.put(srcAddr.getAddress());
+            packet.putShort((short) 53); // source port
+            packet.putShort((short) srcPort); // dest port
+            int udpLength = 8 + dnsPayload.length;
+            packet.putShort((short) udpLength);
+            packet.putShort((short) 0); // checksum (zero)
+            packet.put(dnsPayload);
+            return packet.array();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String extractDomain(byte[] data) {
+        try {
             int pos = 12;
             StringBuilder sb = new StringBuilder();
-            while (pos < length) {
+            while (pos < data.length) {
                 int labelLength = data[pos] & 0xFF;
                 if (labelLength == 0) break;
-                if (labelLength > 63) {
-                    // pointer to another location (simplify: ignore)
-                    return null;
-                }
+                if (labelLength > 63) return null;
                 pos++;
-                if (pos + labelLength > length) return null;
+                if (pos + labelLength > data.length) return null;
                 for (int i = 0; i < labelLength; i++) {
                     sb.append((char) (data[pos + i] & 0xFF));
                 }
@@ -182,33 +219,29 @@ public class GamingVpnService extends VpnService {
         }
     }
 
-    private byte[] buildDnsResponse(byte[] query, int queryLength, String ip) {
+    private byte[] buildDnsResponse(byte[] query, String ip) {
         try {
             ByteBuffer response = ByteBuffer.allocate(1024);
-            // کپی ID
             response.put(query[0]);
             response.put(query[1]);
-            // Flags: response, recursion available
             response.put((byte) 0x81);
             response.put((byte) 0x80);
-            // Questions: 1, Answers: 1
             response.putShort((short) 1);
             response.putShort((short) 1);
             response.putShort((short) 0);
             response.putShort((short) 0);
 
-            // کپی بخش سوال از کوئری (شامل QNAME, QTYPE, QCLASS)
             int pos = 12;
-            while (pos < queryLength && query[pos] != 0) {
+            while (pos < query.length && query[pos] != 0) {
                 response.put(query[pos++]);
             }
-            response.put((byte) 0); // null label
-            response.put(query[++pos]); // QTYPE high
-            response.put(query[++pos]); // QTYPE low
-            response.put(query[++pos]); // QCLASS high
-            response.put(query[++pos]); // QCLASS low
+            response.put((byte) 0);
+            pos++;
+            response.put(query[pos++]);
+            response.put(query[pos++]);
+            response.put(query[pos++]);
+            response.put(query[pos++]);
 
-            // Answer: pointer to name, type A, class IN, TTL, RDLENGTH, RDATA
             response.put((byte) 0xC0);
             response.put((byte) 0x0C);
             response.putShort((short) 1); // Type A
@@ -219,7 +252,10 @@ public class GamingVpnService extends VpnService {
             for (String part : ipParts) {
                 response.put((byte) Integer.parseInt(part));
             }
-            return response.array();
+            byte[] result = new byte[response.position()];
+            response.rewind();
+            response.get(result);
+            return result;
         } catch (Exception e) {
             return null;
         }
@@ -227,15 +263,11 @@ public class GamingVpnService extends VpnService {
 
     private void stopVpn() {
         running = false;
+        if (tunThread != null) {
+            tunThread.interrupt();
+            tunThread = null;
+        }
         try {
-            if (dnsSocket != null) {
-                dnsSocket.close();
-                dnsSocket = null;
-            }
-            if (dnsExecutor != null) {
-                dnsExecutor.shutdownNow();
-                dnsExecutor = null;
-            }
             if (vpnInterface != null) {
                 vpnInterface.close();
                 vpnInterface = null;
@@ -296,7 +328,6 @@ public class GamingVpnService extends VpnService {
         context.startService(intent);
     }
 
-    // کلاس قابل سریالایز برای ارسال HashMap
     public static class SerializableHosts implements java.io.Serializable {
         public HashMap<String, String> map;
         public SerializableHosts(HashMap<String, String> map) {
