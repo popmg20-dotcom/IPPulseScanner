@@ -34,7 +34,7 @@ public class MainActivity extends Activity {
     private static final String VPN_PREFS = "vpn_settings";
     private static final int REQUEST_VPN = 1001;
     private static final int REQUEST_NOTIFICATION = 1002;
-    private static final int MAX_LOG_ITEMS = 200; // محدودیت لاگ
+    private static final int MAX_LOG_ITEMS = 50; // محدودیت لاگ
 
     // Tab 1
     private View tab1Container, tab2Container, tab3Container;
@@ -312,6 +312,9 @@ public class MainActivity extends Activity {
 
         allResults.clear();
         logLayout1.removeAllViews();
+            if (aliveResults.size() > 100) {
+                aliveResults = new ArrayList<>(aliveResults.subList(0, 100));
+            }
         table1.removeAllViews();
         addTableHeader(table1, false);
         btnStart1.setEnabled(false);
@@ -320,7 +323,7 @@ public class MainActivity extends Activity {
 
         saveHistory(query);
 
-        executor = Executors.newFixedThreadPool(10); // کاهش به 10
+        executor = Executors.newFixedThreadPool(3); // کاهش به 10
         final int[] completed = {0};
         status1.setText("Scanning " + ips.size() + " IPs concurrently...");
 
@@ -381,6 +384,9 @@ public class MainActivity extends Activity {
                 break;
         }
 
+            if (aliveResults.size() > 100) {
+                aliveResults = new ArrayList<>(aliveResults.subList(0, 100));
+            }
         table1.removeAllViews();
         addTableHeader(table1, false);
         top5IPs.clear();
@@ -522,7 +528,7 @@ public class MainActivity extends Activity {
             }
 
             // به‌روزرسانی UI فقط هر 10 پکت یا آخرین پکت
-            if (isDeepLive && liveRow != null && (i % 10 == 0 || i == totalPkts)) {
+            if (isDeepLive && liveRow != null && (i % 50 == 0 || i == totalPkts)) {
                 int curReceived = rttList.size();
                 float curAvg = avg(rttList);
                 float curMin = min(rttList);
