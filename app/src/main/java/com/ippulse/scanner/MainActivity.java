@@ -8,7 +8,6 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -22,15 +21,14 @@ public class MainActivity extends Activity {
     private EditText ipInput, packetInput, intervalInput, timeoutInput;
     private Button btnStart, btnStop;
     private TextView statusText;
-    private TableLayout resultTable;
-    private LinearLayout topListLayout;
-    private Spinner historySpinner;
+    private TableLayout resultTable, top5Table;
+    private LinearLayout topListLayout, historyContainer;
+    private ScrollView logScrollView;
     
     private ExecutorService executor;
     private volatile boolean isCancelled = false;
     private List<ScanResult> allResults = new ArrayList<>();
     private List<String> searchHistory = new ArrayList<>();
-    private ArrayAdapter<String> historyAdapter;
     private int totalIPs = 0;
     private int completedIPs = 0;
 
@@ -47,28 +45,56 @@ public class MainActivity extends Activity {
         btnStop = findViewById(R.id.btnStop);
         statusText = findViewById(R.id.statusText);
         resultTable = findViewById(R.id.resultTable);
+        top5Table = findViewById(R.id.top5Table);
         topListLayout = findViewById(R.id.topListLayout);
-        historySpinner = findViewById(R.id.historySpinner);
-
-        searchHistory.add("تاریخچه جستجوها...");
-        historyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, searchHistory);
-        historySpinner.setAdapter(historyAdapter);
-
-        historySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position > 0) {
-                    String selected = searchHistory.get(position);
-                    ipInput.setText(selected);
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
+        historyContainer = findViewById(R.id.historyContainer);
+        logScrollView = findViewById(R.id.logScrollView);
 
         btnStart.setOnClickListener(v -> startScanning());
         btnStop.setOnClickListener(v -> stopScanning());
+    }
+
+    private void updateHistoryUI() {
+        historyContainer.removeAllViews();
+        for (String item : searchHistory) {
+            LinearLayout chip = new LinearLayout(this);
+            chip.setOrientation(LinearLayout.HORIZONTAL);
+            chip.setBackgroundColor(Color.parseColor("#334155"));
+            chip.setPadding(8, 4, 8, 4);
+            chip.setGravity(Gravity.CENTER_VERTICAL);
+
+            TextView tv = new TextView(this);
+            tv.setText(item);
+            tv.setTextColor(Color.parseColor("#F8FAFC"));
+            tv.setTextSize(11);
+            tv.setPadding(4, 2, 8, 2);
+            tv.setOnClickListener(v -> ipInput.setText(item));
+
+            Button delBtn = new Button(this);
+            delBtn.setText("✕");
+            delBtn.setTextSize(10);
+            delBtn.setTextColor(Color.parseColor("#F87171"));
+            delBtn.setBackgroundColor(Color.TRANSPARENT);
+            delBtn.setMinWidth(0);
+            delBtn.setMinHeight(0);
+            delBtn.setMinimumWidth(0);
+            delBtn.setMinimumHeight(0);
+            delBtn.setPadding(4, 2, 4, 2);
+            delBtn.setOnClickListener(v -> {
+                searchHistory.remove(item);
+                updateHistoryUI();
+            });
+
+            chip.addView(tv);
+            chip.addView(delBtn);
+
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.setMargins(4, 2, 4, 2);
+            chip.setLayoutParams(params);
+
+            historyContainer.addView(chip);
+        }
     }
 
     private void startScanning() {
@@ -80,7 +106,7 @@ public class MainActivity extends Activity {
 
         if (!searchHistory.contains(inputStr)) {
             searchHistory.add(inputStr);
-            historyAdapter.notifyDataSetChanged();
+            updateHistoryUI();
         }
 
         List<String> ipList = parseIPList(inputStr);
@@ -89,7 +115,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        int packets = parseNum(packetInput, 200);
+        int packets = parseNum(packetInput, 100);
         int interval = parseNum(intervalInput, 1);
         int timeout = parseNum(timeoutInput, 1000);
 
@@ -98,11 +124,12 @@ public class MainActivity extends Activity {
         btnStop.setEnabled(true);
         allResults.clear();
         resultTable.removeAllViews();
+        top5Table.removeAllViews();
         if (topListLayout != null) topListLayout.removeAllViews();
 
         totalIPs = ipList.size();
         completedIPs = 0;
-        statusText.setText("شروع تست دقیق پکت‌ها... 0 / " + totalIPs);
+        statusText.setText("شروع اسکن همزمان رنج... 0 / " + totalIPs);
 
         executor = Executors.newCachedThreadPool();
 
@@ -120,10 +147,12 @@ public class MainActivity extends Activity {
                     statusText.setText("در حال پردازش: " + completedIPs + " / " + totalIPs);
                     if (topListLayout != null) {
                         TextView logTv = new TextView(MainActivity.this);
-                        logTv.setText(String.format(Locale.US, "-> IP: %s | Avg: %.1fms | Loss: %.0f%%", result.ip, result.avg, result.loss));
+                        logTv.setText(String.format(Locale.US, "IP: %s | Packets: %d/%d | Avg: %.1fms | Loss: %.0f%%", 
+                                result.ip, result.testedPackets, packets, result.avg, result.loss));
                         logTv.setTextColor(result.loss < 50f ? Color.parseColor("#34D399") : Color.parseColor("#F87171"));
                         logTv.setTextSize(11);
                         topListLayout.addView(logTv);
+                        logScrollView.post(() -> logScrollView.fullScroll(View.FOCUS_DOWN));
                     }
                     if (completedIPs >= totalIPs) {
                         finishScanning();
@@ -137,9 +166,11 @@ public class MainActivity extends Activity {
         List<Float> rttList = new ArrayList<>();
         int lost = 0;
         int timeoutSec = Math.max(1, timeoutMs / 1000);
+        int currentTested = 0;
 
         for (int i = 0; i < totalPackets; i++) {
             if (isCancelled) break;
+            currentTested++;
             try {
                 Process p = Runtime.getRuntime().exec("ping -c 1 -W " + timeoutSec + " " + ip);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -177,7 +208,7 @@ public class MainActivity extends Activity {
 
         float lossPct = ((float) lost / totalPackets) * 100f;
         if (rttList.isEmpty()) {
-            return new ScanResult(ip, "Unknown", "🏳️", 999f, 999f, 999f, 999f, 100f);
+            return new ScanResult(ip, "Unknown", "🌐", 999f, 999f, 999f, 999f, 100f, currentTested);
         }
 
         float min = Collections.min(rttList);
@@ -196,19 +227,19 @@ public class MainActivity extends Activity {
         }
 
         String country = "Unknown";
-        String flag = "🏳️";
+        String flag = "🌐";
         try {
             URL url = new URL("http://ip-api.com/json/" + ip + "?fields=country,countryCode");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(1500);
-            conn.setReadTimeout(1500);
+            conn.setConnectTimeout(1200);
+            conn.setReadTimeout(1200);
             BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) sb.append(line);
             JSONObject obj = new JSONObject(sb.toString());
             country = obj.optString("country", "Unknown");
-            String code = obj.optString("countryCode", "");
+            String code = obj.optString("countryCode", "").toUpperCase();
             if (code.length() == 2) {
                 int first = Character.codePointAt(code, 0) - 0x41 + 0x1F1E6;
                 int second = Character.codePointAt(code, 1) - 0x41 + 0x1F1E6;
@@ -216,13 +247,13 @@ public class MainActivity extends Activity {
             }
         } catch (Exception ignored) {}
 
-        return new ScanResult(ip, country, flag, avg, min, max, jitter, lossPct);
+        return new ScanResult(ip, country, flag, avg, min, max, jitter, lossPct, currentTested);
     }
 
     private void finishScanning() {
         btnStart.setEnabled(true);
         btnStop.setEnabled(false);
-        statusText.setText("اسکن کامل شد! مرتب‌سازی نهایی بر اساس پایداری گیمینگ...");
+        statusText.setText("اسکن رنج کامل شد! در حال اجرای تست تخصصی ۵ آی‌پی برتر...");
 
         Collections.sort(allResults, new Comparator<ScanResult>() {
             @Override
@@ -236,19 +267,41 @@ public class MainActivity extends Activity {
             }
         });
 
+        // نمایش جدول کل نتایج
         resultTable.removeAllViews();
-        addTableHeader();
+        addTableHeader(resultTable, true);
         int rank = 1;
+        List<ScanResult> validResults = new ArrayList<>();
         for (ScanResult res : allResults) {
             if (res.loss < 99f) {
-                addTableRow(res, rank++);
+                validResults.add(res);
+                addTableRow(resultTable, res, rank++);
             }
         }
 
-        statusText.setText("نتایج با موفقیت استخراج و مرتب شدند.");
+        // مرحله دوم: تست تخصصی و فوق‌العاده دقیق ۵ آی‌پی برتر با پکت بالاتر
+        new Thread(() -> {
+            List<ScanResult> top5Deep = new ArrayList<>();
+            int count = Math.min(5, validResults.size());
+            for (int i = 0; i < count; i++) {
+                ScanResult best = validResults.get(i);
+                // تست تخصصی با ۳۰۰ پکت برای دقت نهایت گیمینگ
+                ScanResult deepRes = benchmarkIP(best.ip, 300, 1, 1000);
+                top5Deep.add(deepRes);
+            }
+
+            runOnUiThread(() -> {
+                top5Table.removeAllViews();
+                addTableHeader(top5Table, false);
+                for (int i = 0; i < top5Deep.size(); i++) {
+                    addTableRow(top5Table, top5Deep.get(i), i + 1);
+                }
+                statusText.setText("تست تخصصی ۵ آی‌پی برتر گیمینگ با موفقیت انجام شد.");
+            });
+        }).start();
     }
 
-    private void addTableHeader() {
+    private void addTableHeader(TableLayout table, bool isRange) {
         TableRow header = new TableRow(this);
         header.setBackgroundColor(Color.parseColor("#334155"));
         String[] cols = {"#", "IP / Country", "Avg", "Min", "Max", "Jitter", "Loss"};
@@ -262,10 +315,15 @@ public class MainActivity extends Activity {
             tv.setTextSize(11);
             header.addView(tv);
         }
-        resultTable.addView(header);
+        table.addView(header);
+    }
+    
+    // نسخه سازگار متد هدر
+    private void addTableHeader(TableLayout table, boolean isMain) {
+        addTableHeader(table, (bool) true);
     }
 
-    private void addTableRow(ScanResult res, int rank) {
+    private void addTableRow(TableLayout table, ScanResult res, int rank) {
         TableRow row = new TableRow(this);
         row.setBackgroundColor(rank <= 5 ? Color.parseColor("#332200") : Color.parseColor("#1E293B"));
         
@@ -295,7 +353,7 @@ public class MainActivity extends Activity {
             tv.setTextSize(11);
             row.addView(tv);
         }
-        resultTable.addView(row);
+        table.addView(row);
     }
 
     private void stopScanning() {
@@ -359,7 +417,8 @@ public class MainActivity extends Activity {
     private static class ScanResult {
         String ip, country, flag;
         float avg, min, max, jitter, loss;
-        ScanResult(String ip, String country, String flag, float avg, float min, float max, float jitter, float loss) {
+        int testedPackets;
+        ScanResult(String ip, String country, String flag, float avg, float min, float max, float jitter, float loss, int testedPackets) {
             this.ip = ip;
             this.country = country;
             this.flag = flag;
@@ -368,6 +427,7 @@ public class MainActivity extends Activity {
             this.max = max;
             this.jitter = jitter;
             this.loss = loss;
+            this.testedPackets = testedPackets;
         }
     }
 }
