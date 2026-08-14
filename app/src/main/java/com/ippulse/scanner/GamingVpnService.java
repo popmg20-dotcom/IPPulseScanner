@@ -11,18 +11,16 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class GamingVpnService extends VpnService {
     private static final String ACTION_START = "com.ippulse.scanner.START";
@@ -36,6 +34,7 @@ public class GamingVpnService extends VpnService {
     private HashMap<String, String> hostsMap = new HashMap<>();
     private Thread tunThread;
     private volatile boolean running = false;
+    private ExecutorService dnsExecutor;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -85,6 +84,7 @@ public class GamingVpnService extends VpnService {
             vpnInterface = builder.establish();
 
             running = true;
+            dnsExecutor = Executors.newFixedThreadPool(4); // ترد برای DNS
             startTunReader();
         } catch (Exception e) {
             e.printStackTrace();
@@ -120,37 +120,23 @@ public class GamingVpnService extends VpnService {
             int headerLength = (versionIHL & 0xF) * 4;
             int protocol = buf.get(9) & 0xFF;
 
-            // Source IP (starting at offset 12)
+            if (protocol != 17) return; // فقط UDP
+
             byte[] srcIpBytes = new byte[4];
             buf.position(12);
             buf.get(srcIpBytes);
             InetAddress srcAddr = InetAddress.getByAddress(srcIpBytes);
 
-            // Destination IP
             byte[] dstIpBytes = new byte[4];
             buf.get(dstIpBytes);
             InetAddress dstAddr = InetAddress.getByAddress(dstIpBytes);
 
-            if (!dstAddr.getHostAddress().equals(DNS_ADDRESS)) return;
+            int srcPort = ((buf.get(headerLength) & 0xFF) << 8) | (buf.get(headerLength + 1) & 0xFF);
+            int dstPort = ((buf.get(headerLength + 2) & 0xFF) << 8) | (buf.get(headerLength + 3) & 0xFF);
 
-            if (protocol == 17) { // UDP
-                handleUdp(packet, length, headerLength, srcAddr, dstAddr, out);
-            } else if (protocol == 6) { // TCP
-                handleTcp(packet, length, headerLength, srcAddr, dstAddr, out);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+            if (!dstAddr.getHostAddress().equals(DNS_ADDRESS) || dstPort != 53) return;
 
-    private void handleUdp(byte[] packet, int length, int headerLength, InetAddress srcAddr, InetAddress dstAddr, FileOutputStream out) {
-        try {
-            ByteBuffer buf = ByteBuffer.wrap(packet, headerLength, length - headerLength);
-            int srcPort = buf.getShort() & 0xFFFF;
-            int dstPort = buf.getShort() & 0xFFFF;
-            if (dstPort != 53) return;
-
-            int udpLength = buf.getShort() & 0xFFFF;
+            int udpLength = ((buf.get(headerLength + 4) & 0xFF) << 8) | (buf.get(headerLength + 5) & 0xFF);
             int dnsPayloadOffset = headerLength + 8;
             int dnsPayloadLength = udpLength - 8;
             if (dnsPayloadLength <= 0) return;
@@ -159,77 +145,32 @@ public class GamingVpnService extends VpnService {
             System.arraycopy(packet, dnsPayloadOffset, dnsQuery, 0, dnsPayloadLength);
 
             String domain = extractDomain(dnsQuery);
-            byte[] dnsResponse;
-            if (domain != null && hostsMap.containsKey(domain)) {
-                dnsResponse = buildDnsResponse(dnsQuery, hostsMap.get(domain));
-            } else {
-                dnsResponse = forwardUdpDns(dnsQuery);
-            }
-
-            if (dnsResponse != null) {
-                byte[] responsePacket = buildUdpResponsePacket(srcAddr, srcPort, dnsResponse);
-                out.write(responsePacket);
-            }
+            // هندل DNS در thread جدا
+            dnsExecutor.execute(() -> {
+                byte[] dnsResponse;
+                if (domain != null && hostsMap.containsKey(domain)) {
+                    dnsResponse = buildDnsResponse(dnsQuery, hostsMap.get(domain));
+                } else {
+                    dnsResponse = forwardDns(dnsQuery);
+                }
+                if (dnsResponse != null) {
+                    byte[] responsePacket = buildUdpPacket(srcAddr, srcPort, dnsResponse);
+                    try {
+                        out.write(responsePacket);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void handleTcp(byte[] packet, int length, int headerLength, InetAddress srcAddr, InetAddress dstAddr, FileOutputStream out) {
-        // فقط TCP SYN به پورت 53 را قبول می‌کنیم و یک اتصال ساده برقرار می‌کنیم
-        try {
-            ByteBuffer tcpBuf = ByteBuffer.wrap(packet, headerLength, length - headerLength);
-            int srcPort = tcpBuf.getShort() & 0xFFFF;
-            int dstPort = tcpBuf.getShort() & 0xFFFF;
-            if (dstPort != 53) return;
-
-            int flags = tcpBuf.get(13) & 0xFF;
-            boolean isSyn = (flags & 0x02) != 0;
-            if (isSyn) {
-                // ارسال SYN-ACK ساده (بدون هندشیک کامل)
-                // فقط برای اینکه برنامه بفهمد اتصال برقرار شده
-                // این پیاده‌سازی ساده ممکن است برای بعضی برنامه‌ها کافی نباشد
-                // اما بهتر از قطع کامل است
-                byte[] synAck = buildTcpSynAck(srcAddr, srcPort, dstPort);
-                out.write(synAck);
-            }
-            // برای سادگی، TCP DNS را کامل پشتیبانی نمی‌کنیم؛ اما برنامه‌ها معمولاً از UDP استفاده می‌کنند
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private byte[] buildTcpSynAck(InetAddress srcAddr, int srcPort, int dstPort) {
-        // ساده‌سازی: فقط یک بسته TCP با فلگ SYN-ACK و بدون payload
-        // برای جلوگیری از قطع کامل، بهتر است از هیچی نباشد
-        ByteBuffer packet = ByteBuffer.allocate(40);
-        packet.put((byte) 0x45);
-        packet.put((byte) 0x00);
-        packet.putShort((short) 40);
-        packet.putShort((short) 0);
-        packet.putShort((short) 0);
-        packet.put((byte) 64);
-        packet.put((byte) 6);
-        packet.putShort((short) 0); // IP checksum
-        packet.put(new byte[]{10,0,0,1});
-        packet.put(srcAddr.getAddress());
-        packet.putShort((short) 53);
-        packet.putShort((short) srcPort);
-        packet.putInt(0); // SEQ
-        packet.putInt(0); // ACK
-        packet.put((byte) 0x60); // offset 6, flags SYN|ACK
-        packet.put((byte) 0x12);
-        packet.putShort((short) 65535); // window
-        packet.putShort((short) 0); // checksum
-        packet.putShort((short) 0); // urgent
-        // Calculate TCP checksum (ignored for simplicity)
-        return packet.array();
-    }
-
-    private byte[] forwardUdpDns(byte[] query) {
+    private byte[] forwardDns(byte[] query) {
         try {
             DatagramSocket socket = new DatagramSocket();
-            socket.setSoTimeout(5000);
+            socket.setSoTimeout(2000); // کاهش به ۲ ثانیه
             DatagramPacket request = new DatagramPacket(query, query.length, InetAddress.getByName(dns), 53);
             socket.send(request);
             byte[] responseBuffer = new byte[1024];
@@ -244,7 +185,7 @@ public class GamingVpnService extends VpnService {
         }
     }
 
-    private byte[] buildUdpResponsePacket(InetAddress clientAddr, int clientPort, byte[] dnsPayload) {
+    private byte[] buildUdpPacket(InetAddress srcAddr, int srcPort, byte[] dnsPayload) {
         try {
             int udpLength = 8 + dnsPayload.length;
             ByteBuffer packet = ByteBuffer.allocate(20 + udpLength);
@@ -256,23 +197,19 @@ public class GamingVpnService extends VpnService {
             packet.put((byte) 64);
             packet.put((byte) 17);
             packet.putShort((short) 0); // IP checksum placeholder
-            packet.put(new byte[]{10,0,0,1});
-            packet.put(clientAddr.getAddress());
+            packet.put(new byte[]{10, 0, 0, 1}); // Source IP: DNS
+            packet.put(srcAddr.getAddress());
             packet.putShort((short) 53);
-            packet.putShort((short) clientPort);
+            packet.putShort((short) srcPort);
             packet.putShort((short) udpLength);
             packet.putShort((short) 0); // UDP checksum placeholder
             packet.put(dnsPayload);
 
-            // محاسبه UDP checksum
             byte[] array = packet.array();
-            int udpChecksum = calculateUdpChecksum(array, 12, 20, 8 + dnsPayload.length);
+            int udpChecksum = calculateUdpChecksum(array, 12, 20, udpLength);
             packet.putShort(26, (short) udpChecksum);
-
-            // محاسبه IP checksum
             int ipChecksum = calculateIpChecksum(array, 0, 20);
             packet.putShort(10, (short) ipChecksum);
-
             return array;
         } catch (Exception e) {
             return null;
@@ -288,7 +225,6 @@ public class GamingVpnService extends VpnService {
         sum += ((packet[srcIpOffset + 6] & 0xFF) << 8) | (packet[srcIpOffset + 7] & 0xFF);
         sum += 0x0011; // protocol UDP
         sum += udpLength;
-        // UDP header + payload
         int end = udpOffset + udpLength;
         for (int i = udpOffset; i < end; i += 2) {
             int word = ((packet[i] & 0xFF) << 8);
@@ -384,7 +320,6 @@ public class GamingVpnService extends VpnService {
             response.putShort((short) 0);
             response.putShort((short) 0);
 
-            // Copy question
             int pos = 12;
             while (pos < query.length && query[pos] != 0) {
                 response.put(query[pos++]);
@@ -396,13 +331,12 @@ public class GamingVpnService extends VpnService {
             response.put(query[pos++]);
             response.put(query[pos++]);
 
-            // Answer
             response.put((byte) 0xC0);
             response.put((byte) 0x0C);
-            response.putShort((short) 1); // Type A
-            response.putShort((short) 1); // Class IN
-            response.putInt(60); // TTL
-            response.putShort((short) 4); // RDLENGTH
+            response.putShort((short) 1);
+            response.putShort((short) 1);
+            response.putInt(60);
+            response.putShort((short) 4);
             String[] ipParts = ip.split("\\.");
             for (String part : ipParts) {
                 response.put((byte) Integer.parseInt(part));
@@ -421,6 +355,10 @@ public class GamingVpnService extends VpnService {
         if (tunThread != null) {
             tunThread.interrupt();
             tunThread = null;
+        }
+        if (dnsExecutor != null) {
+            dnsExecutor.shutdownNow();
+            dnsExecutor = null;
         }
         try {
             if (vpnInterface != null) {
