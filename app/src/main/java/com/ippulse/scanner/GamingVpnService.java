@@ -24,6 +24,8 @@ public class GamingVpnService extends VpnService {
     private static final String ACTION_START = "com.ippulse.scanner.START";
     private static final String ACTION_STOP = "com.ippulse.scanner.STOP";
     private static final String CHANNEL_ID = "gaming_vpn";
+    private static final String VPN_ADDRESS = "10.0.0.2"; // آدرس دستگاه
+    private static final String DNS_ADDRESS = "10.0.0.1";  // آدرس سرور DNS مجازی
     private ParcelFileDescriptor vpnInterface;
     private String dns = "8.8.8.8";
     private int mtu = 1400;
@@ -71,9 +73,9 @@ public class GamingVpnService extends VpnService {
 
             Builder builder = new Builder();
             builder.setSession("Gaming VPN");
-            builder.addAddress("10.0.0.1", 32);
-            builder.addRoute("10.0.0.1", 32); // فقط DNS server از تونل رد بشه
-            builder.addDnsServer("10.0.0.1");
+            builder.addAddress(VPN_ADDRESS, 32);
+            builder.addRoute(DNS_ADDRESS, 32); // فقط مسیر DNS
+            builder.addDnsServer(DNS_ADDRESS);
             builder.setMtu(mtu);
             builder.setBlocking(true);
             vpnInterface = builder.establish();
@@ -127,7 +129,9 @@ public class GamingVpnService extends VpnService {
 
             int srcPort = ((buf.get(headerLength) & 0xFF) << 8) | (buf.get(headerLength + 1) & 0xFF);
             int dstPort = ((buf.get(headerLength + 2) & 0xFF) << 8) | (buf.get(headerLength + 3) & 0xFF);
-            if (dstPort != 53 || !dstAddr.getHostAddress().equals("10.0.0.1")) return;
+
+            // فقط DNS به سمت 10.0.0.1:53
+            if (!dstAddr.getHostAddress().equals(DNS_ADDRESS) || dstPort != 53) return;
 
             int udpLength = ((buf.get(headerLength + 4) & 0xFF) << 8) | (buf.get(headerLength + 5) & 0xFF);
             int dnsPayloadOffset = headerLength + 8;
@@ -173,22 +177,22 @@ public class GamingVpnService extends VpnService {
     private byte[] buildUdpPacket(InetAddress srcAddr, int srcPort, byte[] dnsPayload) {
         try {
             ByteBuffer packet = ByteBuffer.allocate(20 + 8 + dnsPayload.length);
-            packet.put((byte) 0x45); // version/IHL
-            packet.put((byte) 0x00); // DSCP/ECN
+            packet.put((byte) 0x45);
+            packet.put((byte) 0x00);
             int totalLength = 20 + 8 + dnsPayload.length;
             packet.putShort((short) totalLength);
-            packet.putShort((short) 0); // identification
-            packet.putShort((short) 0); // flags/fragment
-            packet.put((byte) 64); // TTL
-            packet.put((byte) 17); // protocol UDP
-            packet.putShort((short) 0); // checksum (zero)
-            packet.put(InetAddress.getByName("10.0.0.1").getAddress());
-            packet.put(srcAddr.getAddress());
-            packet.putShort((short) 53); // source port
-            packet.putShort((short) srcPort); // dest port
+            packet.putShort((short) 0);
+            packet.putShort((short) 0);
+            packet.put((byte) 64);
+            packet.put((byte) 17);
+            packet.putShort((short) 0);
+            packet.put(InetAddress.getByName(DNS_ADDRESS).getAddress()); // Source IP: DNS
+            packet.put(srcAddr.getAddress()); // Dest IP: client
+            packet.putShort((short) 53); // Source port
+            packet.putShort((short) srcPort); // Dest port
             int udpLength = 8 + dnsPayload.length;
             packet.putShort((short) udpLength);
-            packet.putShort((short) 0); // checksum (zero)
+            packet.putShort((short) 0);
             packet.put(dnsPayload);
             return packet.array();
         } catch (Exception e) {
@@ -200,19 +204,55 @@ public class GamingVpnService extends VpnService {
         try {
             int pos = 12;
             StringBuilder sb = new StringBuilder();
+            boolean first = true;
             while (pos < data.length) {
                 int labelLength = data[pos] & 0xFF;
                 if (labelLength == 0) break;
+                if ((labelLength & 0xC0) == 0xC0) {
+                    // Name compression pointer
+                    if (pos + 1 >= data.length) return null;
+                    int pointer = ((labelLength & 0x3F) << 8) | (data[pos + 1] & 0xFF);
+                    return extractDomainFromOffset(data, pointer);
+                }
                 if (labelLength > 63) return null;
                 pos++;
                 if (pos + labelLength > data.length) return null;
+                if (!first) sb.append('.');
                 for (int i = 0; i < labelLength; i++) {
                     sb.append((char) (data[pos + i] & 0xFF));
                 }
-                sb.append('.');
+                first = false;
                 pos += labelLength;
             }
-            if (sb.length() > 0) sb.setLength(sb.length() - 1);
+            return sb.toString().toLowerCase();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String extractDomainFromOffset(byte[] data, int offset) {
+        try {
+            int pos = offset;
+            StringBuilder sb = new StringBuilder();
+            boolean first = true;
+            while (pos < data.length) {
+                int labelLength = data[pos] & 0xFF;
+                if (labelLength == 0) break;
+                if ((labelLength & 0xC0) == 0xC0) {
+                    if (pos + 1 >= data.length) return null;
+                    int pointer = ((labelLength & 0x3F) << 8) | (data[pos + 1] & 0xFF);
+                    return extractDomainFromOffset(data, pointer);
+                }
+                if (labelLength > 63) return null;
+                pos++;
+                if (pos + labelLength > data.length) return null;
+                if (!first) sb.append('.');
+                for (int i = 0; i < labelLength; i++) {
+                    sb.append((char) (data[pos + i] & 0xFF));
+                }
+                first = false;
+                pos += labelLength;
+            }
             return sb.toString().toLowerCase();
         } catch (Exception e) {
             return null;
@@ -244,10 +284,10 @@ public class GamingVpnService extends VpnService {
 
             response.put((byte) 0xC0);
             response.put((byte) 0x0C);
-            response.putShort((short) 1); // Type A
-            response.putShort((short) 1); // Class IN
-            response.putInt(60); // TTL
-            response.putShort((short) 4); // RDLENGTH
+            response.putShort((short) 1);
+            response.putShort((short) 1);
+            response.putInt(60);
+            response.putShort((short) 4);
             String[] ipParts = ip.split("\\.");
             for (String part : ipParts) {
                 response.put((byte) Integer.parseInt(part));
