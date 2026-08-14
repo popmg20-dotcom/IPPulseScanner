@@ -211,7 +211,7 @@ public class GamingVpnService extends VpnService {
         packet.put((byte) 64);
         packet.put((byte) 6);
         packet.putShort((short) 0); // IP checksum
-        packet.put(InetAddress.getByName(DNS_ADDRESS).getAddress());
+        packet.put(new byte[]{10,0,0,1});
         packet.put(srcAddr.getAddress());
         packet.putShort((short) 53);
         packet.putShort((short) srcPort);
@@ -256,7 +256,7 @@ public class GamingVpnService extends VpnService {
             packet.put((byte) 64);
             packet.put((byte) 17);
             packet.putShort((short) 0); // IP checksum placeholder
-            packet.put(InetAddress.getByName(DNS_ADDRESS).getAddress());
+            packet.put(new byte[]{10,0,0,1});
             packet.put(clientAddr.getAddress());
             packet.putShort((short) 53);
             packet.putShort((short) clientPort);
