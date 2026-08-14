@@ -312,8 +312,6 @@ public class MainActivity extends Activity {
 
         allResults.clear();
         logLayout1.removeAllViews();
-            if (aliveResults.size() > 100) {
-                aliveResults = new ArrayList<>(aliveResults.subList(0, 100));
             }
         table1.removeAllViews();
         addTableHeader(table1, false);
@@ -384,8 +382,6 @@ public class MainActivity extends Activity {
                 break;
         }
 
-            if (aliveResults.size() > 100) {
-                aliveResults = new ArrayList<>(aliveResults.subList(0, 100));
             }
         table1.removeAllViews();
         addTableHeader(table1, false);
