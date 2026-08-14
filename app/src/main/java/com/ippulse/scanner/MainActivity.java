@@ -34,6 +34,7 @@ public class MainActivity extends Activity {
     private static final String VPN_PREFS = "vpn_settings";
     private static final int REQUEST_VPN = 1001;
     private static final int REQUEST_NOTIFICATION = 1002;
+    private static final int MAX_LOG_ITEMS = 200; // محدودیت لاگ
 
     // Tab 1
     private View tab1Container, tab2Container, tab3Container;
@@ -67,7 +68,6 @@ public class MainActivity extends Activity {
     private String[] sortOptions = {"Default", "Loss", "Jitter", "Average (Avg)", "Min (Low Ping)", "Max (High Ping)"};
     private int currentSortIndex = 0;
 
-    // لیست دامنه‌های پیش‌فرض برای Master IP
     private String[] defaultDomains = {
         "west-tdm.codmwest.com",
         "west-cschannel.codm.activision.com",
@@ -79,7 +79,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Tab 1
         tab1Container = findViewById(R.id.tab1Container);
         btnTab1 = findViewById(R.id.btnTab1);
         btnTab2 = findViewById(R.id.btnTab2);
@@ -96,7 +95,6 @@ public class MainActivity extends Activity {
         table1 = findViewById(R.id.table1);
         spinnerSort = findViewById(R.id.spinnerSort);
 
-        // Tab 2
         tab2Container = findViewById(R.id.tab2Container);
         top5Container = findViewById(R.id.top5Container);
         status2 = findViewById(R.id.status2);
@@ -105,7 +103,6 @@ public class MainActivity extends Activity {
         table2Live = findViewById(R.id.table2Live);
         btnStop2 = findViewById(R.id.btnStop2);
 
-        // Tab 3
         tab3Container = findViewById(R.id.tab3Container);
         vpnDns = findViewById(R.id.vpnDns);
         vpnMtu = findViewById(R.id.vpnMtu);
@@ -121,7 +118,6 @@ public class MainActivity extends Activity {
 
         loadVpnSettings();
 
-        // Setup Spinner
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, sortOptions);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerSort.setAdapter(adapter);
@@ -137,22 +133,18 @@ public class MainActivity extends Activity {
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
-        // Tab switching
         btnTab1.setOnClickListener(v -> switchTab(1));
         btnTab2.setOnClickListener(v -> switchTab(2));
         btnTab3.setOnClickListener(v -> switchTab(3));
 
-        // Scan/Test
         btnStart1.setOnClickListener(v -> startRangeScan());
         btnStop1.setOnClickListener(v -> stopRangeScan());
         btnStop2.setOnClickListener(v -> stopDeepTest());
 
-        // VPN
         btnStartVpn.setOnClickListener(v -> startVpn());
         btnStopVpn.setOnClickListener(v -> stopVpn());
         btnApplyIp.setOnClickListener(v -> applyMasterIp());
 
-        // History
         btnHistory.setOnClickListener(v -> showHistoryDialog());
         btnClearHistory.setOnClickListener(v -> clearHistory());
     }
@@ -175,7 +167,6 @@ public class MainActivity extends Activity {
         vpnMtu.setText(String.valueOf(prefs.getInt("mtu", 1400)));
         vpnHosts.setText(prefs.getString("hosts", ""));
         if (vpnHosts.getText().toString().trim().isEmpty()) {
-            // مقدار پیش‌فرض: فقط دامنه‌ها بدون IP
             StringBuilder sb = new StringBuilder();
             for (String domain : defaultDomains) {
                 sb.append(domain).append("\n");
@@ -199,7 +190,6 @@ public class MainActivity extends Activity {
             Toast.makeText(this, "لطفاً یک IP وارد کنید", Toast.LENGTH_SHORT).show();
             return;
         }
-        // ساده‌ترین حالت: اعمال همان IP به همه دامنه‌های پیش‌فرض
         StringBuilder sb = new StringBuilder();
         for (String domain : defaultDomains) {
             sb.append(masterIp).append(" ").append(domain).append("\n");
@@ -215,7 +205,6 @@ public class MainActivity extends Activity {
         int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
         HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
 
-        // اول مجوز اعلان (برای اندروید ۱۳ به بالا)
         if (Build.VERSION.SDK_INT >= 33) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQUEST_NOTIFICATION);
@@ -278,8 +267,6 @@ public class MainActivity extends Activity {
                 String ip = parts[0];
                 String domain = parts[1].toLowerCase();
                 map.put(domain, ip);
-            } else if (parts.length == 1) {
-                // فقط دامنه بدون IP؛ صرف نظر کن
             }
         }
         return map;
@@ -289,7 +276,6 @@ public class MainActivity extends Activity {
         try { return Integer.parseInt(s); } catch (Exception e) { return defaultVal; }
     }
 
-    // ================= بقیه متدهای اسکن/تست عیناً حفظ شده‌اند =================
     private void stopRangeScan() {
         isCancelled = true;
         if (executor != null) executor.shutdownNow();
@@ -334,7 +320,7 @@ public class MainActivity extends Activity {
 
         saveHistory(query);
 
-        executor = Executors.newFixedThreadPool(30);
+        executor = Executors.newFixedThreadPool(10); // کاهش به 10
         final int[] completed = {0};
         status1.setText("Scanning " + ips.size() + " IPs concurrently...");
 
@@ -535,7 +521,8 @@ public class MainActivity extends Activity {
                 if (consecutiveLost >= FAST_FAIL_THRESHOLD) break;
             }
 
-            if (isDeepLive && liveRow != null && (i % 5 == 0 || i == totalPkts)) {
+            // به‌روزرسانی UI فقط هر 10 پکت یا آخرین پکت
+            if (isDeepLive && liveRow != null && (i % 10 == 0 || i == totalPkts)) {
                 int curReceived = rttList.size();
                 float curAvg = avg(rttList);
                 float curMin = min(rttList);
@@ -595,6 +582,10 @@ public class MainActivity extends Activity {
     }
 
     private void appendMainLog(ScanResult res) {
+        // محدود کردن تعداد لاگ‌ها
+        if (logLayout1.getChildCount() >= MAX_LOG_ITEMS) {
+            logLayout1.removeViewAt(0);
+        }
         TextView tv = new TextView(this);
         tv.setText(String.format(Locale.US, "%s | Sent:%d | Avg:%.1f | Min:%.1f | Max:%.1f | Jit:%.2f | Loss:%.0f%%",
                 res.ip, res.sent, res.avg, res.min, res.max, res.jitter, res.loss));
@@ -607,6 +598,9 @@ public class MainActivity extends Activity {
 
     private void appendDeepLog(String msg) {
         runOnUiThread(() -> {
+            if (logLayout2.getChildCount() >= MAX_LOG_ITEMS) {
+                logLayout2.removeViewAt(0);
+            }
             TextView tv = new TextView(this);
             tv.setText(msg);
             tv.setTextColor(Color.GREEN);
