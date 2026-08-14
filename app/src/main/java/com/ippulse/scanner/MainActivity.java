@@ -177,17 +177,17 @@ public class MainActivity extends Activity {
         rangeScanFinished = true;
         btnStart1.setEnabled(true);
 
-        // ❗ فقط IPهای زنده را نگه می‌داریم
+        // فقط IPهای زنده
         List<ScanResult> aliveResults = new ArrayList<>();
         for (ScanResult res : allResults) {
             if (res.alive) aliveResults.add(res);
         }
 
-        // مرتب‌سازی: میانگین ← جیتر ← لاس ← مکس
+        // ✅ رتبه‌بندی: پکت‌لاس ← جیتر ← میانگین ← مکس
         Collections.sort(aliveResults, (a, b) -> {
-            if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
-            if (Math.abs(a.jitter - b.jitter) > 0.1f) return Float.compare(a.jitter, b.jitter);
             if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
+            if (Math.abs(a.jitter - b.jitter) > 0.1f) return Float.compare(a.jitter, b.jitter);
+            if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
             return Float.compare(a.max, b.max);
         });
 
@@ -351,7 +351,7 @@ public class MainActivity extends Activity {
                     liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
                     liveCells[7].setText(curReceived > 0 ? "ALIVE" : "DEAD");
                 });
-                appendDeepLog(ip + " seq=" + seq + " rtt=" + (finalRtt >= 0 ? finalRtt + "ms" : "lost"));
+                appendDeepLog(ip + " seq=" + seq + "/" + totalPkts + " rtt=" + (finalRtt >= 0 ? finalRtt + "ms" : "lost"));
             }
 
             if (i < totalPkts && !isCancelled && consecutiveLost < FAST_FAIL_THRESHOLD) {
@@ -394,8 +394,8 @@ public class MainActivity extends Activity {
 
     private void appendMainLog(ScanResult res) {
         TextView tv = new TextView(this);
-        tv.setText(String.format(Locale.US, "%s | Avg:%.1f | Min:%.1f | Max:%.1f | Jit:%.2f | Loss:%.0f%%",
-                res.ip, res.avg, res.min, res.max, res.jitter, res.loss));
+        tv.setText(String.format(Locale.US, "%s | Sent:%d | Avg:%.1f | Min:%.1f | Max:%.1f | Jit:%.2f | Loss:%.0f%%",
+                res.ip, res.sent, res.avg, res.min, res.max, res.jitter, res.loss));
         tv.setTextColor(res.alive ? Color.GREEN : Color.RED);
         tv.setTextSize(11f);
         tv.setPadding(0, 4, 0, 4);
@@ -508,14 +508,11 @@ public class MainActivity extends Activity {
         conn.disconnect();
         JSONObject json = new JSONObject(sb.toString());
 
-        // ip-api.com و ipwho.is از countryCode یا country_code استفاده می‌کنند
         String code = json.optString("countryCode", "");
         if (code.isEmpty()) code = json.optString("country_code", "");
         if (code.isEmpty()) code = json.optString("country", "");
 
-        // ipinfo.io گاهی "country" اسم کامل است، نه کد
         if (code.length() != 2) {
-            // تبدیل نام کشور به کد در صورت امکان (فقط چند مورد رایج)
             String countryName = code.toLowerCase();
             if (countryName.contains("united arab")) return "AE";
             if (countryName.contains("germany")) return "DE";
