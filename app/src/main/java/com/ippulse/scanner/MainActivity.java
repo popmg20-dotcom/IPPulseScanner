@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
+import android.view.View;
 import android.widget.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -267,7 +268,6 @@ public class MainActivity extends Activity {
             }
         });
 
-        // نمایش جدول کل نتایج
         resultTable.removeAllViews();
         addTableHeader(resultTable, true);
         int rank = 1;
@@ -279,13 +279,11 @@ public class MainActivity extends Activity {
             }
         }
 
-        // مرحله دوم: تست تخصصی و فوق‌العاده دقیق ۵ آی‌پی برتر با پکت بالاتر
         new Thread(() -> {
             List<ScanResult> top5Deep = new ArrayList<>();
             int count = Math.min(5, validResults.size());
             for (int i = 0; i < count; i++) {
                 ScanResult best = validResults.get(i);
-                // تست تخصصی با ۳۰۰ پکت برای دقت نهایت گیمینگ
                 ScanResult deepRes = benchmarkIP(best.ip, 300, 1, 1000);
                 top5Deep.add(deepRes);
             }
@@ -301,7 +299,7 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    private void addTableHeader(TableLayout table, bool isRange) {
+    private void addTableHeader(TableLayout table, boolean isRange) {
         TableRow header = new TableRow(this);
         header.setBackgroundColor(Color.parseColor("#334155"));
         String[] cols = {"#", "IP / Country", "Avg", "Min", "Max", "Jitter", "Loss"};
@@ -316,11 +314,6 @@ public class MainActivity extends Activity {
             header.addView(tv);
         }
         table.addView(header);
-    }
-    
-    // نسخه سازگار متد هدر
-    private void addTableHeader(TableLayout table, boolean isMain) {
-        addTableHeader(table, (bool) true);
     }
 
     private void addTableRow(TableLayout table, ScanResult res, int rank) {
