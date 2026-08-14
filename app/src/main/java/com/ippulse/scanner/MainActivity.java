@@ -317,7 +317,7 @@ public class MainActivity extends Activity {
 
         saveHistory(query);
 
-        executor = Executors.newFixedThreadPool(3); // کاهش برای جلوگیری از ANR
+        executor = Executors.newFixedThreadPool(3);
         final int[] completed = {0};
         status1.setText("Scanning " + ips.size() + " IPs concurrently...");
 
@@ -352,7 +352,6 @@ public class MainActivity extends Activity {
             if (res.alive) aliveResults.add(res);
         }
 
-        // محدودیت ۱۰۰ ردیف برتر
         if (aliveResults.size() > 100) {
             aliveResults = new ArrayList<>(aliveResults.subList(0, 100));
         }
@@ -449,11 +448,12 @@ public class MainActivity extends Activity {
         deepTestThread.start();
     }
 
+    // ✅ موتور جدید: استفاده از ping پیوسته با یک فرآیند
     private ScanResult pingLogic(String ip, int totalPkts, int timeo, boolean isDeepLive, TableLayout liveTable) {
         List<Float> rttList = new ArrayList<>();
+        int received = 0;
         int lost = 0;
-        int consecutiveLost = 0;
-        int attempted = 0;
+        int sent = 0;
         int tSec = Math.max(1, timeo / 1000);
 
         TableRow liveRow = null;
@@ -487,72 +487,100 @@ public class MainActivity extends Activity {
             });
         }
 
-        for (int i = 1; i <= totalPkts; i++) {
-            if (isCancelled) break;
-            attempted = i;
-            float rtt = -1f;
-            try {
-                Process p = new ProcessBuilder("ping", "-c", "1", "-W", String.valueOf(tSec), ip)
-                        .redirectErrorStream(true)
-                        .start();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.contains("time=")) {
-                        int idx = line.indexOf("time=");
+        try {
+            ProcessBuilder pb = new ProcessBuilder("ping", "-c", String.valueOf(totalPkts), "-i", "0.2", "-W", String.valueOf(tSec), ip);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null && !isCancelled) {
+                if (line.contains("time=")) {
+                    int idx = line.indexOf("time=");
+                    if (idx != -1) {
                         String sub = line.substring(idx + 5).trim();
                         String[] parts = sub.split(" ");
                         if (parts.length > 0) {
-                            rtt = Float.parseFloat(parts[0].trim());
-                            break;
+                            float rtt = Float.parseFloat(parts[0].trim());
+                            rttList.add(rtt);
+                            received++;
+                            sent++;
+                            if (isDeepLive && liveRow != null && (received % 5 == 0 || received == totalPkts)) {
+                                int curReceived = received;
+                                float curAvg = avg(rttList);
+                                float curMin = min(rttList);
+                                float curMax = max(rttList);
+                                float curJitter = jitter(rttList);
+                                float curLoss = ((totalPkts - curReceived) * 100f) / totalPkts;
+                                final int seq = received;
+                                final float finalRtt = rtt;
+                                runOnUiThread(() -> {
+                                    liveCells[1].setText(String.valueOf(seq));
+                                    liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
+                                    liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
+                                    liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
+                                    liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
+                                    liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
+                                    liveCells[7].setText("ALIVE");
+                                });
+                                appendDeepLog(ip + " seq=" + seq + "/" + totalPkts + " rtt=" + finalRtt + "ms");
+                            }
+                        }
+                    }
+                } else if (line.contains("icmp_seq")) {
+                    // شماره سکانس را استخراج می‌کنیم (برای packet loss)
+                    int seqIdx = line.indexOf("icmp_seq=");
+                    if (seqIdx != -1) {
+                        int start = seqIdx + "icmp_seq=".length();
+                        int end = start;
+                        while (end < line.length() && Character.isDigit(line.charAt(end))) end++;
+                        if (end > start) {
+                            try {
+                                int seq = Integer.parseInt(line.substring(start, end));
+                                sent = Math.max(sent, seq);
+                                // اگر خط حاوی time= نبود، یعنی lost
+                                if (!line.contains("time=")) {
+                                    lost++;
+                                    if (isDeepLive && liveRow != null && (sent % 5 == 0 || sent == totalPkts)) {
+                                        int curSent = sent;
+                                        int curReceived = received;
+                                        float curAvg = avg(rttList);
+                                        float curMin = min(rttList);
+                                        float curMax = max(rttList);
+                                        float curJitter = jitter(rttList);
+                                        float curLoss = ((curSent - curReceived) * 100f) / curSent;
+                                        runOnUiThread(() -> {
+                                            liveCells[1].setText(String.valueOf(curSent));
+                                            liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
+                                            liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
+                                            liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
+                                            liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
+                                            liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
+                                            liveCells[7].setText("ALIVE");
+                                        });
+                                        appendDeepLog(ip + " seq=" + curSent + "/" + totalPkts + " lost");
+                                    }
+                                }
+                            } catch (Exception ignored) {}
                         }
                     }
                 }
-                p.waitFor();
-                p.destroy();
-            } catch (Exception e) {
-                rtt = -1f;
             }
-
-            if (rtt >= 0) {
-                rttList.add(rtt);
-                consecutiveLost = 0;
-            } else {
-                lost++;
-                consecutiveLost++;
-                if (consecutiveLost >= FAST_FAIL_THRESHOLD) break;
-            }
-
-            // به‌روزرسانی UI فقط هر ۵۰ پکت یا پکت آخر
-            if (isDeepLive && liveRow != null && (i % 50 == 0 || i == totalPkts)) {
-                int curReceived = rttList.size();
-                float curAvg = avg(rttList);
-                float curMin = min(rttList);
-                float curMax = max(rttList);
-                float curJitter = jitter(rttList);
-                float curLoss = ((i - curReceived) * 100f) / i;
-                final int seq = i;
-                final float finalRtt = rtt;
-                runOnUiThread(() -> {
-                    liveCells[1].setText(String.valueOf(seq));
-                    liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
-                    liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
-                    liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
-                    liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
-                    liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
-                    liveCells[7].setText(curReceived > 0 ? "ALIVE" : "DEAD");
-                });
-                appendDeepLog(ip + " seq=" + seq + "/" + totalPkts + " rtt=" + (finalRtt >= 0 ? finalRtt + "ms" : "lost"));
-            }
-
-            if (i < totalPkts && !isCancelled && consecutiveLost < FAST_FAIL_THRESHOLD) {
-                try { Thread.sleep(10); } catch (InterruptedException e) { break; }
-            }
+            process.waitFor();
+            if (sent == 0) sent = totalPkts;
+            lost = sent - received;
+            if (lost < 0) lost = 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            lost = totalPkts;
         }
 
-        float lossPct = attempted == 0 ? 100f : (lost * 100f) / attempted;
-        boolean alive = rttList.size() > 0 && lossPct < 100f;
-        return new ScanResult(ip, avg(rttList), min(rttList), max(rttList), jitter(rttList), lossPct, alive, attempted);
+        float lossPct = sent == 0 ? 100f : (lost * 100f) / sent;
+        boolean alive = received > 0 && lossPct < 100f;
+        float avg = avg(rttList);
+        float min = min(rttList);
+        float max = max(rttList);
+        float jit = jitter(rttList);
+        return new ScanResult(ip, avg, min, max, jit, lossPct, alive, sent);
     }
 
     private float avg(List<Float> list) {
