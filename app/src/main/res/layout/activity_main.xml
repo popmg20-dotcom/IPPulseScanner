@@ -2,79 +2,137 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:orientation="vertical" android:background="#09090B"
-    android:padding="12dp" android:layoutDirection="ltr">
+    android:paddingLeft="12dp" android:paddingRight="12dp"
+    android:paddingBottom="12dp" android:paddingTop="28dp"
+    android:fitsSystemWindows="true" android:layoutDirection="ltr">
 
     <!-- TAB BUTTONS -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="12dp">
-        <Button android:id="@+id/btnTab1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="45dp" android:text="Range Scan" android:textColor="#FFFFFF" android:textStyle="bold" android:backgroundTint="#2563EB" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="12dp" android:layout_marginTop="8dp">
+        <Button android:id="@+id/btnTab1" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="45dp" android:text="Range Scan" android:textColor="#FFFFFF"
+            android:textStyle="bold" android:backgroundTint="#2563EB" />
         <Space android:layout_width="8dp" android:layout_height="wrap_content" />
-        <Button android:id="@+id/btnTab2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="45dp" android:text="Deep Test (Top 5)" android:textColor="#94A3B8" android:textStyle="bold" android:backgroundTint="#1E293B" />
+        <Button android:id="@+id/btnTab2" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="45dp" android:text="Deep Test (Top 5)" android:textColor="#94A3B8"
+            android:textStyle="bold" android:backgroundTint="#1E293B" />
     </LinearLayout>
 
-    <!-- ================= TAB 1: RANGE SCAN ================= -->
-    <ScrollView android:id="@+id/tab1Container" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-            <EditText android:id="@+id/ipInput" android:layout_width="match_parent" android:layout_height="75dp"
-                android:text="3.122.114.0 - 3.122.114.255" android:textColor="#FFFFFF"
-                android:textColorHint="#64748B" android:background="#18181B" android:padding="10dp"
+    <!-- TAB 1: RANGE SCAN -->
+    <ScrollView android:id="@+id/tab1Container" android:layout_width="match_parent"
+        android:layout_height="match_parent" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <EditText android:id="@+id/ipInput" android:layout_width="match_parent"
+                android:layout_height="75dp" android:text="3.122.114.0 - 3.122.114.255"
+                android:textColor="#FFFFFF" android:textColorHint="#64748B"
+                android:background="#18181B" android:padding="10dp"
                 android:gravity="top|left" android:textSize="14sp" android:layout_marginBottom="12dp"/>
 
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="12dp">
-                <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Packets" android:textColor="#38BDF8" android:textSize="12sp"/>
-                    <EditText android:id="@+id/inputPackets" android:layout_width="match_parent" android:layout_height="45dp" android:text="100" android:inputType="number" android:textColor="#FFFFFF" android:gravity="center" android:background="#18181B" android:layout_marginTop="4dp"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginBottom="12dp">
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Packets" android:textColor="#38BDF8" android:textSize="12sp"/>
+                    <EditText android:id="@+id/inputPackets" android:layout_width="match_parent"
+                        android:layout_height="45dp" android:text="100" android:inputType="number"
+                        android:textColor="#FFFFFF" android:gravity="center"
+                        android:background="#18181B" android:layout_marginTop="4dp"/>
                 </LinearLayout>
                 <Space android:layout_width="8dp" android:layout_height="wrap_content"/>
-                <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Interval (ms)" android:textColor="#38BDF8" android:textSize="12sp"/>
-                    <EditText android:id="@+id/inputInterval" android:layout_width="match_parent" android:layout_height="45dp" android:text="1" android:inputType="number" android:textColor="#FFFFFF" android:gravity="center" android:background="#18181B" android:layout_marginTop="4dp"/>
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Interval (ms)" android:textColor="#38BDF8" android:textSize="12sp"/>
+                    <EditText android:id="@+id/inputInterval" android:layout_width="match_parent"
+                        android:layout_height="45dp" android:text="1" android:inputType="number"
+                        android:textColor="#FFFFFF" android:gravity="center"
+                        android:background="#18181B" android:layout_marginTop="4dp"/>
                 </LinearLayout>
                 <Space android:layout_width="8dp" android:layout_height="wrap_content"/>
-                <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Timeout (ms)" android:textColor="#38BDF8" android:textSize="12sp"/>
-                    <EditText android:id="@+id/inputTimeout" android:layout_width="match_parent" android:layout_height="45dp" android:text="1000" android:inputType="number" android:textColor="#FFFFFF" android:gravity="center" android:background="#18181B" android:layout_marginTop="4dp"/>
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Timeout (ms)" android:textColor="#38BDF8" android:textSize="12sp"/>
+                    <EditText android:id="@+id/inputTimeout" android:layout_width="match_parent"
+                        android:layout_height="45dp" android:text="1000" android:inputType="number"
+                        android:textColor="#FFFFFF" android:gravity="center"
+                        android:background="#18181B" android:layout_marginTop="4dp"/>
                 </LinearLayout>
             </LinearLayout>
 
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="12dp">
-                <Button android:id="@+id/btnStart1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="48dp" android:text="START SCAN" android:textColor="#FFFFFF" android:textStyle="bold" android:backgroundTint="#059669"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginBottom="12dp">
+                <Button android:id="@+id/btnStart1" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="48dp" android:text="START SCAN" android:textColor="#FFFFFF"
+                    android:textStyle="bold" android:backgroundTint="#059669"/>
                 <Space android:layout_width="12dp" android:layout_height="wrap_content"/>
-                <Button android:id="@+id/btnStop1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="48dp" android:text="STOP" android:textColor="#FFFFFF" android:textStyle="bold" android:backgroundTint="#DC2626"/>
+                <Button android:id="@+id/btnStop1" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="48dp" android:text="STOP" android:textColor="#FFFFFF"
+                    android:textStyle="bold" android:backgroundTint="#DC2626"/>
             </LinearLayout>
 
-            <TextView android:id="@+id/status1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Ready for Range Scan" android:textColor="#94A3B8" android:gravity="center" android:textSize="12sp" android:layout_marginBottom="8dp"/>
+            <TextView android:id="@+id/status1" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="Ready for Range Scan"
+                android:textColor="#94A3B8" android:gravity="center" android:textSize="12sp"
+                android:layout_marginBottom="8dp"/>
 
-            <ScrollView android:id="@+id/logScroll1" android:layout_width="match_parent" android:layout_height="160dp" android:background="#000000" android:padding="8dp" android:layout_marginBottom="12dp">
-                <LinearLayout android:id="@+id/logLayout1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
+            <ScrollView android:id="@+id/logScroll1" android:layout_width="match_parent"
+                android:layout_height="160dp" android:background="#000000" android:padding="8dp"
+                android:layout_marginBottom="12dp">
+                <LinearLayout android:id="@+id/logLayout1" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"/>
             </ScrollView>
 
             <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
-                <TableLayout android:id="@+id/table1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:stretchColumns="*"/>
+                <TableLayout android:id="@+id/table1" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:stretchColumns="*"/>
             </HorizontalScrollView>
         </LinearLayout>
     </ScrollView>
 
-    <!-- ================= TAB 2: DEEP TEST ================= -->
-    <ScrollView android:id="@+id/tab2Container" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Select an IP to start Live Deep Test:" android:textColor="#FBBF24" android:textStyle="bold" android:gravity="center" android:layout_marginBottom="12dp"/>
+    <!-- TAB 2: DEEP TEST -->
+    <ScrollView android:id="@+id/tab2Container" android:layout_width="match_parent"
+        android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Select an IP to start Live Deep Test:" android:textColor="#FBBF24"
+                android:textStyle="bold" android:gravity="center" android:layout_marginBottom="12dp"/>
             
-            <LinearLayout android:id="@+id/top5Container" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="12dp">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Run Range Scan first to populate Top 5." android:textColor="#64748B" android:gravity="center"/>
+            <LinearLayout android:id="@+id/top5Container" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical"
+                android:layout_marginBottom="12dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Run Range Scan first to populate Top 5." android:textColor="#64748B"
+                    android:gravity="center"/>
             </LinearLayout>
 
-            <Button android:id="@+id/btnStop2" android:layout_width="match_parent" android:layout_height="48dp" android:text="STOP DEEP TEST" android:textColor="#FFFFFF" android:textStyle="bold" android:backgroundTint="#DC2626" android:layout_marginBottom="12dp"/>
+            <Button android:id="@+id/btnStop2" android:layout_width="match_parent"
+                android:layout_height="48dp" android:text="STOP DEEP TEST" android:textColor="#FFFFFF"
+                android:textStyle="bold" android:backgroundTint="#DC2626"
+                android:layout_marginBottom="12dp"/>
             
-            <TextView android:id="@+id/status2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Waiting..." android:textColor="#38BDF8" android:gravity="center" android:textSize="12sp" android:layout_marginBottom="8dp"/>
+            <TextView android:id="@+id/status2" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="Waiting..." android:textColor="#38BDF8"
+                android:gravity="center" android:textSize="12sp" android:layout_marginBottom="8dp"/>
 
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🔴 Live Log:" android:textColor="#FFFFFF" android:layout_marginBottom="4dp"/>
-            <ScrollView android:id="@+id/logScroll2" android:layout_width="match_parent" android:layout_height="140dp" android:background="#000000" android:padding="8dp" android:layout_marginBottom="12dp">
-                <LinearLayout android:id="@+id/logLayout2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="🔴 Live Log:" android:textColor="#FFFFFF" android:layout_marginBottom="4dp"/>
+            <ScrollView android:id="@+id/logScroll2" android:layout_width="match_parent"
+                android:layout_height="140dp" android:background="#000000" android:padding="8dp"
+                android:layout_marginBottom="12dp">
+                <LinearLayout android:id="@+id/logLayout2" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"/>
             </ScrollView>
 
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="📊 Live Table (Gaming Parameters):" android:textColor="#FFFFFF" android:layout_marginBottom="4dp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="📊 Live Table (Gaming Parameters):" android:textColor="#FFFFFF"
+                android:layout_marginBottom="4dp"/>
             <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
-                <TableLayout android:id="@+id/table2Live" android:layout_width="wrap_content" android:layout_height="wrap_content" android:stretchColumns="*"/>
+                <TableLayout android:id="@+id/table2Live" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:stretchColumns="*"/>
             </HorizontalScrollView>
         </LinearLayout>
     </ScrollView>
