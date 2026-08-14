@@ -1,63 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#0F172A"
-    android:orientation="vertical">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:orientation="horizontal">
-        <Button android:id="@+id/tab1Btn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:text="RANGE SCAN" android:backgroundTint="#2563EB"/>
-        <Button android:id="@+id/tab2Btn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:text="GAMING DEEP TEST" android:backgroundTint="#1E293B"/>
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="#0F172A">
+    
+    <!-- Tabs -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <Button android:id="@+id/btnTab1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="اسکن رنج (تب 1)" android:backgroundTint="#334155" android:textColor="#FFF"/>
+        <Button android:id="@+id/btnTab2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="تست تخصصی (تب 2)" android:backgroundTint="#1E293B" android:textColor="#FFF"/>
     </LinearLayout>
 
-    <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
-        
-        <!-- تب اول: اسکن رنج -->
-        <ScrollView android:id="@+id/tab1Container" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="12dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                <EditText android:id="@+id/ipInput" android:layout_width="match_parent" android:layout_height="60dp" android:background="#1E293B" android:textColor="#FFFFFF" android:text="3.122.114.0 - 3.122.114.255" android:hint="IP Range" android:padding="8dp" android:layout_marginBottom="6dp" android:textSize="12sp"/>
-                
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="6dp">
-                    <EditText android:id="@+id/packetInput1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="50" android:hint="Packets" android:inputType="number" android:textColor="#FFFFFF" android:gravity="center" android:background="#1E293B" android:padding="6dp"/>
-                    <EditText android:id="@+id/intervalInput1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="1" android:hint="Interval" android:inputType="number" android:textColor="#FFFFFF" android:gravity="center" android:background="#1E293B" android:padding="6dp" android:layout_marginLeft="4dp" android:layout_marginRight="4dp"/>
-                    <EditText android:id="@+id/timeoutInput1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="1000" android:hint="Timeout" android:inputType="number" android:textColor="#FFFFFF" android:gravity="center" android:background="#1E293B" android:padding="6dp"/>
-                </LinearLayout>
-
-                <Button android:id="@+id/btnStart1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="START RANGE SCAN" android:backgroundTint="#059669"/>
-                <TextView android:id="@+id/statusText1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#94A3B8" android:text="آماده..." android:layout_marginTop="4dp"/>
-                
-                <ScrollView android:id="@+id/logScrollView" android:layout_width="match_parent" android:layout_height="100dp" android:background="#1E293B" android:padding="4dp" android:layout_marginTop="6dp">
-                    <LinearLayout android:id="@+id/logLayout" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
-                </ScrollView>
-
-                <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp">
-                    <TableLayout android:id="@+id/resultTable" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                </HorizontalScrollView>
+    <!-- Tab 1: Range Scan -->
+    <ScrollView android:id="@+id/tab1" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+            <EditText android:id="@+id/ipInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="IP یا رنج (مثال: 8.8.8.1-10)" android:textColor="#FFF" android:textColorHint="#94A3B8" android:backgroundTint="#38BDF8"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+                <EditText android:id="@+id/t1Packets" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="پکت (50)" android:inputType="number" android:textColor="#FFF" android:textColorHint="#94A3B8"/>
+                <EditText android:id="@+id/t1Interval" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="فاصله ms (1)" android:inputType="number" android:textColor="#FFF" android:textColorHint="#94A3B8"/>
+                <EditText android:id="@+id/t1Timeout" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="تایم‌اوت ms (1000)" android:inputType="number" android:textColor="#FFF" android:textColorHint="#94A3B8"/>
             </LinearLayout>
-        </ScrollView>
+            <Button android:id="@+id/btnStart1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="شروع اسکن رنج" android:backgroundTint="#0ea5e9" android:textColor="#FFF" android:layout_marginTop="8dp"/>
+            <TextView android:id="@+id/t1Status" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#34D399" android:layout_marginTop="8dp" android:textStyle="bold" android:gravity="center"/>
+            
+            <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp">
+                <TableLayout android:id="@+id/t1Table" android:layout_width="wrap_content" android:layout_height="wrap_content" android:stretchColumns="*"/>
+            </HorizontalScrollView>
+        </LinearLayout>
+    </ScrollView>
 
-        <!-- تب دوم: تست تخصصی گیمینگ -->
-        <ScrollView android:id="@+id/tab2Container" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="12dp" android:visibility="gone">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                <TextView android:text="🏆 تست تخصصی ۵ آی‌پی برتر انتقال یافته" android:textColor="#FBBF24" android:textSize="13sp" android:textStyle="bold" android:layout_marginBottom="6dp"/>
-                
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="6dp">
-                    <EditText android:id="@+id/packetInput2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="300" android:hint="Packets" android:inputType="number" android:textColor="#FFFFFF" android:gravity="center" android:background="#1E293B" android:padding="6dp"/>
-                    <EditText android:id="@+id/intervalInput2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="1" android:hint="Interval" android:inputType="number" android:textColor="#FFFFFF" android:gravity="center" android:background="#1E293B" android:padding="6dp" android:layout_marginLeft="4dp" android:layout_marginRight="4dp"/>
-                    <EditText android:id="@+id/timeoutInput2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="1000" android:hint="Timeout" android:inputType="number" android:textColor="#FFFFFF" android:gravity="center" android:background="#1E293B" android:padding="6dp"/>
-                </LinearLayout>
-
-                <Button android:id="@+id/btnStart2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="START DEEP GAMING TEST" android:backgroundTint="#D97706"/>
-                <TextView android:id="@+id/statusText2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#94A3B8" android:text="منتظر اتمام اسکن رنج..." android:layout_marginTop="4dp"/>
-
-                <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp">
-                    <TableLayout android:id="@+id/top5Table" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                </HorizontalScrollView>
+    <!-- Tab 2: Deep Test -->
+    <ScrollView android:id="@+id/tab2" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="تنظیمات تست تخصصی ۵ آی‌پی برتر" android:textColor="#FBBF24" android:textStyle="bold" android:gravity="center" android:layout_marginBottom="8dp"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <EditText android:id="@+id/t2Packets" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="پکت (300)" android:inputType="number" android:textColor="#FFF" android:textColorHint="#94A3B8"/>
+                <EditText android:id="@+id/t2Interval" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="فاصله ms (1)" android:inputType="number" android:textColor="#FFF" android:textColorHint="#94A3B8"/>
+                <EditText android:id="@+id/t2Timeout" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="تایم‌اوت ms (500)" android:inputType="number" android:textColor="#FFF" android:textColorHint="#94A3B8"/>
             </LinearLayout>
-        </ScrollView>
-
-    </FrameLayout>
+            <Button android:id="@+id/btnStart2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="شروع تست تخصصی (دقیق)" android:backgroundTint="#F59E0B" android:textColor="#FFF" android:layout_marginTop="8dp"/>
+            <TextView android:id="@+id/t2Status" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#34D399" android:layout_marginTop="8dp" android:textStyle="bold" android:gravity="center"/>
+            
+            <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp">
+                <TableLayout android:id="@+id/t2Table" android:layout_width="wrap_content" android:layout_height="wrap_content" android:stretchColumns="*"/>
+            </HorizontalScrollView>
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>
