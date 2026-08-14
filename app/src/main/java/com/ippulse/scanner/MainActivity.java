@@ -35,6 +35,7 @@ public class MainActivity extends Activity {
     private static final int REQUEST_VPN = 1001;
     private static final int REQUEST_NOTIFICATION = 1002;
 
+    // Tab 1
     private View tab1Container, tab2Container, tab3Container;
     private Button btnTab1, btnTab2, btnTab3, btnStart1, btnStop1, btnHistory, btnClearHistory;
     private EditText ipInput, inputPackets, inputInterval, inputTimeout;
@@ -44,14 +45,16 @@ public class MainActivity extends Activity {
     private TableLayout table1;
     private Spinner spinnerSort;
 
+    // Tab 2
     private LinearLayout top5Container, logLayout2;
     private ScrollView logScroll2;
     private TextView status2;
     private TableLayout table2Live;
     private Button btnStop2;
 
-    private EditText vpnDns, vpnMtu, vpnHosts;
-    private Button btnStartVpn, btnStopVpn;
+    // Tab 3
+    private EditText vpnDns, vpnMtu, vpnHosts, vpnMasterIp;
+    private Button btnStartVpn, btnStopVpn, btnApplyIp;
     private TextView vpnStatus;
 
     private ExecutorService executor;
@@ -64,11 +67,19 @@ public class MainActivity extends Activity {
     private String[] sortOptions = {"Default", "Loss", "Jitter", "Average (Avg)", "Min (Low Ping)", "Max (High Ping)"};
     private int currentSortIndex = 0;
 
+    // لیست دامنه‌های پیش‌فرض برای Master IP
+    private String[] defaultDomains = {
+        "west-tdm.codmwest.com",
+        "west-cschannel.codm.activision.com",
+        "gcloud.codm.activision.com"
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Tab 1
         tab1Container = findViewById(R.id.tab1Container);
         btnTab1 = findViewById(R.id.btnTab1);
         btnTab2 = findViewById(R.id.btnTab2);
@@ -85,6 +96,7 @@ public class MainActivity extends Activity {
         table1 = findViewById(R.id.table1);
         spinnerSort = findViewById(R.id.spinnerSort);
 
+        // Tab 2
         tab2Container = findViewById(R.id.tab2Container);
         top5Container = findViewById(R.id.top5Container);
         status2 = findViewById(R.id.status2);
@@ -93,12 +105,15 @@ public class MainActivity extends Activity {
         table2Live = findViewById(R.id.table2Live);
         btnStop2 = findViewById(R.id.btnStop2);
 
+        // Tab 3
         tab3Container = findViewById(R.id.tab3Container);
         vpnDns = findViewById(R.id.vpnDns);
         vpnMtu = findViewById(R.id.vpnMtu);
         vpnHosts = findViewById(R.id.vpnHosts);
+        vpnMasterIp = findViewById(R.id.vpnMasterIp);
         btnStartVpn = findViewById(R.id.btnStartVpn);
         btnStopVpn = findViewById(R.id.btnStopVpn);
+        btnApplyIp = findViewById(R.id.btnApplyIp);
         vpnStatus = findViewById(R.id.vpnStatus);
 
         btnHistory = findViewById(R.id.btnHistory);
@@ -106,6 +121,7 @@ public class MainActivity extends Activity {
 
         loadVpnSettings();
 
+        // Setup Spinner
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, sortOptions);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerSort.setAdapter(adapter);
@@ -121,17 +137,22 @@ public class MainActivity extends Activity {
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
+        // Tab switching
         btnTab1.setOnClickListener(v -> switchTab(1));
         btnTab2.setOnClickListener(v -> switchTab(2));
         btnTab3.setOnClickListener(v -> switchTab(3));
 
+        // Scan/Test
         btnStart1.setOnClickListener(v -> startRangeScan());
         btnStop1.setOnClickListener(v -> stopRangeScan());
         btnStop2.setOnClickListener(v -> stopDeepTest());
 
+        // VPN
         btnStartVpn.setOnClickListener(v -> startVpn());
         btnStopVpn.setOnClickListener(v -> stopVpn());
+        btnApplyIp.setOnClickListener(v -> applyMasterIp());
 
+        // History
         btnHistory.setOnClickListener(v -> showHistoryDialog());
         btnClearHistory.setOnClickListener(v -> clearHistory());
     }
@@ -153,6 +174,14 @@ public class MainActivity extends Activity {
         vpnDns.setText(prefs.getString("dns", "8.8.8.8"));
         vpnMtu.setText(String.valueOf(prefs.getInt("mtu", 1400)));
         vpnHosts.setText(prefs.getString("hosts", ""));
+        if (vpnHosts.getText().toString().trim().isEmpty()) {
+            // مقدار پیش‌فرض: فقط دامنه‌ها بدون IP
+            StringBuilder sb = new StringBuilder();
+            for (String domain : defaultDomains) {
+                sb.append(domain).append("\n");
+            }
+            vpnHosts.setText(sb.toString().trim());
+        }
     }
 
     private void saveVpnSettings() {
@@ -164,10 +193,27 @@ public class MainActivity extends Activity {
             .apply();
     }
 
+    private void applyMasterIp() {
+        String masterIp = vpnMasterIp.getText().toString().trim();
+        if (masterIp.isEmpty()) {
+            Toast.makeText(this, "لطفاً یک IP وارد کنید", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        // ساده‌ترین حالت: اعمال همان IP به همه دامنه‌های پیش‌فرض
+        StringBuilder sb = new StringBuilder();
+        for (String domain : defaultDomains) {
+            sb.append(masterIp).append(" ").append(domain).append("\n");
+        }
+        vpnHosts.setText(sb.toString().trim());
+        saveVpnSettings();
+        Toast.makeText(this, "IP به همه دامنه‌ها اعمال شد", Toast.LENGTH_SHORT).show();
+    }
+
     private void startVpn() {
         saveVpnSettings();
         String dns = vpnDns.getText().toString().trim();
         int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
+        HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
 
         // اول مجوز اعلان (برای اندروید ۱۳ به بالا)
         if (Build.VERSION.SDK_INT >= 33) {
@@ -177,14 +223,13 @@ public class MainActivity extends Activity {
             }
         }
 
-        // بعد مجوز VPN
         Intent intent = VpnService.prepare(this);
         if (intent != null) {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
-            GamingVpnService.start(this, dns, mtu);
+            GamingVpnService.start(this, dns, mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
-            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show(); // one toast
+            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -199,7 +244,6 @@ public class MainActivity extends Activity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_NOTIFICATION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // مجوز اعلان گرفته شد، حالا VPN را شروع کن
                 startVpn();
             } else {
                 Toast.makeText(this, "Notification permission required for VPN", Toast.LENGTH_SHORT).show();
@@ -213,19 +257,39 @@ public class MainActivity extends Activity {
         if (requestCode == REQUEST_VPN && resultCode == RESULT_OK) {
             String dns = vpnDns.getText().toString().trim();
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
-            GamingVpnService.start(this, dns, mtu);
+            HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
+            GamingVpnService.start(this, dns, mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
-            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show(); // one toast
+            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         } else if (requestCode == REQUEST_VPN) {
             Toast.makeText(this, "VPN permission denied", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private HashMap<String, String> parseHosts(String text) {
+        HashMap<String, String> map = new HashMap<>();
+        if (text == null || text.trim().isEmpty()) return map;
+        String[] lines = text.split("\\n");
+        for (String line : lines) {
+            line = line.trim();
+            if (line.isEmpty() || line.startsWith("#")) continue;
+            String[] parts = line.split("\\s+");
+            if (parts.length >= 2) {
+                String ip = parts[0];
+                String domain = parts[1].toLowerCase();
+                map.put(domain, ip);
+            } else if (parts.length == 1) {
+                // فقط دامنه بدون IP؛ صرف نظر کن
+            }
+        }
+        return map;
     }
 
     private int parseIntSafe(String s, int defaultVal) {
         try { return Integer.parseInt(s); } catch (Exception e) { return defaultVal; }
     }
 
-    // ================= Existing scan/test methods (unchanged) =================
+    // ================= بقیه متدهای اسکن/تست عیناً حفظ شده‌اند =================
     private void stopRangeScan() {
         isCancelled = true;
         if (executor != null) executor.shutdownNow();

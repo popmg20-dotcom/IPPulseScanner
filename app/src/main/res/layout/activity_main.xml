@@ -22,10 +22,9 @@
             android:textStyle="bold" android:backgroundTint="#1E293B" />
     </LinearLayout>
 
-    <!-- TAB 1: RANGE SCAN -->
+    <!-- TAB 1: RANGE SCAN (بدون تغییر) -->
     <ScrollView android:id="@+id/tab1Container" android:layout_width="match_parent"
         android:layout_height="match_parent" android:fillViewport="true">
-        <!-- Keep same content as before -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="vertical">
             <EditText android:id="@+id/ipInput" android:layout_width="match_parent"
@@ -116,7 +115,7 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- TAB 2: DEEP TEST -->
+    <!-- TAB 2: DEEP TEST (بدون تغییر) -->
     <ScrollView android:id="@+id/tab2Container" android:layout_width="match_parent"
         android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -156,7 +155,7 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- TAB 3: NETWORK LAB -->
+    <!-- TAB 3: NETWORK LAB (با Master IP) -->
     <ScrollView android:id="@+id/tab3Container" android:layout_width="match_parent"
         android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -180,13 +179,29 @@
                 android:padding="8dp" android:layout_marginBottom="12dp"/>
 
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Master IP (اعمال به همه دامنه‌ها):" android:textColor="#38BDF8" android:textSize="12sp"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginBottom="12dp">
+                <EditText android:id="@+id/vpnMasterIp" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="45dp" android:hint="مثلا 109.61.42.44"
+                    android:textColor="#FFFFFF" android:textColorHint="#64748B"
+                    android:background="#18181B" android:padding="8dp"
+                    android:inputType="text" />
+                <Button android:id="@+id/btnApplyIp" android:layout_width="wrap_content"
+                    android:layout_height="45dp" android:text="Apply to All"
+                    android:textColor="#FFFFFF" android:textStyle="bold"
+                    android:backgroundTint="#2563EB" android:layout_marginStart="8dp"/>
+            </LinearLayout>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="Hosts Mapping (IP DOMAIN):" android:textColor="#38BDF8" android:textSize="12sp"/>
             <EditText android:id="@+id/vpnHosts" android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:hint="109.61.42.44 west-tdm.codmwest.com\n109.61.42.44 west-cschannel.codm.activision.com"
+                android:layout_height="120dp"
+                android:hint="109.61.42.44 west-tdm.codmwest.com\n109.61.42.44 west-cschannel.codm.activision.com\n109.61.42.44 gcloud.codm.activision.com"
                 android:textColor="#FFFFFF" android:textColorHint="#64748B"
                 android:background="#18181B" android:padding="8dp"
-                android:gravity="top|left" android:textSize="12sp" android:layout_marginBottom="12dp"/>
+                android:gravity="top|left" android:textSize="12sp" android:layout_marginBottom="12dp"
+                android:inputType="textMultiLine" />
 
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:layout_marginBottom="12dp">
