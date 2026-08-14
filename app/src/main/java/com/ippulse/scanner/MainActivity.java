@@ -28,7 +28,6 @@ public class MainActivity extends Activity {
     private static final String PREFS_NAME = "ippulse_history";
     private static final String HISTORY_KEY = "history";
 
-    // Tab 1
     private View tab1Container, tab2Container;
     private Button btnTab1, btnTab2, btnStart1, btnStop1, btnHistory, btnClearHistory;
     private EditText ipInput, inputPackets, inputInterval, inputTimeout;
@@ -37,7 +36,6 @@ public class MainActivity extends Activity {
     private ScrollView logScroll1;
     private TableLayout table1;
 
-    // Tab 2
     private LinearLayout top5Container, logLayout2;
     private ScrollView logScroll2;
     private TextView status2;
@@ -179,8 +177,14 @@ public class MainActivity extends Activity {
         rangeScanFinished = true;
         btnStart1.setEnabled(true);
 
-        Collections.sort(allResults, (a, b) -> {
-            // معیار: اول میانگین (کمتر بهتر)، بعد جیتر، بعد لاس، بعد مکس
+        // ❗ فقط IPهای زنده را نگه می‌داریم
+        List<ScanResult> aliveResults = new ArrayList<>();
+        for (ScanResult res : allResults) {
+            if (res.alive) aliveResults.add(res);
+        }
+
+        // مرتب‌سازی: میانگین ← جیتر ← لاس ← مکس
+        Collections.sort(aliveResults, (a, b) -> {
             if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
             if (Math.abs(a.jitter - b.jitter) > 0.1f) return Float.compare(a.jitter, b.jitter);
             if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
@@ -191,16 +195,18 @@ public class MainActivity extends Activity {
         addTableHeader(table1, false);
         top5IPs.clear();
 
-        for (ScanResult res : allResults) {
-            if (res.alive && top5IPs.size() < 5) top5IPs.add(res.ip);
+        // ۵ IP اول طلایی
+        for (int i = 0; i < Math.min(5, aliveResults.size()); i++) {
+            top5IPs.add(aliveResults.get(i).ip);
         }
 
         int rank = 1;
-        for (ScanResult res : allResults) {
+        for (ScanResult res : aliveResults) {
             boolean isTop5 = top5IPs.contains(res.ip);
             addTableRow(table1, res, rank, false, isTop5);
             rank++;
         }
+
         populateTab2();
         status1.setText("Scan complete. Top 5 transferred to Tab 2.");
     }
@@ -253,7 +259,6 @@ public class MainActivity extends Activity {
         deepTestThread.start();
     }
 
-    // ✅ موتور اصلی (per-packet) با fast-fail
     private ScanResult pingLogic(String ip, int totalPkts, int timeo, boolean isDeepLive, TableLayout liveTable) {
         List<Float> rttList = new ArrayList<>();
         int lost = 0;
@@ -325,9 +330,7 @@ public class MainActivity extends Activity {
             } else {
                 lost++;
                 consecutiveLost++;
-                if (consecutiveLost >= FAST_FAIL_THRESHOLD) {
-                    break; // قطع زودهنگام برای IP مرده
-                }
+                if (consecutiveLost >= FAST_FAIL_THRESHOLD) break;
             }
 
             if (isDeepLive && liveRow != null) {
@@ -352,21 +355,13 @@ public class MainActivity extends Activity {
             }
 
             if (i < totalPkts && !isCancelled && consecutiveLost < FAST_FAIL_THRESHOLD) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    break;
-                }
+                try { Thread.sleep(10); } catch (InterruptedException e) { break; }
             }
         }
 
         float lossPct = attempted == 0 ? 100f : (lost * 100f) / attempted;
         boolean alive = rttList.size() > 0 && lossPct < 100f;
-        float avg = avg(rttList);
-        float min = min(rttList);
-        float max = max(rttList);
-        float jit = jitter(rttList);
-        return new ScanResult(ip, avg, min, max, jit, lossPct, alive, attempted);
+        return new ScanResult(ip, avg(rttList), min(rttList), max(rttList), jitter(rttList), lossPct, alive, attempted);
     }
 
     private float avg(List<Float> list) {
@@ -393,9 +388,7 @@ public class MainActivity extends Activity {
     private float jitter(List<Float> list) {
         if (list == null || list.size() < 2) return 0;
         float sum = 0;
-        for (int i = 1; i < list.size(); i++) {
-            sum += Math.abs(list.get(i) - list.get(i - 1));
-        }
+        for (int i = 1; i < list.size(); i++) sum += Math.abs(list.get(i) - list.get(i - 1));
         return sum / (list.size() - 1);
     }
 
@@ -488,14 +481,17 @@ public class MainActivity extends Activity {
     }
 
     private String getCountryFlag(String ip) {
-        HttpURLConnection conn = null;
-        try {
-            String code = queryCountryCode("http://ip-api.com/json/" + ip + "?fields=countryCode");
-            if (!code.isEmpty()) return countryCodeToFlag(code);
-            code = queryCountryCode("https://ipinfo.io/" + ip + "/json");
-            if (!code.isEmpty()) return countryCodeToFlag(code);
-        } catch (Exception e) {
-            // ignore
+        String[] urls = {
+            "http://ip-api.com/json/" + ip + "?fields=countryCode",
+            "http://ipwho.is/" + ip,
+            "https://ipinfo.io/" + ip + "/json"
+        };
+
+        for (String urlStr : urls) {
+            try {
+                String code = queryCountryCode(urlStr);
+                if (!code.isEmpty()) return countryCodeToFlag(code);
+            } catch (Exception ignored) {}
         }
         return "🌐";
     }
@@ -511,8 +507,50 @@ public class MainActivity extends Activity {
         reader.close();
         conn.disconnect();
         JSONObject json = new JSONObject(sb.toString());
+
+        // ip-api.com و ipwho.is از countryCode یا country_code استفاده می‌کنند
         String code = json.optString("countryCode", "");
+        if (code.isEmpty()) code = json.optString("country_code", "");
         if (code.isEmpty()) code = json.optString("country", "");
+
+        // ipinfo.io گاهی "country" اسم کامل است، نه کد
+        if (code.length() != 2) {
+            // تبدیل نام کشور به کد در صورت امکان (فقط چند مورد رایج)
+            String countryName = code.toLowerCase();
+            if (countryName.contains("united arab")) return "AE";
+            if (countryName.contains("germany")) return "DE";
+            if (countryName.contains("iran")) return "IR";
+            if (countryName.contains("netherlands")) return "NL";
+            if (countryName.contains("france")) return "FR";
+            if (countryName.contains("singapore")) return "SG";
+            if (countryName.contains("united states")) return "US";
+            if (countryName.contains("united kingdom")) return "GB";
+            if (countryName.contains("russia")) return "RU";
+            if (countryName.contains("china")) return "CN";
+            if (countryName.contains("japan")) return "JP";
+            if (countryName.contains("south korea")) return "KR";
+            if (countryName.contains("taiwan")) return "TW";
+            if (countryName.contains("hong kong")) return "HK";
+            if (countryName.contains("india")) return "IN";
+            if (countryName.contains("brazil")) return "BR";
+            if (countryName.contains("canada")) return "CA";
+            if (countryName.contains("australia")) return "AU";
+            if (countryName.contains("italy")) return "IT";
+            if (countryName.contains("spain")) return "ES";
+            if (countryName.contains("portugal")) return "PT";
+            if (countryName.contains("sweden")) return "SE";
+            if (countryName.contains("norway")) return "NO";
+            if (countryName.contains("denmark")) return "DK";
+            if (countryName.contains("finland")) return "FI";
+            if (countryName.contains("poland")) return "PL";
+            if (countryName.contains("turkey")) return "TR";
+            if (countryName.contains("saudi")) return "SA";
+            if (countryName.contains("qatar")) return "QA";
+            if (countryName.contains("kuwait")) return "KW";
+            if (countryName.contains("bahrain")) return "BH";
+            if (countryName.contains("oman")) return "OM";
+            return "";
+        }
         return code;
     }
 
@@ -525,11 +563,8 @@ public class MainActivity extends Activity {
     }
 
     private int parseNum(EditText editText, int defaultVal) {
-        try {
-            return Integer.parseInt(editText.getText().toString().trim());
-        } catch (Exception e) {
-            return defaultVal;
-        }
+        try { return Integer.parseInt(editText.getText().toString().trim()); }
+        catch (Exception e) { return defaultVal; }
     }
 
     private List<String> parseIPList(String query) {
@@ -550,11 +585,7 @@ public class MainActivity extends Activity {
                 String[] parts = q.split("-");
                 long start = ipToLong(parts[0].trim());
                 long end = ipToLong(parts[1].trim());
-                if (start > end) {
-                    long tmp = start;
-                    start = end;
-                    end = tmp;
-                }
+                if (start > end) { long tmp = start; start = end; end = tmp; }
                 for (long i = start; i <= end; i++) list.add(longToIp(i));
             } else {
                 list.add(q);
