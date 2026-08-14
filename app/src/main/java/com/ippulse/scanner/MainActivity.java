@@ -5,9 +5,11 @@ import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.VpnService;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -27,9 +29,10 @@ public class MainActivity extends Activity {
     private static final int FAST_FAIL_THRESHOLD = 3;
     private static final String PREFS_NAME = "ippulse_history";
     private static final String HISTORY_KEY = "history";
+    private static final String VPN_PREFS = "vpn_settings";
 
-    private View tab1Container, tab2Container;
-    private Button btnTab1, btnTab2, btnStart1, btnStop1, btnHistory, btnClearHistory;
+    private View tab1Container, tab2Container, tab3Container;
+    private Button btnTab1, btnTab2, btnTab3, btnStart1, btnStop1, btnHistory, btnClearHistory;
     private EditText ipInput, inputPackets, inputInterval, inputTimeout;
     private TextView status1;
     private LinearLayout logLayout1;
@@ -43,6 +46,10 @@ public class MainActivity extends Activity {
     private TableLayout table2Live;
     private Button btnStop2;
 
+    private EditText vpnDns, vpnMtu, vpnHosts;
+    private Button btnStartVpn, btnStopVpn;
+    private TextView vpnStatus;
+
     private ExecutorService executor;
     private Thread deepTestThread;
     private volatile boolean isCancelled = false;
@@ -50,18 +57,19 @@ public class MainActivity extends Activity {
     private List<String> top5IPs = new ArrayList<>();
     private boolean rangeScanFinished = true;
 
-    // گزینه‌های مرتب‌سازی
     private String[] sortOptions = {"Default", "Loss", "Jitter", "Average (Avg)", "Min (Low Ping)", "Max (High Ping)"};
-    private int currentSortIndex = 0; // 0 = Default
+    private int currentSortIndex = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Tab 1
         tab1Container = findViewById(R.id.tab1Container);
         btnTab1 = findViewById(R.id.btnTab1);
         btnTab2 = findViewById(R.id.btnTab2);
+        btnTab3 = findViewById(R.id.btnTab3);
         btnStart1 = findViewById(R.id.btnStart1);
         btnStop1 = findViewById(R.id.btnStop1);
         ipInput = findViewById(R.id.ipInput);
@@ -74,6 +82,7 @@ public class MainActivity extends Activity {
         table1 = findViewById(R.id.table1);
         spinnerSort = findViewById(R.id.spinnerSort);
 
+        // Tab 2
         tab2Container = findViewById(R.id.tab2Container);
         top5Container = findViewById(R.id.top5Container);
         status2 = findViewById(R.id.status2);
@@ -82,8 +91,20 @@ public class MainActivity extends Activity {
         table2Live = findViewById(R.id.table2Live);
         btnStop2 = findViewById(R.id.btnStop2);
 
+        // Tab 3
+        tab3Container = findViewById(R.id.tab3Container);
+        vpnDns = findViewById(R.id.vpnDns);
+        vpnMtu = findViewById(R.id.vpnMtu);
+        vpnHosts = findViewById(R.id.vpnHosts);
+        btnStartVpn = findViewById(R.id.btnStartVpn);
+        btnStopVpn = findViewById(R.id.btnStopVpn);
+        vpnStatus = findViewById(R.id.vpnStatus);
+
         btnHistory = findViewById(R.id.btnHistory);
         btnClearHistory = findViewById(R.id.btnClearHistory);
+
+        // Load VPN settings
+        loadVpnSettings();
 
         // Setup Spinner
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, sortOptions);
@@ -101,33 +122,97 @@ public class MainActivity extends Activity {
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
+        // Tab switching
         btnTab1.setOnClickListener(v -> switchTab(1));
         btnTab2.setOnClickListener(v -> switchTab(2));
+        btnTab3.setOnClickListener(v -> switchTab(3));
+
+        // Scan/Test
         btnStart1.setOnClickListener(v -> startRangeScan());
         btnStop1.setOnClickListener(v -> stopRangeScan());
         btnStop2.setOnClickListener(v -> stopDeepTest());
+
+        // VPN
+        btnStartVpn.setOnClickListener(v -> startVpn());
+        btnStopVpn.setOnClickListener(v -> stopVpn());
+
+        // History
         btnHistory.setOnClickListener(v -> showHistoryDialog());
         btnClearHistory.setOnClickListener(v -> clearHistory());
     }
 
     private void switchTab(int tab) {
-        if (tab == 1) {
-            tab1Container.setVisibility(View.VISIBLE);
-            tab2Container.setVisibility(View.GONE);
-            btnTab1.setBackgroundColor(Color.parseColor("#2563EB"));
-            btnTab1.setTextColor(Color.WHITE);
-            btnTab2.setBackgroundColor(Color.parseColor("#1E293B"));
-            btnTab2.setTextColor(Color.parseColor("#94A3B8"));
+        tab1Container.setVisibility(tab == 1 ? View.VISIBLE : View.GONE);
+        tab2Container.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
+        tab3Container.setVisibility(tab == 3 ? View.VISIBLE : View.GONE);
+        btnTab1.setBackgroundColor(tab == 1 ? Color.parseColor("#2563EB") : Color.parseColor("#1E293B"));
+        btnTab1.setTextColor(tab == 1 ? Color.WHITE : Color.parseColor("#94A3B8"));
+        btnTab2.setBackgroundColor(tab == 2 ? Color.parseColor("#2563EB") : Color.parseColor("#1E293B"));
+        btnTab2.setTextColor(tab == 2 ? Color.WHITE : Color.parseColor("#94A3B8"));
+        btnTab3.setBackgroundColor(tab == 3 ? Color.parseColor("#2563EB") : Color.parseColor("#1E293B"));
+        btnTab3.setTextColor(tab == 3 ? Color.WHITE : Color.parseColor("#94A3B8"));
+    }
+
+    private void loadVpnSettings() {
+        SharedPreferences prefs = getSharedPreferences(VPN_PREFS, MODE_PRIVATE);
+        vpnDns.setText(prefs.getString("dns", "8.8.8.8"));
+        vpnMtu.setText(String.valueOf(prefs.getInt("mtu", 1400)));
+        vpnHosts.setText(prefs.getString("hosts", ""));
+    }
+
+    private void saveVpnSettings() {
+        SharedPreferences prefs = getSharedPreferences(VPN_PREFS, MODE_PRIVATE);
+        prefs.edit()
+            .putString("dns", vpnDns.getText().toString().trim())
+            .putInt("mtu", parseIntSafe(vpnMtu.getText().toString().trim(), 1400))
+            .putString("hosts", vpnHosts.getText().toString().trim())
+            .apply();
+    }
+
+    private void startVpn() {
+        saveVpnSettings();
+        String dns = vpnDns.getText().toString().trim();
+        int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
+        // Request VPN permission (system dialog)
+        Intent intent = VpnService.prepare(this);
+        if (intent != null) {
+            try {
+                startActivityForResult(intent, 1001);
+            } catch (Exception e) {
+                Toast.makeText(this, "Failed to request VPN permission", Toast.LENGTH_SHORT).show();
+            }
         } else {
-            tab1Container.setVisibility(View.GONE);
-            tab2Container.setVisibility(View.VISIBLE);
-            btnTab2.setBackgroundColor(Color.parseColor("#2563EB"));
-            btnTab2.setTextColor(Color.WHITE);
-            btnTab1.setBackgroundColor(Color.parseColor("#1E293B"));
-            btnTab1.setTextColor(Color.parseColor("#94A3B8"));
+            GamingVpnService.start(this, dns, mtu);
+            vpnStatus.setText("VPN: Starting...");
+            Toast.makeText(this, "VPN starting", Toast.LENGTH_SHORT).show();
         }
     }
 
+    private void stopVpn() {
+        GamingVpnService.stop(this);
+        vpnStatus.setText("VPN: Stopped");
+        Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1001 && resultCode == RESULT_OK) {
+            String dns = vpnDns.getText().toString().trim();
+            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
+            GamingVpnService.start(this, dns, mtu);
+            vpnStatus.setText("VPN: Connected");
+            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "VPN permission denied", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private int parseIntSafe(String s, int defaultVal) {
+        try { return Integer.parseInt(s); } catch (Exception e) { return defaultVal; }
+    }
+
+    // ================= Existing scan/test methods (kept intact) =================
     private void stopRangeScan() {
         isCancelled = true;
         if (executor != null) executor.shutdownNow();
@@ -201,17 +286,14 @@ public class MainActivity extends Activity {
         applySortAndRefreshTable();
     }
 
-    // ✅ مرتب‌سازی و بازسازی جدول بر اساس فیلتر انتخابی
     private void applySortAndRefreshTable() {
-        // فقط IPهای زنده
         List<ScanResult> aliveResults = new ArrayList<>();
         for (ScanResult res : allResults) {
             if (res.alive) aliveResults.add(res);
         }
 
-        // مرتب‌سازی بر اساس currentSortIndex
         switch (currentSortIndex) {
-            case 0: // Default: Loss -> Jitter -> Avg -> Max
+            case 0:
                 Collections.sort(aliveResults, (a, b) -> {
                     if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
                     if (Math.abs(a.jitter - b.jitter) > 0.1f) return Float.compare(a.jitter, b.jitter);
@@ -219,19 +301,19 @@ public class MainActivity extends Activity {
                     return Float.compare(a.max, b.max);
                 });
                 break;
-            case 1: // Loss
+            case 1:
                 Collections.sort(aliveResults, (a, b) -> Float.compare(a.loss, b.loss));
                 break;
-            case 2: // Jitter
+            case 2:
                 Collections.sort(aliveResults, (a, b) -> Float.compare(a.jitter, b.jitter));
                 break;
-            case 3: // Average
+            case 3:
                 Collections.sort(aliveResults, (a, b) -> Float.compare(a.avg, b.avg));
                 break;
-            case 4: // Min (Low Ping)
+            case 4:
                 Collections.sort(aliveResults, (a, b) -> Float.compare(a.min, b.min));
                 break;
-            case 5: // Max (High Ping)
+            case 5:
                 Collections.sort(aliveResults, (a, b) -> Float.compare(a.max, b.max));
                 break;
         }
@@ -239,8 +321,6 @@ public class MainActivity extends Activity {
         table1.removeAllViews();
         addTableHeader(table1, false);
         top5IPs.clear();
-
-        // ۵ IP اول طلایی
         for (int i = 0; i < Math.min(5, aliveResults.size()); i++) {
             top5IPs.add(aliveResults.get(i).ip);
         }
@@ -531,7 +611,6 @@ public class MainActivity extends Activity {
             "http://ipwho.is/" + ip,
             "https://ipinfo.io/" + ip + "/json"
         };
-
         for (String urlStr : urls) {
             try {
                 String code = queryCountryCode(urlStr);
@@ -552,11 +631,9 @@ public class MainActivity extends Activity {
         reader.close();
         conn.disconnect();
         JSONObject json = new JSONObject(sb.toString());
-
         String code = json.optString("countryCode", "");
         if (code.isEmpty()) code = json.optString("country_code", "");
         if (code.isEmpty()) code = json.optString("country", "");
-
         if (code.length() != 2) {
             String countryName = code.toLowerCase();
             if (countryName.contains("united arab")) return "AE";
@@ -695,7 +772,6 @@ public class MainActivity extends Activity {
         float avg, min, max, jitter, loss;
         int sent;
         boolean alive;
-
         ScanResult(String ip, float avg, float min, float max, float jitter, float loss, boolean alive, int sent) {
             this.ip = ip;
             this.avg = avg;
