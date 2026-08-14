@@ -19,14 +19,13 @@ import java.util.concurrent.*;
 import org.json.JSONObject;
 
 public class MainActivity extends Activity {
-    private EditText ipInput, t1Packets, t1Interval, t1Timeout, t2Packets, t2Interval, t2Timeout;
-    private Button tab1Btn, tab2Btn, btnStart1, btnStop1, btnStart2, btnStop2;
-    private View tab1View, tab2View;
-    private TextView t1Status, t2Status, t2TargetText;
-    private TableLayout t1Table, t2Table;
-    private LinearLayout t1LogLayout, t2LogLayout;
-    private ScrollView t1LogScroll, t2LogScroll;
-    
+    private EditText ipInput, inputPackets, inputInterval, inputTimeout;
+    private Button btnStart, btnStop;
+    private TextView status1, status2;
+    private LinearLayout logLayout1, logLayout2;
+    private ScrollView logScroll1, logScroll2;
+    private TableLayout resultsTable;
+
     private ExecutorService executor;
     private List<ScanResult> allResults = new ArrayList<>();
     private List<String> top5IPs = new ArrayList<>();
@@ -38,167 +37,113 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         ipInput = findViewById(R.id.ipInput);
-        t1Packets = findViewById(R.id.t1Packets);
-        t1Interval = findViewById(R.id.t1Interval);
-        t1Timeout = findViewById(R.id.t1Timeout);
-        t2Packets = findViewById(R.id.t2Packets);
-        t2Interval = findViewById(R.id.t2Interval);
-        t2Timeout = findViewById(R.id.t2Timeout);
+        inputPackets = findViewById(R.id.inputPackets);
+        inputInterval = findViewById(R.id.inputInterval);
+        inputTimeout = findViewById(R.id.inputTimeout);
 
-        tab1Btn = findViewById(R.id.tab1Btn);
-        tab2Btn = findViewById(R.id.tab2Btn);
-        btnStart1 = findViewById(R.id.btnStart1);
-        btnStop1 = findViewById(R.id.btnStop1);
-        btnStart2 = findViewById(R.id.btnStart2);
-        btnStop2 = findViewById(R.id.btnStop2);
+        btnStart = findViewById(R.id.btnStart);
+        btnStop = findViewById(R.id.btnStop);
 
-        tab1View = findViewById(R.id.tab1View);
-        tab2View = findViewById(R.id.tab2View);
-        t1Status = findViewById(R.id.t1Status);
-        t2Status = findViewById(R.id.t2Status);
-        t2TargetText = findViewById(R.id.t2TargetText);
+        status1 = findViewById(R.id.status1);
+        status2 = findViewById(R.id.status2);
+        logLayout1 = findViewById(R.id.logLayout1);
+        logLayout2 = findViewById(R.id.logLayout2);
+        logScroll1 = findViewById(R.id.logScroll1);
+        logScroll2 = findViewById(R.id.logScroll2);
+        resultsTable = findViewById(R.id.resultsTable);
 
-        t1Table = findViewById(R.id.t1Table);
-        t2Table = findViewById(R.id.t2Table);
-        t1LogLayout = findViewById(R.id.t1LogLayout);
-        t2LogLayout = findViewById(R.id.t2LogLayout);
-        t1LogScroll = findViewById(R.id.t1LogScroll);
-        t2LogScroll = findViewById(R.id.t2LogScroll);
-
-        tab1Btn.setOnClickListener(v -> {
-            tab1View.setVisibility(View.VISIBLE);
-            tab2View.setVisibility(View.GONE);
-            tab1Btn.setBackgroundColor(Color.parseColor("#0284C7"));
-            tab1Btn.setTextColor(Color.WHITE);
-            tab2Btn.setBackgroundColor(Color.parseColor("#1E293B"));
-            tab2Btn.setTextColor(Color.parseColor("#94A3B8"));
-        });
-
-        tab2Btn.setOnClickListener(v -> {
-            tab1View.setVisibility(View.GONE);
-            tab2View.setVisibility(View.VISIBLE);
-            tab2Btn.setBackgroundColor(Color.parseColor("#D97706"));
-            tab2Btn.setTextColor(Color.WHITE);
-            tab1Btn.setBackgroundColor(Color.parseColor("#1E293B"));
-            tab1Btn.setTextColor(Color.parseColor("#94A3B8"));
-        });
-
-        btnStart1.setOnClickListener(v -> startRangeScan());
-        btnStop1.setOnClickListener(v -> stopScan());
-        btnStart2.setOnClickListener(v -> startDeepTest());
-        btnStop2.setOnClickListener(v -> stopScan());
+        btnStart.setOnClickListener(v -> startWorkflow());
+        btnStop.setOnClickListener(v -> stopWorkflow());
     }
 
-    private void stopScan() {
+    private void stopWorkflow() {
         isCancelled = true;
         if (executor != null) executor.shutdownNow();
-        t1Status.setText("Scan stopped by user.");
-        t2Status.setText("Test stopped by user.");
-        btnStart1.setEnabled(true);
-        btnStart2.setEnabled(true);
+        status1.setText("اسکن متوقف شد.");
+        status2.setText("عملیات لغو شد.");
+        btnStart.setEnabled(true);
     }
 
-    private void startRangeScan() {
+    private void startWorkflow() {
         String query = ipInput.getText().toString().trim();
         List<String> ips = parseIPList(query);
-        if (ips.isEmpty()) { Toast.makeText(this, "Invalid IP Range", Toast.LENGTH_SHORT).show(); return; }
+        if (ips.isEmpty()) { Toast.makeText(this, "آی‌پی نامعتبر است!", Toast.LENGTH_SHORT).show(); return; }
 
-        int packets = parseNum(t1Packets, 50);
-        int interval = parseNum(t1Interval, 1);
-        int timeout = parseNum(t1Timeout, 1000);
+        int packets = parseNum(inputPackets, 100);
+        int interval = parseNum(inputInterval, 1);
+        int timeout = parseNum(inputTimeout, 1000);
 
         allResults.clear();
-        t1Table.removeAllViews();
-        t1LogLayout.removeAllViews();
-        addTableHeader(t1Table);
-        btnStart1.setEnabled(false);
+        top5IPs.clear();
+        resultsTable.removeAllViews();
+        logLayout1.removeAllViews();
+        logLayout2.removeAllViews();
+        addTableHeader();
+        btnStart.setEnabled(false);
         isCancelled = false;
 
-        executor = Executors.newFixedThreadPool(12);
-        int total = ips.size();
+        status1.setText("در حال اسکن سریع رنج (" + ips.size() + " آی‌پی)...");
+        executor = Executors.newFixedThreadPool(15);
         final int[] completed = {0};
-
-        t1Status.setText("Scanning " + total + " IPs...");
 
         for (String ip : ips) {
             executor.execute(() -> {
                 if (isCancelled) return;
-                ScanResult res = performRealPing(ip, packets, interval, timeout);
+                
+                ScanResult res = performRealPingFast(ip, packets, interval, timeout);
                 synchronized(allResults) { allResults.add(res); completed[0]++; }
 
                 runOnUiThread(() -> {
-                    appendLiveLog(t1LogLayout, t1LogScroll, res);
-                    t1Status.setText("Progress: " + completed[0] + " / " + total);
-                    if (completed[0] >= total && !isCancelled) finishRangeScan();
+                    appendSimpleLog(logLayout1, logScroll1, res);
+                    status1.setText("پیشرفت اسکن: " + completed[0] + " از " + ips.size());
+                    
+                    if (completed[0] >= ips.size() && !isCancelled) {
+                        extractTop5AndStartDeepTest(packets, interval, timeout);
+                    }
                 });
             });
         }
     }
 
-    private void finishRangeScan() {
+    private void extractTop5AndStartDeepTest(int packets, int interval, int timeout) {
         Collections.sort(allResults, (a, b) -> {
             if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
             if (Math.abs(a.jitter - b.jitter) > 0.2f) return Float.compare(a.jitter, b.jitter);
             return Float.compare(a.avg, b.avg);
         });
 
-        t1Table.removeAllViews();
-        addTableHeader(t1Table);
-
-        int rank = 1;
-        top5IPs.clear();
-        for (ScanResult res : allResults) {
-            addTableRow(t1Table, res, rank);
-            if (res.loss < 100f && top5IPs.size() < 5) top5IPs.add(res.ip);
-            rank++;
+        for (ScanResult r : allResults) {
+            if (r.loss < 100f && top5IPs.size() < 5) top5IPs.add(r.ip);
         }
-        btnStart1.setEnabled(true);
-        t1Status.setText("Results extracted and sorted successfully.");
 
-        if (!top5IPs.isEmpty()) {
-            StringBuilder sb = new StringBuilder("Top 5 Transferred IPs:\n");
-            for (String ip : top5IPs) sb.append(ip).append("  ");
-            t2TargetText.setText(sb.toString().trim());
-        } else {
-            t2TargetText.setText("No alive IPs found for Tab 2.");
+        if (top5IPs.isEmpty()) {
+            status2.setText("هیچ آی‌پی زنده‌ای برای تست تخصصی یافت نشد!");
+            renderFinalTable();
+            btnStart.setEnabled(true);
+            return;
         }
-    }
 
-    private void startDeepTest() {
-        if (top5IPs.isEmpty()) { Toast.makeText(this, "Run Tab 1 first to get Top 5 IPs!", Toast.LENGTH_SHORT).show(); return; }
-
-        int packets = parseNum(t2Packets, 300);
-        int interval = parseNum(t2Interval, 1);
-        int timeout = parseNum(t2Timeout, 500);
-
-        t2Table.removeAllViews();
-        t2LogLayout.removeAllViews();
-        addTableHeader(t2Table);
-        btnStart2.setEnabled(false);
-        isCancelled = false;
-        t2Status.setText("Running deep gaming test on Top 5 IPs...");
-
+        status2.setText("اسکن رنج کامل شد! در حال اجرای تست تخصصی ۵ آی‌پی برتر بصورت تکی...");
+        
         new Thread(() -> {
-            List<ScanResult> deepResults = new ArrayList<>();
-            for (String ip : top5IPs) {
+            for (int i = 0; i < top5IPs.size(); i++) {
                 if (isCancelled) break;
-                ScanResult res = performRealPing(ip, packets, interval, timeout);
-                deepResults.add(res);
-                runOnUiThread(() -> appendLiveLog(t2LogLayout, t2LogScroll, res));
+                String currentIP = top5IPs.get(i);
+                performDeepPingLive(currentIP, packets, interval, timeout, i + 1);
             }
+            
             runOnUiThread(() -> {
                 if (!isCancelled) {
-                    for (int i = 0; i < deepResults.size(); i++) {
-                        addTableRow(t2Table, deepResults.get(i), i + 1);
-                    }
-                    t2Status.setText("Deep Gaming Test completed.");
+                    status2.setText("تست تخصصی با موفقیت به پایان رسید.");
+                    renderFinalTable();
                 }
-                btnStart2.setEnabled(true);
+                btnStart.setEnabled(true);
             });
         }).start();
     }
 
-    private ScanResult performRealPing(String ip, int totalPackets, int intervalMs, int timeoutMs) {
+    // Fast ping for Range Scan
+    private ScanResult performRealPingFast(String ip, int totalPackets, int intervalMs, int timeoutMs) {
         List<Float> rttList = new ArrayList<>();
         int lost = 0;
         int consecutiveLost = 0;
@@ -207,14 +152,14 @@ public class MainActivity extends Activity {
         for (int i = 0; i < totalPackets; i++) {
             if (isCancelled) break;
             try {
+                long startT = System.currentTimeMillis();
                 Process p = Runtime.getRuntime().exec("ping -c 1 -W " + timeoutSec + " " + ip);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
                 String line;
                 float rtt = -1f;
                 while ((line = reader.readLine()) != null) {
                     if (line.contains("time=")) {
-                        String sub = line.substring(line.indexOf("time=") + 5);
-                        rtt = Float.parseFloat(sub.split(" ")[0].trim());
+                        rtt = Float.parseFloat(line.substring(line.indexOf("time=") + 5).split(" ")[0].trim());
                         break;
                     }
                 }
@@ -226,12 +171,13 @@ public class MainActivity extends Activity {
                 } else {
                     lost++;
                     consecutiveLost++;
-                    if (consecutiveLost >= 3) {
-                        lost = totalPackets;
-                        break;
-                    }
+                    if (consecutiveLost >= 3) { lost = totalPackets; break; }
                 }
-                if (intervalMs > 0 && i < totalPackets - 1) Thread.sleep(intervalMs);
+                
+                long elapsed = System.currentTimeMillis() - startT;
+                long sleepTime = intervalMs - elapsed;
+                if (sleepTime > 0) Thread.sleep(sleepTime);
+                
             } catch (Exception e) {
                 lost = totalPackets;
                 break;
@@ -239,7 +185,7 @@ public class MainActivity extends Activity {
         }
 
         float lossPct = ((float) lost / totalPackets) * 100f;
-        if (rttList.isEmpty()) return new ScanResult(ip, "🌐", 999f, 999f, 999f, 999f, 100f);
+        if (rttList.isEmpty()) return new ScanResult(ip, fetchFlag(ip), 999f, 999f, 999f, 999f, 100f);
 
         float min = Collections.min(rttList);
         float max = Collections.max(rttList);
@@ -258,19 +204,123 @@ public class MainActivity extends Activity {
         return new ScanResult(ip, fetchFlag(ip), avg, min, max, jitter, lossPct);
     }
 
-    private void appendLiveLog(LinearLayout layout, ScrollView scroll, ScanResult res) {
+    // Deep ping for Top 5 (One by One with Live Packet Tracking)
+    private void performDeepPingLive(String ip, int totalPackets, int intervalMs, int timeoutMs, int rank) {
+        List<Float> rttList = new ArrayList<>();
+        int lost = 0;
+        int timeoutSec = Math.max(1, timeoutMs / 1000);
+        
+        final TextView liveTv = new TextView(this);
+        liveTv.setTextSize(11f); // FIX: using float '11f' instead of '11sp'
+        liveTv.setTypeface(Typeface.MONOSPACE);
+        liveTv.setTextColor(Color.parseColor("#38BDF8"));
+        
+        runOnUiThread(() -> {
+            logLayout2.addView(liveTv);
+            logScroll2.post(() -> logScroll2.fullScroll(View.FOCUS_DOWN));
+        });
+
+        for (int i = 1; i <= totalPackets; i++) {
+            if (isCancelled) break;
+            try {
+                long startT = System.currentTimeMillis();
+                Process p = Runtime.getRuntime().exec("ping -c 1 -W " + timeoutSec + " " + ip);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line;
+                float rtt = -1f;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("time=")) {
+                        rtt = Float.parseFloat(line.substring(line.indexOf("time=") + 5).split(" ")[0].trim());
+                        break;
+                    }
+                }
+                p.waitFor();
+
+                if (rtt >= 0) {
+                    rttList.add(rtt);
+                } else {
+                    lost++;
+                }
+
+                final int currentPacket = i;
+                final float currentAvg = rttList.isEmpty() ? 0 : rttList.get(rttList.size()-1);
+                final float currentLoss = ((float) lost / currentPacket) * 100f;
+                
+                runOnUiThread(() -> {
+                    liveTv.setText(String.format(Locale.US, "[Rank %d] IP: %s | Pkts: %d/%d | Cur: %.1fms | Loss: %.0f%%", 
+                        rank, ip, currentPacket, totalPackets, currentAvg, currentLoss));
+                    if (currentPacket % 5 == 0) { // scroll every 5 packets to save UI thread
+                        logScroll2.post(() -> logScroll2.fullScroll(View.FOCUS_DOWN));
+                    }
+                });
+
+                long elapsed = System.currentTimeMillis() - startT;
+                long sleepTime = intervalMs - elapsed;
+                if (sleepTime > 0) Thread.sleep(sleepTime);
+                
+            } catch (Exception ignored) {}
+        }
+        
+        // Update the final result in the list for the table rendering
+        float finalLoss = ((float) lost / totalPackets) * 100f;
+        if (!rttList.isEmpty()) {
+            float min = Collections.min(rttList);
+            float max = Collections.max(rttList);
+            float sum = 0; for (float v : rttList) sum += v;
+            float avg = sum / rttList.size();
+            float jitter = 0;
+            if (rttList.size() > 1) {
+                float jSum = 0;
+                for (int j = 1; j < rttList.size(); j++) jSum += Math.abs(rttList.get(j) - rttList.get(j - 1));
+                jitter = jSum / (rttList.size() - 1);
+            }
+            
+            // Replace old range scan result with this deep test result
+            for (int k = 0; k < allResults.size(); k++) {
+                if (allResults.get(k).ip.equals(ip)) {
+                    allResults.set(k, new ScanResult(ip, allResults.get(k).flag, avg, min, max, jitter, finalLoss));
+                    break;
+                }
+            }
+            
+            runOnUiThread(() -> {
+                liveTv.setTextColor(Color.parseColor("#10B981"));
+                liveTv.setText(String.format(Locale.US, "✅ IP: %s | Final Avg: %.1fms | Loss: %.0f%%", ip, avg, finalLoss));
+            });
+        }
+    }
+
+    private void appendSimpleLog(LinearLayout layout, ScrollView scroll, ScanResult res) {
         TextView tv = new TextView(this);
-        tv.setTextSize(11sp);
+        tv.setTextSize(11f); // FIX
         tv.setTypeface(Typeface.MONOSPACE);
         if (res.loss >= 100) {
-            tv.setText("-> IP: " + res.ip + " | Avg: 999.0ms | Loss: 100%");
+            tv.setText("-> " + res.ip + " | Timeout / Dead");
             tv.setTextColor(Color.parseColor("#EF4444"));
         } else {
-            tv.setText(String.format(Locale.US, "-> IP: %s | Avg: %.1fms | Loss: %.0f%%", res.ip, res.avg, res.loss));
-            tv.setTextColor(Color.parseColor("#10B981"));
+            tv.setText(String.format(Locale.US, "-> %s | Avg: %.1fms | Loss: %.0f%%", res.ip, res.avg, res.loss));
+            tv.setTextColor(Color.parseColor("#94A3B8"));
         }
         layout.addView(tv);
         scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
+    }
+
+    private void renderFinalTable() {
+        resultsTable.removeAllViews();
+        addTableHeader();
+        
+        // Sort again after deep test might have changed values
+        Collections.sort(allResults, (a, b) -> {
+            if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
+            if (Math.abs(a.jitter - b.jitter) > 0.2f) return Float.compare(a.jitter, b.jitter);
+            return Float.compare(a.avg, b.avg);
+        });
+
+        int rank = 1;
+        for (ScanResult res : allResults) {
+            addTableRow(res, rank);
+            rank++;
+        }
     }
 
     private String fetchFlag(String ip) {
@@ -294,28 +344,28 @@ public class MainActivity extends Activity {
         return "🌐";
     }
 
-    private void addTableHeader(TableLayout table) {
+    private void addTableHeader() {
         TableRow header = new TableRow(this);
         header.setBackgroundColor(Color.parseColor("#334155"));
         String[] cols = {"#", "IP / Country", "Avg", "Min", "Max", "Jitter", "Loss"};
         for (String c : cols) {
             TextView tv = new TextView(this);
             tv.setText(c); tv.setTextColor(Color.parseColor("#38BDF8"));
-            tv.setPadding(12, 10, 12, 10); tv.setGravity(Gravity.CENTER);
-            tv.setTypeface(null, Typeface.BOLD); tv.setTextSize(12);
+            tv.setPadding(14, 12, 14, 12); tv.setGravity(Gravity.CENTER);
+            tv.setTypeface(null, Typeface.BOLD); tv.setTextSize(12f);
             header.addView(tv);
         }
-        table.addView(header);
+        resultsTable.addView(header);
     }
 
-    private void addTableRow(TableLayout table, ScanResult res, int rank) {
+    private void addTableRow(ScanResult res, int rank) {
         TableRow row = new TableRow(this);
         row.setBackgroundColor(rank % 2 == 0 ? Color.parseColor("#0F172A") : Color.parseColor("#1E293B"));
 
         row.setOnClickListener(v -> {
             ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             clipboard.setPrimaryClip(ClipData.newPlainText("IP", res.ip));
-            Toast.makeText(this, "Copied IP: " + res.ip, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "آی‌پی کپی شد: " + res.ip, Toast.LENGTH_SHORT).show();
         });
 
         String[] vals = {
@@ -328,15 +378,15 @@ public class MainActivity extends Activity {
         for (int i = 0; i < vals.length; i++) {
             TextView tv = new TextView(this);
             tv.setText(vals[i]);
-            tv.setPadding(12, 10, 12, 10); tv.setGravity(Gravity.CENTER); tv.setTextSize(12);
+            tv.setPadding(14, 12, 14, 12); tv.setGravity(Gravity.CENTER); tv.setTextSize(12f);
             if (rank <= 5) {
-                tv.setTextColor(Color.parseColor("#FBBF24"));
+                tv.setTextColor(Color.parseColor("#FBBF24")); // Gold for top 5
             } else {
                 tv.setTextColor(res.loss >= 100 ? Color.parseColor("#EF4444") : Color.WHITE);
             }
             row.addView(tv);
         }
-        table.addView(row);
+        resultsTable.addView(row);
     }
 
     private List<String> parseIPList(String input) {
@@ -363,6 +413,7 @@ public class MainActivity extends Activity {
             return res;
         } catch (Exception e) { return -1; }
     }
+    
     private String longToIP(long ip) { return ((ip >> 24) & 0xFF) + "." + ((ip >> 16) & 0xFF) + "." + ((ip >> 8) & 0xFF) + "." + (ip & 0xFF); }
     private int parseNum(EditText et, int def) { try { return Integer.parseInt(et.getText().toString().trim()); } catch (Exception e) { return def; } }
 
