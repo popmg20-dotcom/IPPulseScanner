@@ -535,7 +535,7 @@ public class MainActivity extends Activity {
                 if (consecutiveLost >= FAST_FAIL_THRESHOLD) break;
             }
 
-            if (isDeepLive && liveRow != null) {
+            if (isDeepLive && liveRow != null && (i % 5 == 0 || i == totalPkts)) {
                 int curReceived = rttList.size();
                 float curAvg = avg(rttList);
                 float curMin = min(rttList);
