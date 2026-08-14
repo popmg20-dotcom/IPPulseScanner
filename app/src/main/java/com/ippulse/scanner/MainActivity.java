@@ -180,7 +180,7 @@ public class MainActivity extends Activity {
         btnStart1.setEnabled(true);
 
         Collections.sort(allResults, (a, b) -> {
-            // معیار: اول میانگین، بعد جیتر، بعد لاس، بعد مکس
+            // معیار: اول میانگین (کمتر بهتر)، بعد جیتر، بعد لاس، بعد مکس
             if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
             if (Math.abs(a.jitter - b.jitter) > 0.1f) return Float.compare(a.jitter, b.jitter);
             if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
@@ -351,10 +351,9 @@ public class MainActivity extends Activity {
                 appendDeepLog(ip + " seq=" + seq + " rtt=" + (finalRtt >= 0 ? finalRtt + "ms" : "lost"));
             }
 
-            // فاصله بین پکت‌ها (اختیاری)
             if (i < totalPkts && !isCancelled && consecutiveLost < FAST_FAIL_THRESHOLD) {
                 try {
-                    Thread.sleep(10); // 10ms برای کاهش فشار CPU
+                    Thread.sleep(10);
                 } catch (InterruptedException e) {
                     break;
                 }
