@@ -266,7 +266,7 @@ public class GamingVpnService extends VpnService {
 
             // محاسبه UDP checksum
             byte[] array = packet.array();
-            int udpChecksum = calculateUdpChecksum(array, 12, 20, dnsPayload.length);
+            int udpChecksum = calculateUdpChecksum(array, 12, 20, 8 + dnsPayload.length);
             packet.putShort(26, (short) udpChecksum);
 
             // محاسبه IP checksum
