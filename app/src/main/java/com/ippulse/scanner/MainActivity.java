@@ -184,7 +184,7 @@ public class MainActivity extends Activity {
         } else {
             GamingVpnService.start(this, dns, mtu);
             vpnStatus.setText("VPN: Connected");
-            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show(); // one toast
         }
     }
 
@@ -215,7 +215,7 @@ public class MainActivity extends Activity {
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
             GamingVpnService.start(this, dns, mtu);
             vpnStatus.setText("VPN: Connected");
-            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show(); // one toast
         } else if (requestCode == REQUEST_VPN) {
             Toast.makeText(this, "VPN permission denied", Toast.LENGTH_SHORT).show();
         }

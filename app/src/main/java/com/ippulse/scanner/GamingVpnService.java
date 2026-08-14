@@ -10,7 +10,6 @@ import android.content.pm.ServiceInfo;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
-import android.widget.Toast;
 
 import java.io.IOException;
 
@@ -48,7 +47,6 @@ public class GamingVpnService extends VpnService {
                 startForeground(1, notification);
             }
         } catch (Exception e) {
-            // اگر permission یا خطایی بود، بازم ادامه بده
             e.printStackTrace();
         }
     }
@@ -66,7 +64,6 @@ public class GamingVpnService extends VpnService {
             builder.setMtu(mtu);
             builder.setBlocking(true);
             vpnInterface = builder.establish();
-            Toast.makeText(this, "VPN Started", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             e.printStackTrace();
             stopVpn();
@@ -84,7 +81,6 @@ public class GamingVpnService extends VpnService {
         }
         stopForeground(true);
         stopSelf();
-        Toast.makeText(this, "VPN Stopped", Toast.LENGTH_SHORT).show();
     }
 
     @Override
