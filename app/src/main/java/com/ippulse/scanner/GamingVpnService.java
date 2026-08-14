@@ -19,8 +19,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.channels.DatagramChannel;
-import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -84,8 +82,6 @@ public class GamingVpnService extends VpnService {
             builder.addDnsServer(DNS_ADDRESS);
             builder.setMtu(mtu);
             builder.setBlocking(true);
-
-            // فقط برنامه‌های خاص بعداً با addAllowedApplication اضافه می‌شوند
             vpnInterface = builder.establish();
 
             running = true;
@@ -217,10 +213,29 @@ public class GamingVpnService extends VpnService {
     }
 
     private void handleTcp(byte[] packet, int length, int headerLength, InetAddress srcAddr, int srcPort, InetAddress dstAddr, int dstPort, FileOutputStream out) {
-        // TCP forwarding با SocketChannel
-        // برای سادگی، در این نسخه فقط اتصال را برقرار می‌کنیم و داده‌ها را رد می‌کنیم
-        // در نسخه بعدی این بخش کامل می‌شود
-        // فعلاً TCP را نادیده می‌گیریم تا اینترنت معمولی کار کند
+        // TCP forwarding با SocketChannel و یک thread جدید
+        packetExecutor.execute(() -> {
+            try {
+                // ابتدا یک Socket به مقصد واقعی باز می‌کنیم
+                Socket socket = new Socket(dstAddr, dstPort);
+                protect(socket);
+
+                // حالا بسته SYN به ما رسیده، باید یک SYN-ACK ساختگی به کلاینت بفرستیم
+                // و سپس داده‌ها را بین TUN و Socket رد و بدل کنیم.
+                // برای سادگی، از یک thread جدا برای هر جهت استفاده می‌کنیم.
+
+                // ارسال SYN-ACK ساده (شما می‌توانید بعداً بهبود دهید)
+                byte[] synAck = buildTcpSynAck(srcAddr, srcPort, dstPort);
+                out.write(synAck);
+
+                // حالا دیتای TCP از TUN به Socket و برعکس
+                // این بخش نیاز به مدیریت sequence/ack دارد که پیچیده است
+                // فعلاً برای جلوگیری از قطع کامل، فقط اتصال را باز می‌کنیم و می‌بندیم.
+                socket.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private byte[] forwardDns(byte[] query) {
@@ -268,6 +283,34 @@ public class GamingVpnService extends VpnService {
             int ipChecksum = calculateIpChecksum(array, 0, 20);
             packet.putShort(10, (short) ipChecksum);
             return array;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private byte[] buildTcpSynAck(InetAddress srcAddr, int srcPort, int dstPort) {
+        try {
+            ByteBuffer packet = ByteBuffer.allocate(40);
+            packet.put((byte) 0x45);
+            packet.put((byte) 0x00);
+            packet.putShort((short) 40);
+            packet.putShort((short) 0);
+            packet.putShort((short) 0);
+            packet.put((byte) 64);
+            packet.put((byte) 6);
+            packet.putShort((short) 0);
+            packet.put(InetAddress.getByName(DNS_ADDRESS).getAddress());
+            packet.put(srcAddr.getAddress());
+            packet.putShort((short) dstPort);
+            packet.putShort((short) srcPort);
+            packet.putInt(0); // SEQ
+            packet.putInt(0); // ACK
+            packet.put((byte) 0x60); // TCP header length 6, flags SYN|ACK
+            packet.put((byte) 0x12);
+            packet.putShort((short) 65535); // window
+            packet.putShort((short) 0); // checksum
+            packet.putShort((short) 0); // urgent
+            return packet.array();
         } catch (Exception e) {
             return null;
         }
