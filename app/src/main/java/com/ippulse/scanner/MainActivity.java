@@ -1,15 +1,18 @@
 package com.ippulse.scanner;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
+
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -22,10 +25,12 @@ import java.util.concurrent.*;
 public class MainActivity extends Activity {
     
     private static final int FAST_FAIL_THRESHOLD = 2;
+    private static final String PREFS_NAME = "ippulse_history";
+    private static final String HISTORY_KEY = "history";
 
     // Tab 1
     private View tab1Container, tab2Container;
-    private Button btnTab1, btnTab2, btnStart1, btnStop1;
+    private Button btnTab1, btnTab2, btnStart1, btnStop1, btnHistory, btnClearHistory;
     private EditText ipInput, inputPackets, inputInterval, inputTimeout;
     private TextView status1;
     private LinearLayout logLayout1;
@@ -44,6 +49,7 @@ public class MainActivity extends Activity {
     private volatile boolean isCancelled = false;
     private List<ScanResult> allResults = new ArrayList<>();
     private List<String> top5IPs = new ArrayList<>();
+    private boolean rangeScanFinished = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,13 +80,20 @@ public class MainActivity extends Activity {
         table2Live = findViewById(R.id.table2Live);
         btnStop2 = findViewById(R.id.btnStop2);
 
+        // History buttons
+        btnHistory = findViewById(R.id.btnHistory);
+        btnClearHistory = findViewById(R.id.btnClearHistory);
+
         // Tab Switching
         btnTab1.setOnClickListener(v -> switchTab(1));
         btnTab2.setOnClickListener(v -> switchTab(2));
 
         btnStart1.setOnClickListener(v -> startRangeScan());
-        btnStop1.setOnClickListener(v -> stopAll());
-        btnStop2.setOnClickListener(v -> stopAll());
+        btnStop1.setOnClickListener(v -> stopRangeScan());
+        btnStop2.setOnClickListener(v -> stopDeepTest());
+
+        btnHistory.setOnClickListener(v -> showHistoryDialog());
+        btnClearHistory.setOnClickListener(v -> clearHistory());
     }
 
     private void switchTab(int tab) {
@@ -97,19 +110,36 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void stopAll() {
+    private void stopRangeScan() {
         isCancelled = true;
         if (executor != null) executor.shutdownNow();
+        runOnUiThread(() -> {
+            if (!rangeScanFinished && !allResults.isEmpty()) {
+                finishRangeScan();
+            } else {
+                status1.setText("Scan stopped.");
+                btnStart1.setEnabled(true);
+            }
+        });
+    }
+
+    private void stopDeepTest() {
+        isCancelled = true;
         if (deepTestThread != null) deepTestThread.interrupt();
-        status1.setText("Stopped by user.");
         status2.setText("Deep test stopped.");
-        btnStart1.setEnabled(true);
     }
 
     private void startRangeScan() {
         String query = ipInput.getText().toString().trim();
+        if (query.isEmpty()) {
+            Toast.makeText(this, "Please enter a range or IP", Toast.LENGTH_SHORT).show();
+            return;
+        }
         List<String> ips = parseIPList(query);
-        if (ips.isEmpty()) return;
+        if (ips.isEmpty()) {
+            Toast.makeText(this, "Invalid range", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         int pkts = parseNum(inputPackets, 100);
         int interv = parseNum(inputInterval, 1);
@@ -121,8 +151,11 @@ public class MainActivity extends Activity {
         addTableHeader(table1, false);
         btnStart1.setEnabled(false);
         isCancelled = false;
-        
-        executor = Executors.newFixedThreadPool(80); 
+        rangeScanFinished = false;
+
+        saveHistory(query);
+
+        executor = Executors.newFixedThreadPool(80);
         final int[] completed = {0};
         status1.setText("Scanning " + ips.size() + " IPs concurrently...");
 
@@ -130,30 +163,33 @@ public class MainActivity extends Activity {
             executor.execute(() -> {
                 if (isCancelled) return;
                 ScanResult res = pingLogic(ip, pkts, interv, timeo, false, null);
-                
                 synchronized(allResults) { allResults.add(res); completed[0]++; }
-
                 runOnUiThread(() -> {
                     appendMainLog(res);
                     status1.setText(completed[0] + " / " + ips.size() + " processed.");
-                    if (completed[0] >= ips.size() && !isCancelled) finishRangeScan();
+                    if (completed[0] >= ips.size() && !isCancelled && !rangeScanFinished) {
+                        finishRangeScan();
+                    }
                 });
             });
         }
     }
 
     private void finishRangeScan() {
+        rangeScanFinished = true;
         btnStart1.setEnabled(true);
+
         Collections.sort(allResults, (a, b) -> {
+            // اول جیتر (کمتر بهتر برای گیم)، بعد لاس، بعد میانگین
+            if (Math.abs(a.jitter - b.jitter) > 0.1f) return Float.compare(a.jitter, b.jitter);
             if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
-            if (Math.abs(a.jitter - b.jitter) > 0.2f) return Float.compare(a.jitter, b.jitter);
             return Float.compare(a.avg, b.avg);
         });
 
         table1.removeAllViews();
         addTableHeader(table1, false);
-        
         top5IPs.clear();
+
         for (ScanResult res : allResults) {
             if (res.alive && top5IPs.size() < 5) top5IPs.add(res.ip);
         }
@@ -164,7 +200,6 @@ public class MainActivity extends Activity {
             addTableRow(table1, res, rank, false, isTop5);
             rank++;
         }
-        
         populateTab2();
         status1.setText("Scan complete. Top 5 transferred to Tab 2.");
     }
@@ -178,7 +213,6 @@ public class MainActivity extends Activity {
             top5Container.addView(tv);
             return;
         }
-
         for (int i = 0; i < top5IPs.size(); i++) {
             String ip = top5IPs.get(i);
             Button btn = new Button(this);
@@ -187,12 +221,10 @@ public class MainActivity extends Activity {
             btn.setTextColor(Color.BLACK);
             btn.setAllCaps(false);
             btn.setPadding(0, 8, 0, 8);
-            
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             params.setMargins(0, 0, 0, 8);
             btn.setLayoutParams(params);
-
             btn.setOnClickListener(v -> startDeepTestOn(ip));
             top5Container.addView(btn);
         }
@@ -200,20 +232,17 @@ public class MainActivity extends Activity {
 
     private void startDeepTestOn(String ip) {
         if (deepTestThread != null && deepTestThread.isAlive()) {
-            isCancelled = true; 
+            isCancelled = true;
             deepTestThread.interrupt();
         }
         isCancelled = false;
         logLayout2.removeAllViews();
         table2Live.removeAllViews();
         addTableHeader(table2Live, true);
-
         int pkts = parseNum(inputPackets, 100);
         int interv = parseNum(inputInterval, 1);
         int timeo = parseNum(inputTimeout, 1000);
-
         status2.setText("Deep Testing: " + ip);
-
         deepTestThread = new Thread(() -> {
             pingLogic(ip, pkts, interv, timeo, true, table2Live);
             runOnUiThread(() -> {
@@ -223,14 +252,13 @@ public class MainActivity extends Activity {
         deepTestThread.start();
     }
 
-    // Core Ping Engine
+    // Core Ping Engine (continuous ping, higher accuracy)
     private ScanResult pingLogic(String ip, int totalPkts, int interv, int timeo, boolean isDeepLive, TableLayout liveTable) {
         List<Float> rttList = new ArrayList<>();
+        int received = 0;
         int lost = 0;
-        int consecutiveLost = 0;
-        int attempted = 0;
-        boolean fastFailTriggered = false;
-        int tSec = Math.max(1, timeo / 1000);
+        int attempted = totalPkts;
+        boolean alive = false;
 
         TableRow liveRow = null;
         TextView[] liveCells = new TextView[8];
@@ -247,90 +275,73 @@ public class MainActivity extends Activity {
             final TableRow rowToAdd = liveRow;
             runOnUiThread(() -> {
                 liveTable.addView(rowToAdd);
-                // Initialize cells
                 liveCells[0].setText(ip);
-                liveCells[1].setText("0");
+                liveCells[1].setText(String.valueOf(totalPkts));
                 liveCells[2].setText("0");
                 liveCells[3].setText("0");
                 liveCells[4].setText("0");
                 liveCells[5].setText("0");
                 liveCells[6].setText("0%");
-                liveCells[7].setText("ALIVE");
+                liveCells[7].setText("TESTING");
             });
         }
 
-        for (int i = 1; i <= totalPkts; i++) {
-            if (isCancelled) break;
-            attempted = i;
-            try {
-                long startT = System.currentTimeMillis();
-                Process process = new ProcessBuilder("ping", "-c", "1", "-W", String.valueOf(tSec), ip)
-                    .redirectErrorStream(true)
-                    .start();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                String line;
-                float rtt = -1f;
-                while ((line = reader.readLine()) != null) {
-                    if (line.contains("time=")) {
-                        String[] tokens = line.substring(line.indexOf("time=") + 5).split(" ");
-                        if (tokens.length > 0) {
-                            rtt = Float.parseFloat(tokens[0].trim());
-                            break;
+        Process process = null;
+        BufferedReader reader = null;
+        try {
+            String intervalSec = String.format(Locale.US, "%.3f", interv / 1000.0);
+            ProcessBuilder pb = new ProcessBuilder("ping", "-c", String.valueOf(totalPkts), "-i", intervalSec, "-W", String.valueOf(timeo/1000), ip);
+            pb.redirectErrorStream(true);
+            process = pb.start();
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null && !isCancelled) {
+                if (line.contains("time=")) {
+                    int idx = line.indexOf("time=");
+                    String sub = line.substring(idx + 5).trim();
+                    String[] parts = sub.split(" ");
+                    if (parts.length > 0) {
+                        float rtt = Float.parseFloat(parts[0].trim());
+                        rttList.add(rtt);
+                        received++;
+                        if (isDeepLive && liveRow != null) {
+                            int curReceived = received;
+                            float curAvg = avg(rttList);
+                            float curMin = min(rttList);
+                            float curMax = max(rttList);
+                            float curJitter = jitter(rttList);
+                            float curLoss = ((totalPkts - curReceived) * 100f) / totalPkts;
+                            runOnUiThread(() -> {
+                                liveCells[1].setText(String.valueOf(totalPkts));
+                                liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
+                                liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
+                                liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
+                                liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
+                                liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
+                                liveCells[7].setText(curReceived > 0 ? "ALIVE" : "TESTING");
+                            });
+                            appendDeepLog(ip + " seq=" + curReceived + " rtt=" + rtt + "ms");
                         }
                     }
                 }
-                process.waitFor();
-
-                if (rtt >= 0) {
-                    rttList.add(rtt);
-                    consecutiveLost = 0;
-                } else {
-                    lost++;
-                    consecutiveLost++;
-                    if (consecutiveLost >= FAST_FAIL_THRESHOLD) {
-                        fastFailTriggered = true;
-                        break;
-                    }
-                }
-            } catch (Exception e) {
-                lost++;
-                consecutiveLost++;
-                if (consecutiveLost >= FAST_FAIL_THRESHOLD) {
-                    fastFailTriggered = true;
-                    break;
-                }
             }
-
-            // Sleep interval between packets (real 1ms)
-            if (i < totalPkts && !fastFailTriggered) {
-                try { Thread.sleep(interv); } catch (InterruptedException e) { break; }
-            }
-
-            // Live update for Deep Test
+            process.waitFor();
+            lost = totalPkts - received;
+            alive = received > 0 && lost < totalPkts;
+        } catch (Exception e) {
+            lost = totalPkts;
+            alive = false;
             if (isDeepLive && liveRow != null) {
-                int curAttempted = i;
-                int curLost = lost;
-                List<Float> curRtt = new ArrayList<>(rttList);
-                float curAvg = avg(curRtt);
-                float curMin = min(curRtt);
-                float curMax = max(curRtt);
-                float curJitter = jitter(curRtt);
-                float curLoss = (curLost * 100f) / curAttempted;
                 runOnUiThread(() -> {
-                    liveCells[0].setText(ip);
-                    liveCells[1].setText(String.valueOf(curAttempted));
-                    liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
-                    liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
-                    liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
-                    liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
-                    liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
-                    liveCells[7].setText(curLoss < 100f ? "ALIVE" : "DEAD");
+                    liveCells[7].setText("DEAD");
                 });
             }
+        } finally {
+            if (process != null) process.destroy();
+            if (reader != null) try { reader.close(); } catch (Exception e) {}
         }
 
         float lossPct = attempted == 0 ? 100f : (lost * 100f) / attempted;
-        boolean alive = lossPct < 100f && !rttList.isEmpty();
         float avg = avg(rttList);
         float min = min(rttList);
         float max = max(rttList);
@@ -372,11 +383,23 @@ public class MainActivity extends Activity {
         TextView tv = new TextView(this);
         tv.setText(String.format(Locale.US, "%s | Avg:%.1f | Min:%.1f | Max:%.1f | Jit:%.2f | Loss:%.0f%%",
                 res.ip, res.avg, res.min, res.max, res.jitter, res.loss));
-        tv.setTextColor(res.alive ? Color.WHITE : Color.RED);
+        tv.setTextColor(res.alive ? Color.GREEN : Color.RED);
         tv.setTextSize(11f);
         tv.setPadding(0, 4, 0, 4);
         logLayout1.addView(tv);
         logScroll1.post(() -> logScroll1.fullScroll(View.FOCUS_DOWN));
+    }
+
+    private void appendDeepLog(String msg) {
+        runOnUiThread(() -> {
+            TextView tv = new TextView(this);
+            tv.setText(msg);
+            tv.setTextColor(Color.GREEN);
+            tv.setTextSize(11f);
+            tv.setPadding(0, 2, 0, 2);
+            logLayout2.addView(tv);
+            logScroll2.post(() -> logScroll2.fullScroll(View.FOCUS_DOWN));
+        });
     }
 
     private void addTableHeader(TableLayout table, boolean isLive) {
@@ -399,11 +422,7 @@ public class MainActivity extends Activity {
 
     private void addTableRow(TableLayout table, ScanResult res, int rank, boolean isLive, boolean isTop5) {
         TableRow row = new TableRow(this);
-        if (isTop5) {
-            row.setBackgroundColor(Color.parseColor("#FFD700")); // gold
-        } else {
-            row.setBackgroundColor(Color.parseColor("#18181B"));
-        }
+        row.setBackgroundColor(isTop5 ? Color.parseColor("#FFD700") : Color.parseColor("#18181B"));
         row.setClickable(true);
         row.setOnClickListener(v -> {
             ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
@@ -436,7 +455,6 @@ public class MainActivity extends Activity {
         }
         table.addView(row);
 
-        // Fetch flag for IP column (index 0 for live, index 1 for range)
         int ipIndex = isLive ? 0 : 1;
         TextView ipCell = (TextView) row.getChildAt(ipIndex);
         fetchFlag(ipCell, res.ip);
@@ -445,9 +463,7 @@ public class MainActivity extends Activity {
     private void fetchFlag(TextView textView, String ip) {
         new Thread(() -> {
             String flag = getCountryFlag(ip);
-            runOnUiThread(() -> {
-                textView.setText(flag + " " + ip);
-            });
+            runOnUiThread(() -> textView.setText(flag + " " + ip));
         }).start();
     }
 
@@ -467,7 +483,7 @@ public class MainActivity extends Activity {
             String code = json.optString("countryCode", "");
             if (!code.isEmpty()) return countryCodeToFlag(code);
         } catch (Exception e) {
-            // ignore, fallback to globe
+            // ignore
         } finally {
             if (conn != null) conn.disconnect();
         }
@@ -487,7 +503,6 @@ public class MainActivity extends Activity {
         catch (Exception e) { return defaultVal; }
     }
 
-    // IP Range Parser (supports arbitrary ranges, CIDR, and single IP)
     private List<String> parseIPList(String query) {
         List<String> list = new ArrayList<>();
         String q = query.replace("تا", "-").trim();
@@ -501,19 +516,13 @@ public class MainActivity extends Activity {
                 long mask = hostBits == 32 ? 0xFFFFFFFFL : (1L << hostBits) - 1;
                 long start = ip & ~mask;
                 long end = ip | mask;
-                for (long i = start; i <= end; i++) {
-                    list.add(longToIp(i));
-                }
+                for (long i = start; i <= end; i++) list.add(longToIp(i));
             } else if (q.contains("-")) {
                 String[] parts = q.split("-");
-                String startStr = parts[0].trim();
-                String endStr = parts[1].trim();
-                long start = ipToLong(startStr);
-                long end = ipToLong(endStr);
+                long start = ipToLong(parts[0].trim());
+                long end = ipToLong(parts[1].trim());
                 if (start > end) { long tmp = start; start = end; end = tmp; }
-                for (long i = start; i <= end; i++) {
-                    list.add(longToIp(i));
-                }
+                for (long i = start; i <= end; i++) list.add(longToIp(i));
             } else {
                 list.add(q);
             }
@@ -539,6 +548,41 @@ public class MainActivity extends Activity {
     private String longToIp(long ip) {
         return String.format(Locale.US, "%d.%d.%d.%d",
                 (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, (ip >> 8) & 0xFF, ip & 0xFF);
+    }
+
+    // History
+    private void saveHistory(String entry) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        Set<String> history = new LinkedHashSet<>(prefs.getStringSet(HISTORY_KEY, new LinkedHashSet<>()));
+        history.add(entry);
+        prefs.edit().putStringSet(HISTORY_KEY, history).apply();
+    }
+
+    private Set<String> loadHistory() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return new LinkedHashSet<>(prefs.getStringSet(HISTORY_KEY, new LinkedHashSet<>()));
+    }
+
+    private void clearHistory() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        prefs.edit().remove(HISTORY_KEY).apply();
+        Toast.makeText(this, "History cleared", Toast.LENGTH_SHORT).show();
+    }
+
+    private void showHistoryDialog() {
+        List<String> items = new ArrayList<>(loadHistory());
+        if (items.isEmpty()) {
+            Toast.makeText(this, "No history yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String[] arr = items.toArray(new String[0]);
+        new AlertDialog.Builder(this)
+            .setTitle("History")
+            .setItems(arr, (dialog, which) -> {
+                ipInput.setText(arr[which]);
+                startRangeScan();
+            })
+            .show();
     }
 
     // ScanResult class

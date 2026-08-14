@@ -25,9 +25,21 @@
             android:orientation="vertical">
             <EditText android:id="@+id/ipInput" android:layout_width="match_parent"
                 android:layout_height="75dp" android:text="3.122.114.0 - 3.122.114.255"
+                android:hint="e.g. 109.61.0.0 - 109.61.40.255 or 109.61.42.0/24"
                 android:textColor="#FFFFFF" android:textColorHint="#64748B"
                 android:background="#18181B" android:padding="10dp"
-                android:gravity="top|left" android:textSize="14sp" android:layout_marginBottom="12dp"/>
+                android:gravity="top|left" android:textSize="14sp" android:layout_marginBottom="6dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginBottom="12dp">
+                <Button android:id="@+id/btnHistory" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="40dp" android:text="History" android:textColor="#FFFFFF"
+                    android:textStyle="bold" android:backgroundTint="#1E293B" />
+                <Space android:layout_width="8dp" android:layout_height="wrap_content" />
+                <Button android:id="@+id/btnClearHistory" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="40dp" android:text="Clear History" android:textColor="#FFFFFF"
+                    android:textStyle="bold" android:backgroundTint="#B91C1C" />
+            </LinearLayout>
 
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:layout_marginBottom="12dp">
