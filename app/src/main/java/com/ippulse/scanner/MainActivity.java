@@ -34,9 +34,8 @@ public class MainActivity extends Activity {
     private static final String VPN_PREFS = "vpn_settings";
     private static final int REQUEST_VPN = 1001;
     private static final int REQUEST_NOTIFICATION = 1002;
-    private static final int MAX_LOG_ITEMS = 50; // محدودیت لاگ
+    private static final int MAX_LOG_ITEMS = 50;
 
-    // Tab 1
     private View tab1Container, tab2Container, tab3Container;
     private Button btnTab1, btnTab2, btnTab3, btnStart1, btnStop1, btnHistory, btnClearHistory;
     private EditText ipInput, inputPackets, inputInterval, inputTimeout;
@@ -46,14 +45,12 @@ public class MainActivity extends Activity {
     private TableLayout table1;
     private Spinner spinnerSort;
 
-    // Tab 2
     private LinearLayout top5Container, logLayout2;
     private ScrollView logScroll2;
     private TextView status2;
     private TableLayout table2Live;
     private Button btnStop2;
 
-    // Tab 3
     private EditText vpnDns, vpnMtu, vpnHosts, vpnMasterIp;
     private Button btnStartVpn, btnStopVpn, btnApplyIp;
     private TextView vpnStatus;
@@ -312,7 +309,6 @@ public class MainActivity extends Activity {
 
         allResults.clear();
         logLayout1.removeAllViews();
-            }
         table1.removeAllViews();
         addTableHeader(table1, false);
         btnStart1.setEnabled(false);
@@ -321,7 +317,7 @@ public class MainActivity extends Activity {
 
         saveHistory(query);
 
-        executor = Executors.newFixedThreadPool(3); // کاهش به 10
+        executor = Executors.newFixedThreadPool(3); // کاهش برای جلوگیری از ANR
         final int[] completed = {0};
         status1.setText("Scanning " + ips.size() + " IPs concurrently...");
 
@@ -356,6 +352,11 @@ public class MainActivity extends Activity {
             if (res.alive) aliveResults.add(res);
         }
 
+        // محدودیت ۱۰۰ ردیف برتر
+        if (aliveResults.size() > 100) {
+            aliveResults = new ArrayList<>(aliveResults.subList(0, 100));
+        }
+
         switch (currentSortIndex) {
             case 0:
                 Collections.sort(aliveResults, (a, b) -> {
@@ -382,7 +383,6 @@ public class MainActivity extends Activity {
                 break;
         }
 
-            }
         table1.removeAllViews();
         addTableHeader(table1, false);
         top5IPs.clear();
@@ -523,7 +523,7 @@ public class MainActivity extends Activity {
                 if (consecutiveLost >= FAST_FAIL_THRESHOLD) break;
             }
 
-            // به‌روزرسانی UI فقط هر 10 پکت یا آخرین پکت
+            // به‌روزرسانی UI فقط هر ۵۰ پکت یا پکت آخر
             if (isDeepLive && liveRow != null && (i % 50 == 0 || i == totalPkts)) {
                 int curReceived = rttList.size();
                 float curAvg = avg(rttList);
@@ -584,7 +584,6 @@ public class MainActivity extends Activity {
     }
 
     private void appendMainLog(ScanResult res) {
-        // محدود کردن تعداد لاگ‌ها
         if (logLayout1.getChildCount() >= MAX_LOG_ITEMS) {
             logLayout1.removeViewAt(0);
         }
