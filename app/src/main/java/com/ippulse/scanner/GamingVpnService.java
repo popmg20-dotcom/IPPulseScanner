@@ -195,8 +195,6 @@ public class GamingVpnService extends VpnService {
                     }
                     drainNetworkToDevice();
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             } catch (Throwable e) {
                 if (running) Log.e(TAG, "TUN loop failed", e);
             } finally {
