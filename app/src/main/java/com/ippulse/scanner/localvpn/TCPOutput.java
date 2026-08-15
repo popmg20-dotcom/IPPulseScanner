@@ -15,6 +15,7 @@
 */
 
 package com.ippulse.scanner.localvpn;
+import android.net.VpnService;
 
 import android.util.Log;
 
