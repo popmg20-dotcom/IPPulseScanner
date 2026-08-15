@@ -97,8 +97,16 @@ public class Socks5ProxyServer {
             out.write(new byte[]{5, 0, 0, 1, 127, 0, 0, 1, (byte)(port >> 8), (byte)(port & 0xFF)});
             out.flush();
 
-            Thread t1 = new Thread(() -> pipe(in, remote.getOutputStream()));
-            Thread t2 = new Thread(() -> pipe(remote.getInputStream(), out));
+            Thread t1 = new Thread(() -> {
+                try {
+                    pipe(in, remote.getOutputStream());
+                } catch (Exception ignored) {}
+            });
+            Thread t2 = new Thread(() -> {
+                try {
+                    pipe(remote.getInputStream(), out);
+                } catch (Exception ignored) {}
+            });
             t1.start(); t2.start();
             t1.join(); t2.join();
         } catch (Exception e) {
