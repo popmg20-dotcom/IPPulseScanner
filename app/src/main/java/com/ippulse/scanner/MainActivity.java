@@ -144,6 +144,7 @@ public class MainActivity extends Activity {
         btnStopVpn.setOnClickListener(v -> stopVpn());
         btnApplyIp.setOnClickListener(v -> applyMasterIp());
         addLogButton();
+        addLogButton();
 
         btnHistory.setOnClickListener(v -> showHistoryDialog());
         btnClearHistory.setOnClickListener(v -> clearHistory());
@@ -889,16 +890,7 @@ public class MainActivity extends Activity {
             this.alive = alive;
         }
     }
-}
-
-    private void showVpnLog() {
-        try {
-            java.io.File logFile = new java.io.File(getFilesDir(), "vpn_log.txt");
-            if (!logFile.exists()) {
-                Toast.makeText(this, "No VPN log yet", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            StringBuilder sb = new StringBuilder();
+}            StringBuilder sb = new StringBuilder();
             BufferedReader reader = new BufferedReader(new FileReader(logFile));
             String line;
             while ((line = reader.readLine()) != null) {
@@ -913,11 +905,34 @@ public class MainActivity extends Activity {
         } catch (IOException e) {
             Toast.makeText(this, "Error reading log", Toast.LENGTH_SHORT).show();
         }
+    
+    private void showVpnLog() {
+        try {
+            java.io.File logFile = new java.io.File(getFilesDir(), "vpn_log.txt");
+            if (!logFile.exists()) {
+                Toast.makeText(this, "No VPN log yet", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            StringBuilder sb = new StringBuilder();
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(logFile));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append('\n');
+            }
+            reader.close();
+            new AlertDialog.Builder(this)
+                .setTitle("VPN Log")
+                .setMessage(sb.toString())
+                .setPositiveButton("OK", null)
+                .show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Error reading log", Toast.LENGTH_SHORT).show();
+        }
     }
+
 
     private void addLogButton() {
         try {
-            // یافتن LinearLayout داخل ScrollView تب سوم
             android.view.ViewGroup tab3Scroll = (android.view.ViewGroup) tab3Container;
             android.view.ViewGroup tab3Layout = (android.view.ViewGroup) tab3Scroll.getChildAt(0);
 
@@ -936,3 +951,4 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
+}
