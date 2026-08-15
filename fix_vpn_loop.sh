@@ -1,3 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Updating LocalSocks5Server to protect sockets from VPN loop..."
+
+FILE="app/src/main/java/com/ippulse/scanner/LocalSocks5Server.java"
+
+cat << 'JAVA_EOF' > "$FILE"
 package com.ippulse.scanner;
 
 import android.net.VpnService;
@@ -148,3 +156,16 @@ public class LocalSocks5Server {
         if (executor != null) executor.shutdownNow();
     }
 }
+JAVA_EOF
+
+# Update GamingVpnService to pass 'this' to LocalSocks5Server
+VPN_FILE="app/src/main/java/com/ippulse/scanner/GamingVpnService.java"
+if [ -f "$VPN_FILE" ]; then
+    sed -i 's/socksServer = new LocalSocks5Server(this, SOCKS_PORT, hostsMap, dns);/socksServer = new LocalSocks5Server(this, SOCKS_PORT, hostsMap, dns);/g' "$VPN_FILE"
+fi
+
+git add .
+git commit -m "Fix: Protect sockets in LocalSocks5Server using vpnService.protect to prevent routing loop"
+git push origin main
+
+echo "Pushed socket protection fix successfully!"
