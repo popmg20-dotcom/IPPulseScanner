@@ -1,6 +1,5 @@
 package com.ippulse.scanner;
 
-import android.content.Context;
 import android.content.Intent;
 import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
@@ -15,30 +14,21 @@ public class GamingVpnService extends VpnService {
     private ParcelFileDescriptor mInterface;
     private LocalSocks5Server socksServer;
     private static final int SOCKS_PORT = 10808;
+    private static GamingVpnService instance;
 
-    public static void start(Context context, String dns, int mtu, HashMap<String, String> hostsMap) {
-        try {
-            Intent intent = new Intent(context, GamingVpnService.class);
-            intent.putExtra("dns", dns);
-            intent.putExtra("mtu", mtu);
-            intent.putExtra("hostsMap", hostsMap);
-            context.startService(intent);
-        } catch (Exception e) {
-            Log.e(TAG, "Error starting service", e);
-        }
-    }
-
-    public static void stop(Context context) {
-        try {
-            Intent intent = new Intent(context, GamingVpnService.class);
-            context.stopService(intent);
-        } catch (Exception e) {
-            Log.e(TAG, "Error stopping service", e);
-        }
+    public static GamingVpnService getInstance() {
+        return instance;
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+    public void onCreate() {
+        super.onCreate();
+        instance = this;
+    }
+
+    @Override
+    int onStartCommand(Intent intent, int flags, int startId) {
+        instance = this;
         try {
             String dns = "8.8.8.8";
             int mtu = 1500;
@@ -49,30 +39,24 @@ public class GamingVpnService extends VpnService {
                     dns = intent.getStringExtra("dns");
                 }
                 mtu = intent.getIntExtra("mtu", 1500);
-                try {
-                    HashMap<?, ?> tempMap = (HashMap<?, ?>) intent.getSerializableExtra("hostsMap");
-                    if (tempMap != null) {
-                        for (java.util.Map.Entry<?, ?> entry : tempMap.entrySet()) {
-                            if (entry.getKey() instanceof String && entry.getValue() instanceof String) {
-                                hostsMap.put((String) entry.getKey(), (String) entry.getValue());
-                            }
-                        }
-                    }
-                } catch (Exception ignored) {}
             }
 
             startVpn(dns, mtu, hostsMap);
         } catch (Throwable t) {
-            Log.e(TAG, "Critical error in onStartCommand", t);
+            Log.e(TAG, "Error in onStartCommand", t);
         }
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     private void startVpn(String dns, int mtu, HashMap<String, String> hostsMap) {
         try {
+            // توقف نمونه قبلی اگر وجود داشته باشد
+            if (socksServer != null) {
+                socksServer.stop();
+            }
+
             socksServer = new LocalSocks5Server(this, SOCKS_PORT, hostsMap, dns);
             socksServer.start();
-            Log.i(TAG, "LocalSocks5Server started successfully.");
 
             File configFile = writeConfigFile(dns, mtu);
 
@@ -98,12 +82,12 @@ public class GamingVpnService extends VpnService {
                     System.loadLibrary("hev-socks5-tunnel");
                     startNativeTunnel(configFile.getAbsolutePath(), tunFd);
                 } catch (Throwable t) {
-                    Log.e(TAG, "Native tunnel execution error", t);
+                    Log.e(TAG, "Native tunnel thread error", t);
                 }
             }, "NativeTunnelThread").start();
 
         } catch (Throwable t) {
-            Log.e(TAG, "Error in startVpn", t);
+            Log.e(TAG, "Error starting VPN", t);
             stopSelf();
         }
     }
@@ -133,6 +117,8 @@ public class GamingVpnService extends VpnService {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.i(TAG, "onDestroy called - Stopping VPN completely");
+        
         try {
             stopNativeTunnel();
         } catch (Throwable ignored) {}
@@ -147,7 +133,10 @@ public class GamingVpnService extends VpnService {
             try {
                 mInterface.close();
             } catch (IOException ignored) {}
+            mInterface = null;
         }
-        Log.i(TAG, "GamingVpnService destroyed cleanly.");
+
+        instance = null;
+        Log.i(TAG, "VPN stopped completely.");
     }
 }
