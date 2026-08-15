@@ -14,13 +14,13 @@
 ** limitations under the License.
 */
 
-package com.ippulse.scanner;
+package com.ippulse.scanner.localvpn;
 
 import android.app.PendingIntent;
 import android.content.Intent;
-import android.content.pm.ServiceInfo;
 import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.io.Closeable;
@@ -35,9 +35,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class GamingVpnService extends VpnService
+public class LocalVPNService extends VpnService
 {
-    private static final String TAG = GamingVpnService.class.getSimpleName();
+    private static final String TAG = LocalVPNService.class.getSimpleName();
     private static final String VPN_ADDRESS = "10.0.0.2"; // Only IPv4 support for now
     private static final String VPN_ROUTE = "0.0.0.0"; // Intercept everything
 
@@ -78,7 +78,7 @@ public class GamingVpnService extends VpnService
             executorService.submit(new TCPOutput(deviceToNetworkTCPQueue, networkToDeviceQueue, tcpSelector, this));
             executorService.submit(new VPNRunnable(vpnInterface.getFileDescriptor(),
                     deviceToNetworkUDPQueue, deviceToNetworkTCPQueue, networkToDeviceQueue));
-            
+            LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(BROADCAST_VPN_STATE).putExtra("running", true));
             Log.i(TAG, "Started");
         }
         catch (IOException e)
@@ -97,9 +97,7 @@ public class GamingVpnService extends VpnService
             Builder builder = new Builder();
             builder.addAddress(VPN_ADDRESS, 32);
             builder.addRoute(VPN_ROUTE, 0);
-            builder.addDnsServer("10.0.0.1");
-            builder.setMtu(1400);
-            vpnInterface = builder.setSession("Gaming VPN").setConfigureIntent(pendingIntent).establish();
+            vpnInterface = builder.setSession(getString(R.string.app_name)).setConfigureIntent(pendingIntent).establish();
         }
     }
 
@@ -253,27 +251,3 @@ public class GamingVpnService extends VpnService
         }
     }
 }
-
-    private void handleDns(byte[] packet, int length, int ipHeaderLen, ByteBuffer packetBuffer) {
-        try {
-            int udpHeaderLen = 8;
-            int payloadLen = length - ipHeaderLen - udpHeaderLen;
-            byte[] dnsPayload = new byte[payloadLen];
-            System.arraycopy(packet, ipHeaderLen + udpHeaderLen, dnsPayload, 0, payloadLen);
-
-            String domain = extractDomain(dnsPayload);
-            byte[] responsePayload;
-            if (hostsMap.containsKey(domain)) {
-                responsePayload = buildDnsResponse(dnsPayload, hostsMap.get(domain));
-            } else {
-                responsePayload = forwardDns(dnsPayload);
-            }
-            if (responsePayload != null) {
-                byte[] responsePacket = buildUdpPacket(packet, ipHeaderLen, responsePayload);
-                tunOut.write(responsePacket);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
