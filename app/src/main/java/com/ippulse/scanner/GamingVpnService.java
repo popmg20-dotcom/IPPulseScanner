@@ -15,6 +15,7 @@ import android.util.Log;
 import java.io.File;
 import net.typeblog.socks.system;
 import java.util.HashMap;
+import android.widget.Toast;
 
 public class GamingVpnService extends VpnService {
     private static final String TAG = "GamingVpn";
@@ -69,6 +70,23 @@ public class GamingVpnService extends VpnService {
     }
 
     private void startVpn() {
+        // بررسی وجود و اجرایی بودن libtun2socks.so
+        java.io.File libTun = new java.io.File(getApplicationInfo().nativeLibraryDir, "libtun2socks.so");
+        if (!libTun.exists()) {
+            Toast.makeText(this, "libtun2socks.so missing", Toast.LENGTH_LONG).show();
+            stopVpn();
+            return;
+        }
+        libTun.setExecutable(true);
+        java.io.File libSystem = new java.io.File(getApplicationInfo().nativeLibraryDir, "libsystem.so");
+        if (!libSystem.exists()) {
+            Toast.makeText(this, "libsystem.so missing", Toast.LENGTH_LONG).show();
+            stopVpn();
+            return;
+        }
+        libSystem.setExecutable(true);
+        writeLog("startVpn called, libs checked");
+
         writeLog("startVpn called");
         try {
             Builder builder = new Builder();
@@ -109,13 +127,19 @@ public class GamingVpnService extends VpnService {
 
             // ارسال fd از طریق سوکت (مثل SocksDroid)
             int attempts = 0;
+            int sentFd = -1;
             while (attempts < 5) {
-                int sent = system.sendfd(fd, sockPath);
-                if (sent != -1) {
+                sentFd = system.sendfd(fd, sockPath);
+                if (sentFd != -1) {
                     break;
                 }
                 attempts++;
                 Thread.sleep(1000L * attempts);
+            }
+            if (sentFd == -1) {
+                Toast.makeText(this, "sendfd failed after retries", Toast.LENGTH_LONG).show();
+                stopVpn();
+                return;
             }
             running = true;
             writeLog("VPN started"); running = true;
