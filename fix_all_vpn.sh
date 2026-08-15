@@ -1,3 +1,12 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Updating GamingVpnService.java..."
+
+FILE="app/src/main/java/com/ippulse/scanner/GamingVpnService.java"
+mkdir -p "$(dirname "$FILE")"
+
+cat << 'JAVA_EOF' > "$FILE"
 package com.ippulse.scanner;
 
 import android.content.Context;
@@ -126,3 +135,9 @@ public class GamingVpnService extends VpnService {
         public static native void TProxyStopService();
     }
 }
+JAVA_EOF
+
+echo "Building project with Gradle..."
+./gradlew --no-daemon assembleDebug
+
+echo "Build complete successfully!"
