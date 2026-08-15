@@ -25,6 +25,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
+import java.io.FileReader;
+import java.io.IOException;
 
 public class MainActivity extends Activity {
 
@@ -141,6 +143,7 @@ public class MainActivity extends Activity {
         btnStartVpn.setOnClickListener(v -> startVpn());
         btnStopVpn.setOnClickListener(v -> stopVpn());
         btnApplyIp.setOnClickListener(v -> applyMasterIp());
+        addLogButton();
 
         btnHistory.setOnClickListener(v -> showHistoryDialog());
         btnClearHistory.setOnClickListener(v -> clearHistory());
@@ -887,3 +890,49 @@ public class MainActivity extends Activity {
         }
     }
 }
+
+    private void showVpnLog() {
+        try {
+            java.io.File logFile = new java.io.File(getFilesDir(), "vpn_log.txt");
+            if (!logFile.exists()) {
+                Toast.makeText(this, "No VPN log yet", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            StringBuilder sb = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new FileReader(logFile));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append('\n');
+            }
+            reader.close();
+            new AlertDialog.Builder(this)
+                .setTitle("VPN Log")
+                .setMessage(sb.toString())
+                .setPositiveButton("OK", null)
+                .show();
+        } catch (IOException e) {
+            Toast.makeText(this, "Error reading log", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void addLogButton() {
+        try {
+            // یافتن LinearLayout داخل ScrollView تب سوم
+            android.view.ViewGroup tab3Scroll = (android.view.ViewGroup) tab3Container;
+            android.view.ViewGroup tab3Layout = (android.view.ViewGroup) tab3Scroll.getChildAt(0);
+
+            Button btnLog = new Button(this);
+            btnLog.setText("Show VPN Log");
+            btnLog.setTextColor(Color.WHITE);
+            btnLog.setBackgroundColor(Color.parseColor("#334155"));
+            btnLog.setAllCaps(false);
+            btnLog.setPadding(0, 8, 0, 8);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.setMargins(0, 12, 0, 0);
+            btnLog.setLayoutParams(params);
+            btnLog.setOnClickListener(v -> showVpnLog());
+            tab3Layout.addView(btnLog);
+        } catch (Exception ignored) {}
+    }
+
