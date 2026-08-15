@@ -46,25 +46,13 @@ public class GamingVpnService extends VpnService {
     public int onStartCommand(Intent intent, int flags, int startId) {
         instance = this;
         try {
-            String dns = "8.8.8.8";
-            int mtu = 1400;
+            String dns = "1.1.1.1";
+            int mtu = 1500;
             HashMap<String, String> hostsMap = new HashMap<>();
 
             if (intent != null) {
-                if (intent.getStringExtra("dns") != null && !intent.getStringExtra("dns").isEmpty()) {
-                    dns = intent.getStringExtra("dns");
-                }
-                if (intent.getIntExtra("mtu", 1400) > 0) mtu = intent.getIntExtra("mtu", 1400);
-                try {
-                    HashMap<?, ?> tempMap = (HashMap<?, ?>) intent.getSerializableExtra("hostsMap");
-                    if (tempMap != null) {
-                        for (java.util.Map.Entry<?, ?> entry : tempMap.entrySet()) {
-                            if (entry.getKey() instanceof String && entry.getValue() instanceof String) {
-                                hostsMap.put((String) entry.getKey(), (String) entry.getValue());
-                            }
-                        }
-                    }
-                } catch (Exception ignored) {}
+                if (intent.getStringExtra("dns") != null) dns = intent.getStringExtra("dns");
+                if (intent.getIntExtra("mtu", 1500) > 0) mtu = intent.getIntExtra("mtu", 1500);
             }
             startVpn(dns, mtu, hostsMap);
         } catch (Throwable t) { Log.e(TAG, "Error in onStartCommand", t); }
@@ -81,9 +69,9 @@ public class GamingVpnService extends VpnService {
 
             Builder builder = new Builder();
             builder.setSession("IPPulseScanner")
-                   .addAddress("26.26.26.2", 24) // تغییر به رنج کاملاً ایزوله برای رفع تداخل با دیتای موبایل
+                   .addAddress("10.0.0.2", 32)
                    .addRoute("0.0.0.0", 0)
-                   .addDnsServer(dns)
+                   .addDnsServer("1.1.1.1")
                    .setMtu(mtu);
 
             try { builder.addDisallowedApplication(getPackageName()); } catch (Exception ignored) {}
@@ -107,7 +95,7 @@ public class GamingVpnService extends VpnService {
 
     private File writeConfigFile(String dns, int mtu) throws IOException {
         File file = new File(getFilesDir(), "tunnel.yml");
-        String content = "tunnel:\n  name: tun0\n  mtu: " + mtu + "\n  ipv4: 26.26.26.2\nsocks5:\n  address: 127.0.0.1\n  port: " + SOCKS_PORT + "\n  udp: 'udp'\nmisc:\n  log-level: error\n";
+        String content = "tunnel:\n  name: tun0\n  mtu: " + mtu + "\n  ipv4: 10.0.0.2\nsocks5:\n  address: 127.0.0.1\n  port: " + SOCKS_PORT + "\n  udp: 'udp'\nmisc:\n  log-level: debug\n";
         FileOutputStream fos = new FileOutputStream(file);
         fos.write(content.getBytes());
         fos.close();
