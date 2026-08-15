@@ -1,5 +1,6 @@
 package com.ippulse.scanner;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
@@ -20,6 +21,27 @@ public class GamingVpnService extends VpnService {
         return instance;
     }
 
+    public static void start(Context context, String dns, int mtu, HashMap<String, String> hostsMap) {
+        try {
+            Intent intent = new Intent(context, GamingVpnService.class);
+            intent.putExtra("dns", dns);
+            intent.putExtra("mtu", mtu);
+            intent.putExtra("hostsMap", hostsMap);
+            context.startService(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting service", e);
+        }
+    }
+
+    public static void stop(Context context) {
+        try {
+            Intent intent = new Intent(context, GamingVpnService.class);
+            context.stopService(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Error stopping service", e);
+        }
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -27,7 +49,7 @@ public class GamingVpnService extends VpnService {
     }
 
     @Override
-    int onStartCommand(Intent intent, int flags, int startId) {
+    public int onStartCommand(Intent intent, int flags, int startId) {
         instance = this;
         try {
             String dns = "8.8.8.8";
@@ -39,6 +61,16 @@ public class GamingVpnService extends VpnService {
                     dns = intent.getStringExtra("dns");
                 }
                 mtu = intent.getIntExtra("mtu", 1500);
+                try {
+                    HashMap<?, ?> tempMap = (HashMap<?, ?>) intent.getSerializableExtra("hostsMap");
+                    if (tempMap != null) {
+                        for (java.util.Map.Entry<?, ?> entry : tempMap.entrySet()) {
+                            if (entry.getKey() instanceof String && entry.getValue() instanceof String) {
+                                hostsMap.put((String) entry.getKey(), (String) entry.getValue());
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
             }
 
             startVpn(dns, mtu, hostsMap);
@@ -50,7 +82,6 @@ public class GamingVpnService extends VpnService {
 
     private void startVpn(String dns, int mtu, HashMap<String, String> hostsMap) {
         try {
-            // توقف نمونه قبلی اگر وجود داشته باشد
             if (socksServer != null) {
                 socksServer.stop();
             }
