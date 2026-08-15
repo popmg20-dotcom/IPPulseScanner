@@ -29,8 +29,7 @@ public class GamingVpnService extends VpnService {
     private static final String ACTION_START = "com.ippulse.scanner.START";
     private static final String ACTION_STOP = "com.ippulse.scanner.STOP";
     private static final String CHANNEL_ID = "gaming_vpn";
-    private static final String VPN_ADDRESS = "10.0.0.2";
-    private static final String DNS_ADDRESS = "10.0.0.1";
+    private static final String VPN_ADDRESS = "10.0.0.2"; // آدرس خود VPN
     private ParcelFileDescriptor vpnInterface;
     private String dns = "8.8.8.8";
     private int mtu = 1400;
@@ -80,9 +79,9 @@ public class GamingVpnService extends VpnService {
             Builder builder = new Builder();
             builder.setSession("Gaming VPN");
             builder.addAddress(VPN_ADDRESS, 32);
-            // فقط DNS محلی
-            builder.addRoute(DNS_ADDRESS, 32);
-            builder.addDnsServer(DNS_ADDRESS);
+            // فقط آدرس خود VPN را برای DNS در نظر بگیر
+            builder.addRoute(VPN_ADDRESS, 32);
+            builder.addDnsServer(VPN_ADDRESS);
 
             // اضافه کردن مسیر IPهای مپ‌شده (فقط برای UDP)
             routedIps.clear();
@@ -148,21 +147,20 @@ public class GamingVpnService extends VpnService {
             int srcPort = ((buf.get(headerLength) & 0xFF) << 8) | (buf.get(headerLength + 1) & 0xFF);
             int dstPort = ((buf.get(headerLength + 2) & 0xFF) << 8) | (buf.get(headerLength + 3) & 0xFF);
 
-            // DNS به سمت DNS_ADDRESS
-            if (protocol == 17 && dstAddr.getHostAddress().equals(DNS_ADDRESS) && dstPort == 53) {
+            // DNS به سمت خود VPN (10.0.0.2)
+            if (protocol == 17 && dstAddr.getHostAddress().equals(VPN_ADDRESS) && dstPort == 53) {
                 handleDns(packet, length, headerLength, srcAddr, srcPort, out);
             }
             // UDP به IPهای مپ‌شده
             else if (protocol == 17 && routedIps.contains(dstAddr.getHostAddress())) {
                 handleUdp(packet, length, headerLength, srcAddr, srcPort, dstAddr, dstPort, out);
             }
-            // بقیه ترافیک نادیده گرفته می‌شود (مستقیم از شبکه عادی)
+            // بقیه ترافیک نادیده گرفته می‌شود
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    // ---------- DNS ----------
     private void handleDns(byte[] packet, int length, int headerLength, InetAddress srcAddr, int srcPort, FileOutputStream out) {
         try {
             ByteBuffer buf = ByteBuffer.wrap(packet, headerLength, length - headerLength);
@@ -183,9 +181,9 @@ public class GamingVpnService extends VpnService {
             }
 
             if (dnsResponse != null) {
-                // ارسال پاسخ با بسته UDP ساخته‌شده به TUN
-                byte[] responsePacket = buildUdpPacket(DNS_ADDRESS, 53, srcAddr, srcPort, dnsResponse);
+                byte[] responsePacket = buildUdpPacket(VPN_ADDRESS, 53, srcAddr, srcPort, dnsResponse);
                 out.write(responsePacket);
+                out.flush(); // فلاش برای ارسال فوری
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -211,7 +209,6 @@ public class GamingVpnService extends VpnService {
         }
     }
 
-    // ---------- UDP Forwarding ----------
     private void handleUdp(byte[] packet, int length, int headerLength, InetAddress srcAddr, int srcPort, InetAddress dstAddr, int dstPort, FileOutputStream out) {
         udpExecutor.execute(() -> {
             try {
@@ -237,9 +234,9 @@ public class GamingVpnService extends VpnService {
                 byte[] responsePayload = new byte[response.getLength()];
                 System.arraycopy(response.getData(), 0, responsePayload, 0, response.getLength());
 
-                // ارسال پاسخ به کلاینت با بسته UDP ساخته‌شده
                 byte[] responsePacket = buildUdpPacket(dstAddr.getHostAddress(), dstPort, srcAddr, srcPort, responsePayload);
                 out.write(responsePacket);
+                out.flush();
                 socket.close();
             } catch (Exception e) {
                 // timeout یا خطا
@@ -247,39 +244,29 @@ public class GamingVpnService extends VpnService {
         });
     }
 
-    // ---------- Packet Builder ----------
     private byte[] buildUdpPacket(String sourceIp, int sourcePort, InetAddress clientAddr, int clientPort, byte[] payload) {
         try {
             int udpLength = 8 + payload.length;
             ByteBuffer packet = ByteBuffer.allocate(20 + udpLength);
-
-            // IP Header
-            packet.put((byte) 0x45); // IPv4 / IHL=5
-            packet.put((byte) 0x00); // TOS
-            packet.putShort((short) (20 + udpLength)); // Total Length
-            packet.putShort((short) 0); // Identification
-            packet.putShort((short) 0); // Flags / Fragment Offset
-            packet.put((byte) 64); // TTL
-            packet.put((byte) 17); // Protocol (UDP)
-            packet.putShort((short) 0); // IP Checksum placeholder
-            packet.put(InetAddress.getByName(sourceIp).getAddress()); // Source IP
-            packet.put(clientAddr.getAddress()); // Destination IP
-
-            // UDP Header
-            packet.putShort((short) sourcePort); // Source Port
-            packet.putShort((short) clientPort); // Destination Port
-            packet.putShort((short) udpLength); // UDP Length
-            packet.putShort((short) 0); // UDP Checksum = 0 (اختیاری در IPv4)
-
-            // Payload
+            packet.put((byte) 0x45);
+            packet.put((byte) 0x00);
+            packet.putShort((short) (20 + udpLength));
+            packet.putShort((short) 0);
+            packet.putShort((short) 0);
+            packet.put((byte) 64);
+            packet.put((byte) 17);
+            packet.putShort((short) 0);
+            packet.put(InetAddress.getByName(sourceIp).getAddress());
+            packet.put(clientAddr.getAddress());
+            packet.putShort((short) sourcePort);
+            packet.putShort((short) clientPort);
+            packet.putShort((short) udpLength);
+            packet.putShort((short) 0); // UDP checksum صفر
             packet.put(payload);
 
             byte[] array = packet.array();
-
-            // فقط IP Checksum را محاسبه کن
             int ipChecksum = calculateIpChecksum(array, 0, 20);
             packet.putShort(10, (short) ipChecksum);
-
             return array;
         } catch (Exception e) {
             return null;
@@ -299,46 +286,36 @@ public class GamingVpnService extends VpnService {
         return (int) (~sum & 0xFFFF);
     }
 
-    // ---------- DNS Response Builder ----------
     private byte[] buildDnsResponse(byte[] query, String ip) {
         ByteBuffer response = ByteBuffer.allocate(1024);
-        response.put(query[0]); response.put(query[1]); // Transaction ID
-        response.put((byte) 0x81); response.put((byte) 0x80); // Flags
-        response.putShort((short) 1); // Questions
-        response.putShort((short) 1); // Answers
-        response.putShort((short) 0); // Authority
-        response.putShort((short) 0); // Additional
-
-        // Copy Question Section
+        response.put(query[0]); response.put(query[1]);
+        response.put((byte) 0x81); response.put((byte) 0x80);
+        response.putShort((short) 1);
+        response.putShort((short) 1);
+        response.putShort((short) 0);
+        response.putShort((short) 0);
         int pos = 12;
         while (pos < query.length && query[pos] != 0) {
             response.put(query[pos++]);
         }
-        response.put((byte) 0); // Null label
+        response.put((byte) 0);
         pos++;
-        response.put(query[pos++]); // QTYPE high
-        response.put(query[pos++]); // QTYPE low
-        response.put(query[pos++]); // QCLASS high
-        response.put(query[pos++]); // QCLASS low
-
-        // Answer Section
-        response.put((byte) 0xC0); response.put((byte) 0x0C); // Pointer to name
-        response.putShort((short) 1); // Type A
-        response.putShort((short) 1); // Class IN
-        response.putInt(60); // TTL
-        response.putShort((short) 4); // RDLENGTH
+        response.put(query[pos++]); response.put(query[pos++]);
+        response.put(query[pos++]); response.put(query[pos++]);
+        response.put((byte) 0xC0); response.put((byte) 0x0C);
+        response.putShort((short) 1);
+        response.putShort((short) 1);
+        response.putInt(60);
+        response.putShort((short) 4);
         String[] ipParts = ip.split("\\.");
         for (String part : ipParts) {
             response.put((byte) Integer.parseInt(part));
         }
-
-        // بازگرداندن آرایه با طول واقعی
         byte[] result = new byte[response.position()];
         System.arraycopy(response.array(), 0, result, 0, response.position());
         return result;
     }
 
-    // ---------- Domain Extraction ----------
     private String extractDomain(byte[] data) {
         try {
             int pos = 12;
