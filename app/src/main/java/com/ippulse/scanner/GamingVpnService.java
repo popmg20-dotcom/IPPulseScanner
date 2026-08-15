@@ -449,4 +449,43 @@ public class GamingVpnService extends VpnService implements Runnable {
             this.map = map;
         }
     }
+
+    private class UdpSession {
+        private DatagramSocket socket;
+        private byte[] vpnClientIp;
+        private int vpnClientPort;
+        private byte[] serverIp;
+        private int serverPort;
+
+        UdpSession(byte[] vpnClientIp, int vpnClientPort, byte[] serverIp, int serverPort) throws Exception {
+            this.vpnClientIp = vpnClientIp;
+            this.vpnClientPort = vpnClientPort;
+            this.serverIp = serverIp;
+            this.serverPort = serverPort;
+
+            this.socket = new DatagramSocket();
+            protect(this.socket);
+
+            new Thread(() -> {
+                try {
+                    byte[] receiveData = new byte[65535];
+                    while (!socket.isClosed()) {
+                        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                        socket.receive(receivePacket);
+
+                        byte[] payload = new byte[receivePacket.getLength()];
+                        System.arraycopy(receiveData, 0, payload, 0, receivePacket.getLength());
+
+                        injectUdpToTun(serverIp, serverPort, vpnClientIp, vpnClientPort, payload);
+                    }
+                } catch (Exception ignored) {}
+            }).start();
+        }
+
+        void sendToServer(byte[] payload) throws Exception {
+            InetAddress destAddr = InetAddress.getByAddress(serverIp);
+            DatagramPacket packet = new DatagramPacket(payload, payload.length, destAddr, serverPort);
+            socket.send(packet);
+        }
+    }
 }
