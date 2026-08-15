@@ -187,7 +187,7 @@ public class GamingVpnService extends VpnService {
             }
 
             if (dnsResponse != null) {
-                byte[] responsePacket = buildUdpPacket(srcAddr, srcPort, dnsResponse);
+                byte[] responsePacket = buildUdpPacket(DNS_ADDRESS, 53, srcAddr, srcPort, dnsResponse);
                 out.write(responsePacket);
             }
         } catch (Exception e) {
@@ -240,7 +240,7 @@ public class GamingVpnService extends VpnService {
                 byte[] responsePayload = new byte[response.getLength()];
                 System.arraycopy(response.getData(), 0, responsePayload, 0, response.getLength());
 
-                byte[] responsePacket = buildUdpPacket(srcAddr, srcPort, responsePayload);
+                byte[] responsePacket = buildUdpPacket(dstAddr.getHostAddress(), dstPort, srcAddr, srcPort, responsePayload);
                 out.write(responsePacket);
                 socket.close();
             } catch (Exception e) {
@@ -255,7 +255,7 @@ public class GamingVpnService extends VpnService {
         // UDP and DNS are working; TCP will be added next.
     }
 
-        private byte[] buildUdpPacket(InetAddress clientAddr, int clientPort, byte[] payload) {
+        private byte[] buildUdpPacket(String sourceIp, int sourcePort, InetAddress clientAddr, int clientPort, byte[] payload) {
         try {
             int udpLength = 8 + payload.length;
             ByteBuffer packet = ByteBuffer.allocate(20 + udpLength);
@@ -267,9 +267,9 @@ public class GamingVpnService extends VpnService {
             packet.put((byte) 64);
             packet.put((byte) 17);
             packet.putShort((short) 0);
-            packet.put(InetAddress.getByName(DNS_ADDRESS).getAddress());
+            packet.put(InetAddress.getByName(sourceIp).getAddress());
             packet.put(clientAddr.getAddress());
-            packet.putShort((short) 53);
+            packet.putShort((short) sourcePort);
             packet.putShort((short) clientPort);
             packet.putShort((short) udpLength);
             packet.putShort((short) 0);
