@@ -1,3 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Updating LocalSocks5Server with correct dynamic UDP Associate relay..."
+
+FILE="app/src/main/java/com/ippulse/scanner/LocalSocks5Server.java"
+
+cat << 'JAVA_EOF' > "$FILE"
 package com.ippulse.scanner;
 
 import android.net.VpnService;
@@ -255,3 +263,10 @@ public class LocalSocks5Server {
         if (executor != null) executor.shutdownNow();
     }
 }
+JAVA_EOF
+
+git add .
+git commit -m "Fix: Allocate ephemeral port for UDP Associate relay in LocalSocks5Server"
+git push origin main
+
+echo "Pushed final SOCKS5 dynamic port fix successfully!"
