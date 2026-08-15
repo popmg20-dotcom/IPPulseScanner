@@ -11,7 +11,10 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -31,6 +34,7 @@ public class GamingVpnService extends VpnService {
     private int mtu = 1400;
     private HashMap<String, String> hostsMap = new HashMap<>();
     private ExecutorService dnsExecutor;
+    private Process tun2socksProcess;
     private volatile boolean running = false;
 
     @Override
@@ -81,11 +85,11 @@ public class GamingVpnService extends VpnService {
 
             running = true;
 
-            // شروع DNS proxy محلی (قبل از tun2socks)
+            // شروع DNS proxy محلی
             startDnsProxy();
 
-            // اتصال tun2socks به FD
-            Tun2Socks.start(vpnInterface.getFd());
+            // اجرای باینری tun2socks
+            startTun2socksProcess();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -126,9 +130,41 @@ public class GamingVpnService extends VpnService {
                 DatagramPacket response = new DatagramPacket(responseBytes, responseBytes.length,
                         packet.getAddress(), packet.getPort());
                 DatagramSocket sendSocket = new DatagramSocket();
+                protect(sendSocket);
                 sendSocket.send(response);
                 sendSocket.close();
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void startTun2socksProcess() {
+        try {
+            File binary = new File(getFilesDir(), "tun2socks");
+            if (!binary.exists() || binary.length() == 0) {
+                InputStream in = getAssets().open("tun2socks");
+                FileOutputStream out = new FileOutputStream(binary);
+                byte[] buffer = new byte[8192];
+                int len;
+                while ((len = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, len);
+                }
+                out.flush();
+                out.close();
+                in.close();
+                binary.setExecutable(true);
+            }
+
+            int fd = vpnInterface.getFd();
+            ProcessBuilder pb = new ProcessBuilder(
+                binary.getAbsolutePath(),
+                "-tun-fd", String.valueOf(fd),
+                "-socks5ServerAddr", "127.0.0.1:1080",
+                "-loglevel", "warn"
+            );
+            pb.redirectErrorStream(true);
+            tun2socksProcess = pb.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -245,10 +281,9 @@ public class GamingVpnService extends VpnService {
 
     private void stopVpn() {
         running = false;
-        try {
-            Tun2Socks.stop();
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (tun2socksProcess != null) {
+            tun2socksProcess.destroy();
+            tun2socksProcess = null;
         }
         if (dnsExecutor != null) {
             dnsExecutor.shutdownNow();
