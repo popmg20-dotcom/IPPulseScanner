@@ -12,6 +12,12 @@ import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
+import com.ippulse.scanner.socks.LocalSocks5Server;
+import hev.socks5.tunnel.TProxyService;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 
 public class GamingVpnService extends VpnService {
@@ -19,11 +25,10 @@ public class GamingVpnService extends VpnService {
     private static final String ACTION_START = "com.ippulse.scanner.START";
     private static final String ACTION_STOP = "com.ippulse.scanner.STOP";
     private static final String CHANNEL_ID = "gaming_vpn";
-    private static final int SOCKS_PORT = 1080;
+    private static final int SOCKS_PORT = 10800;
 
     private ParcelFileDescriptor vpnInterface;
     private LocalSocks5Server socksServer;
-    private TProxyService tProxyService;
     private HashMap<String, String> hostsMap = new HashMap<>();
     private String dns = "8.8.8.8";
     private int currentMtu = 1400;
@@ -46,7 +51,7 @@ public class GamingVpnService extends VpnService {
 
         createNotificationChannel();
         startForegroundCompatible();
-        new Thread(this::startVpn, "GamingVpnStarter").start();
+        startVpn();
         return START_STICKY;
     }
 
@@ -66,43 +71,79 @@ public class GamingVpnService extends VpnService {
     private void startVpn() {
         if (isRunning) return;
         try {
-            socksServer = new LocalSocks5Server(this, SOCKS_PORT, hostsMap, dns);
-            socksServer.start();
-
             Builder builder = new Builder();
             builder.setSession("Gaming VPN");
-            builder.addAddress("10.0.0.2", 24);
-            builder.addDnsServer(dns);
+            builder.addAddress("10.0.0.2", 32);
             builder.addRoute("0.0.0.0", 0);
+            builder.addDnsServer("10.0.0.1");
             builder.setMtu(currentMtu);
             builder.setBlocking(true);
 
             vpnInterface = builder.establish();
-            if (vpnInterface == null) throw new IllegalStateException("establish() failed");
+            if (vpnInterface == null) {
+                Log.e(TAG, "VPN establishment failed");
+                stopVpn();
+                return;
+            }
 
-            int fd = vpnInterface.getFd();
-            tProxyService = new TProxyService(this);
-            tProxyService.start(fd, currentMtu);
+            socksServer = new LocalSocks5Server(this, SOCKS_PORT, hostsMap, dns);
+            socksServer.start();
+
+            final File configFile = writeConfigFile();
+
+            final int fd = vpnInterface.getFd();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    TProxyService.TProxyStartService(configFile.getAbsolutePath(), fd);
+                }
+            }, "NativeTunnelThread").start();
 
             isRunning = true;
-            Log.i(TAG, "VPN started with MTU " + currentMtu);
+            Log.i(TAG, "VPN Tunnel Started with MTU " + currentMtu);
+
         } catch (Exception e) {
-            Log.e(TAG, "Failed to start VPN", e);
+            Log.e(TAG, "Error starting VPN", e);
             stopVpn();
         }
     }
 
+    private File writeConfigFile() throws IOException {
+        File configFile = new File(getCacheDir(), "hev-socks5.conf");
+        String configContent = 
+            "[main]\n" +
+            "workers=1\n" +
+            "[socks5]\n" +
+            "port=" + SOCKS_PORT + "\n" +
+            "address=127.0.0.1\n" +
+            "udp=udp\n" +
+            "[misc]\n" +
+            "task-stack-size=20480\n";
+
+        FileOutputStream fos = new FileOutputStream(configFile);
+        fos.write(configContent.getBytes());
+        fos.close();
+        return configFile;
+    }
+
     private void stopVpn() {
         isRunning = false;
-        if (tProxyService != null) {
-            tProxyService.stop();
-            tProxyService = null;
-        }
+        try {
+            TProxyService.TProxyStopService();
+        } catch (Exception ignored) {}
+
         if (socksServer != null) {
             socksServer.stop();
             socksServer = null;
         }
-        try { if (vpnInterface != null) vpnInterface.close(); } catch (Exception ignored) {}
+
+        try {
+            if (vpnInterface != null) {
+                vpnInterface.close();
+                vpnInterface = null;
+            }
+        } catch (Exception ignored) {}
+
         stopForeground(true);
         stopSelf();
     }
@@ -130,27 +171,10 @@ public class GamingVpnService extends VpnService {
                 .build();
     }
 
-    public static void start(Context context, String dns, int mtu, HashMap<String, String> hostsMap) {
-        Intent intent = new Intent(context, GamingVpnService.class);
-        intent.setAction(ACTION_START);
-        intent.putExtra("dns", dns);
-        intent.putExtra("mtu", mtu);
-        intent.putExtra("hosts", new SerializableHosts(hostsMap));
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent);
-        } else {
-            context.startService(intent);
-        }
-    }
-
-    public static void stop(Context context) {
-        Intent intent = new Intent(context, GamingVpnService.class);
-        intent.setAction(ACTION_STOP);
-        context.startService(intent);
-    }
-
     public static class SerializableHosts implements java.io.Serializable {
         public HashMap<String, String> map;
-        public SerializableHosts(HashMap<String, String> map) { this.map = map; }
+        public SerializableHosts(HashMap<String, String> map) {
+            this.map = map;
+        }
     }
 }
