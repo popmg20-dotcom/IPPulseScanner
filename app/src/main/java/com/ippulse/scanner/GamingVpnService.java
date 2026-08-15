@@ -17,45 +17,70 @@ public class GamingVpnService extends VpnService {
     private static final int SOCKS_PORT = 10808;
 
     public static void start(Context context, String dns, int mtu, HashMap<String, String> hostsMap) {
-        Intent intent = new Intent(context, GamingVpnService.class);
-        intent.putExtra("dns", dns);
-        intent.putExtra("mtu", mtu);
-        intent.putExtra("hostsMap", hostsMap);
-        context.startService(intent);
+        try {
+            Intent intent = new Intent(context, GamingVpnService.class);
+            intent.putExtra("dns", dns);
+            intent.putExtra("mtu", mtu);
+            intent.putExtra("hostsMap", hostsMap);
+            context.startService(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting service", e);
+        }
     }
 
     public static void stop(Context context) {
-        Intent intent = new Intent(context, GamingVpnService.class);
-        context.stopService(intent);
+        try {
+            Intent intent = new Intent(context, GamingVpnService.class);
+            context.stopService(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Error stopping service", e);
+        }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null) {
-            String dns = intent.getStringExtra("dns");
-            int mtu = intent.getIntExtra("mtu", 1500);
-            HashMap<String, String> hostsMap = (HashMap<String, String>) intent.getSerializableExtra("hostsMap");
+        try {
+            String dns = "8.8.8.8";
+            int mtu = 1500;
+            HashMap<String, String> hostsMap = new HashMap<>();
+
+            if (intent != null) {
+                if (intent.getStringExtra("dns") != null) {
+                    dns = intent.getStringExtra("dns");
+                }
+                mtu = intent.getIntExtra("mtu", 1500);
+                try {
+                    HashMap<?, ?> tempMap = (HashMap<?, ?>) intent.getSerializableExtra("hostsMap");
+                    if (tempMap != null) {
+                        for (java.util.Map.Entry<?, ?> entry : tempMap.entrySet()) {
+                            if (entry.getKey() instanceof String && entry.getValue() instanceof String) {
+                                hostsMap.put((String) entry.getKey(), (String) entry.getValue());
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
             startVpn(dns, mtu, hostsMap);
+        } catch (Throwable t) {
+            Log.e(TAG, "Critical error in onStartCommand", t);
         }
         return START_STICKY;
     }
 
     private void startVpn(String dns, int mtu, HashMap<String, String> hostsMap) {
         try {
-            if (hostsMap == null) hostsMap = new HashMap<>();
-            String targetDns = (dns != null && !dns.isEmpty()) ? dns : "8.8.8.8";
-
-            socksServer = new LocalSocks5Server(this, SOCKS_PORT, hostsMap, targetDns);
+            socksServer = new LocalSocks5Server(this, SOCKS_PORT, hostsMap, dns);
             socksServer.start();
-            Log.i(TAG, "LocalSocks5Server started.");
+            Log.i(TAG, "LocalSocks5Server started successfully.");
 
-            File configFile = writeConfigFile(targetDns, mtu);
+            File configFile = writeConfigFile(dns, mtu);
 
             Builder builder = new Builder();
             builder.setSession("IPPulseScanner")
                    .addAddress("198.18.0.1", 32)
                    .addRoute("0.0.0.0", 0)
-                   .addDnsServer(targetDns)
+                   .addDnsServer(dns)
                    .setMtu(mtu);
 
             mInterface = builder.establish();
@@ -66,19 +91,25 @@ public class GamingVpnService extends VpnService {
             }
 
             int tunFd = mInterface.getFd();
+            Log.i(TAG, "VPN established with FD: " + tunFd);
+
             new Thread(() -> {
                 try {
-                    TProxyService.TProxyStartService(configFile.getAbsolutePath(), tunFd);
-                } catch (Exception e) {
-                    Log.e(TAG, "TProxy start error", e);
+                    System.loadLibrary("hev-socks5-tunnel");
+                    startNativeTunnel(configFile.getAbsolutePath(), tunFd);
+                } catch (Throwable t) {
+                    Log.e(TAG, "Native tunnel execution error", t);
                 }
-            }, "TProxyThread").start();
+            }, "NativeTunnelThread").start();
 
-        } catch (Exception e) {
-            Log.e(TAG, "Error starting VPN", e);
+        } catch (Throwable t) {
+            Log.e(TAG, "Error in startVpn", t);
             stopSelf();
         }
     }
+
+    private native void startNativeTunnel(String configPath, int fd);
+    private native void stopNativeTunnel();
 
     private File writeConfigFile(String dns, int mtu) throws IOException {
         File file = new File(getFilesDir(), "tunnel.yml");
@@ -103,11 +134,13 @@ public class GamingVpnService extends VpnService {
     public void onDestroy() {
         super.onDestroy();
         try {
-            TProxyService.TProxyStopService();
-        } catch (Exception ignored) {}
+            stopNativeTunnel();
+        } catch (Throwable ignored) {}
 
         if (socksServer != null) {
-            socksServer.stop();
+            try {
+                socksServer.stop();
+            } catch (Throwable ignored) {}
         }
 
         if (mInterface != null) {
@@ -115,14 +148,6 @@ public class GamingVpnService extends VpnService {
                 mInterface.close();
             } catch (IOException ignored) {}
         }
-        Log.i(TAG, "GamingVpnService destroyed.");
-    }
-
-    public static class TProxyService {
-        static {
-            System.loadLibrary("hev-socks5-tunnel");
-        }
-        public static native void TProxyStartService(String configPath, int fd);
-        public static native void TProxyStopService();
+        Log.i(TAG, "GamingVpnService destroyed cleanly.");
     }
 }
