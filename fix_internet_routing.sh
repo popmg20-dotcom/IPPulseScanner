@@ -1,3 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Updating GamingVpnService for proper routing and DNS..."
+
+CAT_FILE="app/src/main/java/com/ippulse/scanner/GamingVpnService.java"
+
+cat << 'VPN_EOF' > "$CAT_FILE"
 package com.ippulse.scanner;
 
 import android.app.Notification;
@@ -196,3 +204,10 @@ public class GamingVpnService extends VpnService {
         public SerializableHosts(HashMap<String, String> map) { this.map = map; }
     }
 }
+VPN_EOF
+
+git add .
+git commit -m "Fix: Add robust DNS servers (8.8.8.8 and 1.1.1.1) and route configuration"
+git push origin main
+
+echo "Routing and DNS fix pushed successfully!"
