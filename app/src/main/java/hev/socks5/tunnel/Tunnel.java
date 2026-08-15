@@ -1,6 +1,6 @@
-package com.hev.socks5;
+package hev.socks5.tunnel;
 
-public class HevSocks5Tunnel {
+public class Tunnel {
     static {
         try {
             System.loadLibrary("hev-socks5-tunnel");

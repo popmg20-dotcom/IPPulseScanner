@@ -12,7 +12,7 @@ import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
-import com.hev.socks5.HevSocks5Tunnel;
+import hev.socks5.tunnel.Tunnel;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -98,7 +98,7 @@ public class GamingVpnService extends VpnService {
             int fd = vpnInterface.getFd();
             new Thread(() -> {
                 try {
-                    HevSocks5Tunnel.HevSocks5TunnelStart(configFile.getAbsolutePath(), fd);
+                    Tunnel.HevSocks5TunnelStart(configFile.getAbsolutePath(), fd);
                 } catch (Exception e) {
                     Log.e(TAG, "Error in native tun2socks thread", e);
                 }
@@ -125,7 +125,7 @@ public class GamingVpnService extends VpnService {
 
     private void stopVpn() {
         try {
-            HevSocks5Tunnel.HevSocks5TunnelStop();
+            Tunnel.HevSocks5TunnelStop();
         } catch (Throwable ignored) {}
 
         if (socksServer != null) {
