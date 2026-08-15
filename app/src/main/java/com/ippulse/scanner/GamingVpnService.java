@@ -67,22 +67,22 @@ public class GamingVpnService extends VpnService {
 
     private void startVpn() {
         try {
-            // Start SOCKS5 and DNS proxy
-            socks5 = new Socks5ProxyServer(this, SOCKS_PORT);
-            socks5.start();
-            dnsProxy = new DnsProxyServer(DNS_PORT, dns, hostsMap);
-            dnsProxy.start();
-
             Builder builder = new Builder();
             builder.setSession("Gaming VPN");
             builder.addAddress("26.26.26.1", 24);
             builder.addRoute("0.0.0.0", 0);
-            builder.addDnsServer("8.8.8.8");
+            builder.addDnsServer("26.26.26.1");
             builder.setMtu(mtu);
             builder.setBlocking(false);
 
             vpnInterface = builder.establish();
             if (vpnInterface == null) throw new IllegalStateException("establish failed");
+
+            // شروع SOCKS5 و DNS Proxy بعد از ساخت TUN
+            socks5 = new Socks5ProxyServer(this, SOCKS_PORT);
+            socks5.start();
+            dnsProxy = new DnsProxyServer(DNS_PORT, dns, hostsMap);
+            dnsProxy.start();
 
             int fd = vpnInterface.getFd();
             String nativeLibDir = getApplicationInfo().nativeLibraryDir;
