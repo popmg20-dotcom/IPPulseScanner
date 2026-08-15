@@ -1,3 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Updating LocalSocks5Server to fully support UDP Associate and DNS resolution..."
+
+FILE="app/src/main/java/com/ippulse/scanner/LocalSocks5Server.java"
+
+cat << 'JAVA_EOF' > "$FILE"
 package com.ippulse.scanner;
 
 import android.net.VpnService;
@@ -252,3 +260,10 @@ public class LocalSocks5Server {
         if (executor != null) executor.shutdownNow();
     }
 }
+JAVA_EOF
+
+git add .
+git commit -m "Fix: Add full UDP Associate and DNS relay support to LocalSocks5Server"
+git push origin main
+
+echo "Pushed full UDP and DNS support fix successfully!"
