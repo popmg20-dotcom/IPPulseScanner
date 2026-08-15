@@ -18,9 +18,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,7 +42,6 @@ public class GamingVpnService extends VpnService implements Runnable {
     private volatile boolean running = false;
 
     private final Map<String, UdpSession> udpSessions = new ConcurrentHashMap<>();
-    private final Map<String, TcpSession> tcpSessions = new ConcurrentHashMap<>();
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -53,8 +50,8 @@ public class GamingVpnService extends VpnService implements Runnable {
                 stopVpn();
                 return START_NOT_STICKY;
             }
-            dns = intent.getStringExtra("dns");
-            currentMtu = intent.getIntExtra("mtu", 1400);
+            if (intent.hasExtra("dns")) dns = intent.getStringExtra("dns");
+            if (intent.hasExtra("mtu")) currentMtu = intent.getIntExtra("mtu", 1400);
             SerializableHosts serializableHosts = (SerializableHosts) intent.getSerializableExtra("hosts");
             if (serializableHosts != null) {
                 hostsMap = serializableHosts.map;
@@ -132,14 +129,48 @@ public class GamingVpnService extends VpnService implements Runnable {
         System.arraycopy(packet, 12, srcIp, 0, 4);
         System.arraycopy(packet, 16, dstIp, 0, 4);
 
-        if (protocol == 17) { // UDP
+        if (protocol == 1) { // ICMP (Ping)
+            handleIcmpPacket(packet, length, ipHeaderLen);
+        } else if (protocol == 17) { // UDP
             handleUdpPacket(packet, length, ipHeaderLen, srcIp, dstIp);
         } else if (protocol == 6) { // TCP
-            handleTcpPacket(packet, length, ipHeaderLen, srcIp, dstIp);
+            rejectTcpConnection(packet, ipHeaderLen, srcIp, dstIp);
         }
     }
 
-    // -------------------- UDP --------------------
+    // =====================================
+    // ICMP Echo Responder
+    // =====================================
+    private void handleIcmpPacket(byte[] packet, int length, int ipHeaderLen) {
+        int icmpType = packet[ipHeaderLen] & 0xFF;
+        if (icmpType == 8) { // Echo Request
+            byte[] response = new byte[length];
+            System.arraycopy(packet, 0, response, 0, length);
+
+            // Swap Source and Dest IP
+            System.arraycopy(packet, 12, response, 16, 4);
+            System.arraycopy(packet, 16, response, 12, 4);
+
+            // Change Type 8 (Request) to Type 0 (Reply)
+            response[ipHeaderLen] = 0;
+            response[ipHeaderLen + 2] = 0;
+            response[ipHeaderLen + 3] = 0;
+
+            // Recalculate ICMP Checksum
+            int icmpLen = length - ipHeaderLen;
+            int icmpChecksum = calculateChecksum(response, ipHeaderLen, icmpLen);
+            response[ipHeaderLen + 2] = (byte) (icmpChecksum >> 8);
+            response[ipHeaderLen + 3] = (byte) (icmpChecksum & 0xFF);
+
+            try {
+                tunOut.write(response);
+            } catch (IOException ignored) {}
+        }
+    }
+
+    // =====================================
+    // UDP NAT & DNS Proxy
+    // =====================================
     private void handleUdpPacket(byte[] packet, int length, int ipHeaderLen, byte[] srcIp, byte[] dstIp) {
         int srcPort = ((packet[ipHeaderLen] & 0xFF) << 8) | (packet[ipHeaderLen + 1] & 0xFF);
         int dstPort = ((packet[ipHeaderLen + 2] & 0xFF) << 8) | (packet[ipHeaderLen + 3] & 0xFF);
@@ -168,6 +199,47 @@ public class GamingVpnService extends VpnService implements Runnable {
         }
     }
 
+    private class UdpSession {
+        private DatagramSocket socket;
+        private byte[] vpnClientIp, serverIp;
+        private int vpnClientPort, serverPort;
+
+        UdpSession(byte[] clientIp, int clientPort, byte[] serverIp, int serverPort) throws IOException {
+            this.vpnClientIp = clientIp.clone();
+            this.vpnClientPort = clientPort;
+            this.serverIp = serverIp.clone();
+            this.serverPort = serverPort;
+
+            socket = new DatagramSocket();
+            protect(socket); // Bypass VPN
+
+            new Thread(() -> {
+                try {
+                    byte[] recvBuf = new byte[65535];
+                    while (running && !socket.isClosed()) {
+                        DatagramPacket inPacket = new DatagramPacket(recvBuf, recvBuf.length);
+                        socket.receive(inPacket);
+                        byte[] payload = new byte[inPacket.getLength()];
+                        System.arraycopy(recvBuf, 0, payload, 0, payload.length);
+                        injectUdpToTun(this.serverIp, this.serverPort, this.vpnClientIp, this.vpnClientPort, payload);
+                    }
+                } catch (Exception ignored) {
+                } finally {
+                    try {
+                        String ipStr = InetAddress.getByAddress(this.serverIp).getHostAddress();
+                        udpSessions.remove(vpnClientPort + "-" + ipStr + ":" + serverPort);
+                    } catch (Exception e) {}
+                }
+            }).start();
+        }
+
+        void sendToServer(byte[] payload) throws IOException {
+            InetAddress dest = InetAddress.getByAddress(serverIp);
+            DatagramPacket p = new DatagramPacket(payload, payload.length, dest, serverPort);
+            socket.send(p);
+        }
+    }
+
     private void handleDnsRequest(byte[] dnsPayload, byte[] srcIp, int srcPort, byte[] dstIp) {
         new Thread(() -> {
             try {
@@ -191,121 +263,10 @@ public class GamingVpnService extends VpnService implements Runnable {
                     injectUdpToTun(dstIp, 53, srcIp, srcPort, actualResponse);
                     dnsSocket.close();
                 }
-            } catch (Exception e) {
-                Log.e(TAG, "DNS error", e);
-            }
+            } catch (Exception ignored) {}
         }).start();
     }
 
-    // -------------------- TCP --------------------
-    private void handleTcpPacket(byte[] packet, int length, int ipHeaderLen, byte[] srcIp, byte[] dstIp) {
-        int srcPort = ((packet[ipHeaderLen] & 0xFF) << 8) | (packet[ipHeaderLen + 1] & 0xFF);
-        int dstPort = ((packet[ipHeaderLen + 2] & 0xFF) << 8) | (packet[ipHeaderLen + 3] & 0xFF);
-
-        int tcpFlags = packet[ipHeaderLen + 13] & 0xFF;
-        boolean isSyn = (tcpFlags & 0x02) != 0;
-        boolean isAck = (tcpFlags & 0x10) != 0;
-
-        try {
-            String destIpStr = InetAddress.getByAddress(dstIp).getHostAddress();
-            String sessionKey = srcPort + "-" + destIpStr + ":" + dstPort;
-
-            TcpSession session = tcpSessions.get(sessionKey);
-
-            if (session == null && isSyn && !isAck) {
-                session = new TcpSession(srcIp, srcPort, dstIp, dstPort);
-                tcpSessions.put(sessionKey, session);
-                session.connectAndForward();
-                // Send SYN-ACK back
-                injectTcpSynAck(srcIp, srcPort, dstIp, dstPort);
-            } else if (session != null) {
-                int tcpHeaderLen = ((packet[ipHeaderLen + 12] & 0xF0) >> 4) * 4;
-                int payloadOffset = ipHeaderLen + tcpHeaderLen;
-                int payloadLen = length - payloadOffset;
-                if (payloadLen > 0) {
-                    byte[] payload = new byte[payloadLen];
-                    System.arraycopy(packet, payloadOffset, payload, 0, payloadLen);
-                    session.sendData(payload);
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "TCP error", e);
-        }
-    }
-
-    private void injectTcpSynAck(byte[] clientIp, int clientPort, byte[] serverIp, int serverPort) {
-        // Simplified SYN-ACK (not full sequence handling)
-        try {
-            ByteBuffer packet = ByteBuffer.allocate(40);
-            packet.put((byte) 0x45); packet.put((byte) 0x00);
-            packet.putShort((short) 40);
-            packet.putShort((short) 0);
-            packet.putShort((short) 0);
-            packet.put((byte) 64); packet.put((byte) 6);
-            packet.putShort((short) 0); // IP checksum placeholder
-            packet.put(serverIp); // source = server
-            packet.put(clientIp); // dest = client
-            packet.putShort((short) serverPort);
-            packet.putShort((short) clientPort);
-            packet.putInt(0); // SEQ
-            packet.putInt(0); // ACK
-            packet.put((byte) 0x60); // TCP offset 6
-            packet.put((byte) 0x12); // SYN|ACK
-            packet.putShort((short) 65535);
-            packet.putShort((short) 0); // checksum
-            packet.putShort((short) 0);
-
-            byte[] array = packet.array();
-            int ipChecksum = calculateIpChecksum(array, 0, 20);
-            array[10] = (byte) (ipChecksum >> 8);
-            array[11] = (byte) (ipChecksum & 0xFF);
-            tunOut.write(array);
-            tunOut.flush();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private class TcpSession {
-        private SocketChannel socketChannel;
-        private byte[] clientIp, serverIp;
-        private int clientPort, serverPort;
-
-        TcpSession(byte[] cIp, int cPort, byte[] sIp, int sPort) throws IOException {
-            this.clientIp = cIp; this.clientPort = cPort;
-            this.serverIp = sIp; this.serverPort = sPort;
-            socketChannel = SocketChannel.open();
-            socketChannel.configureBlocking(true);
-            protect(socketChannel.socket());
-        }
-
-        void connectAndForward() {
-            new Thread(() -> {
-                try {
-                    InetAddress sAddr = InetAddress.getByAddress(serverIp);
-                    socketChannel.connect(new InetSocketAddress(sAddr, serverPort));
-                    ByteBuffer buffer = ByteBuffer.allocate(32767);
-                    while (socketChannel.read(buffer) > 0) {
-                        buffer.flip();
-                        byte[] data = new byte[buffer.remaining()];
-                        buffer.get(data);
-                        // Not forwarding server->client in this simplified version
-                        buffer.clear();
-                    }
-                } catch (Exception e) {
-                    tcpSessions.remove(clientPort + "-" + serverPort);
-                }
-            }).start();
-        }
-
-        void sendData(byte[] data) throws IOException {
-            if (socketChannel.isConnected()) {
-                socketChannel.write(ByteBuffer.wrap(data));
-            }
-        }
-    }
-
-    // -------------------- Helpers --------------------
     private synchronized void injectUdpToTun(byte[] srcIp, int srcPort, byte[] dstIp, int dstPort, byte[] payload) throws IOException {
         int udpLen = 8 + payload.length;
         int totalLen = 20 + udpLen;
@@ -315,7 +276,7 @@ public class GamingVpnService extends VpnService implements Runnable {
         res.putShort((short) totalLen);
         res.putShort((short) 0); res.putShort((short) 0);
         res.put((byte) 64); res.put((byte) 17);
-        res.putShort((short) 0); // IP checksum placeholder
+        res.putShort((short) 0);
         res.put(srcIp); res.put(dstIp);
 
         res.putShort((short) srcPort); res.putShort((short) dstPort);
@@ -323,22 +284,57 @@ public class GamingVpnService extends VpnService implements Runnable {
 
         res.put(payload);
         byte[] array = res.array();
-        int ipChecksum = calculateIpChecksum(array, 0, 20);
+        int ipChecksum = calculateChecksum(array, 0, 20);
         array[10] = (byte) (ipChecksum >> 8);
         array[11] = (byte) (ipChecksum & 0xFF);
 
         tunOut.write(array);
-        tunOut.flush();
     }
 
+    // =====================================
+    // TCP Rejector
+    // =====================================
+    private void rejectTcpConnection(byte[] packet, int ipHeaderLen, byte[] srcIp, byte[] dstIp) {
+        int srcPort = ((packet[ipHeaderLen] & 0xFF) << 8) | (packet[ipHeaderLen + 1] & 0xFF);
+        int dstPort = ((packet[ipHeaderLen + 2] & 0xFF) << 8) | (packet[ipHeaderLen + 3] & 0xFF);
+
+        long seq = ((long) (packet[ipHeaderLen + 4] & 0xFF) << 24) | ((packet[ipHeaderLen + 5] & 0xFF) << 16) |
+                   ((packet[ipHeaderLen + 6] & 0xFF) << 8) | (packet[ipHeaderLen + 7] & 0xFF);
+
+        ByteBuffer rst = ByteBuffer.allocate(40);
+        rst.put((byte) 0x45); rst.put((byte) 0x00);
+        rst.putShort((short) 40);
+        rst.putShort((short) 0); rst.putShort((short) 0);
+        rst.put((byte) 64); rst.put((byte) 6);
+        rst.putShort((short) 0);
+        rst.put(dstIp); rst.put(srcIp);
+
+        rst.putShort((short) dstPort); rst.putShort((short) srcPort);
+        rst.putInt(0); // Our Seq
+        rst.putInt((int) (seq + 1)); // Ack = Client Seq + 1
+        rst.put((byte) 0x50); // Header Len
+        rst.put((byte) 0x14); // Flags: RST + ACK
+        rst.putShort((short) 0); // Window
+        rst.putShort((short) 0); // Checksum (optional 0 trick)
+        rst.putShort((short) 0);
+
+        byte[] array = rst.array();
+        int ipChecksum = calculateChecksum(array, 0, 20);
+        array[10] = (byte) (ipChecksum >> 8);
+        array[11] = (byte) (ipChecksum & 0xFF);
+
+        try { tunOut.write(array); } catch (Exception ignored) {}
+    }
+
+    // =====================================
+    // Utils
+    // =====================================
     private String extractDomain(byte[] dnsPayload) {
         StringBuilder domain = new StringBuilder();
         int pos = 12;
         while (pos < dnsPayload.length && dnsPayload[pos] != 0) {
             int len = dnsPayload[pos++];
-            for (int i = 0; i < len; i++) {
-                domain.append((char) dnsPayload[pos++]);
-            }
+            for (int i = 0; i < len; i++) domain.append((char) dnsPayload[pos++]);
             domain.append(".");
         }
         if (domain.length() > 0) domain.setLength(domain.length() - 1);
@@ -368,34 +364,29 @@ public class GamingVpnService extends VpnService implements Runnable {
         return result;
     }
 
-    private int calculateIpChecksum(byte[] buf, int offset, int length) {
+    private int calculateChecksum(byte[] buf, int offset, int length) {
         long sum = 0;
-        for (int i = offset; i < offset + length; i += 2) {
-            sum += ((buf[i] & 0xFF) << 8) | (buf[i + 1] & 0xFF);
+        int i = offset;
+        while (length > 1) {
+            sum += (((buf[i] & 0xFF) << 8) | (buf[i + 1] & 0xFF));
+            i += 2;
+            length -= 2;
         }
-        while ((sum >> 16) > 0) {
-            sum = (sum & 0xFFFF) + (sum >> 16);
-        }
+        if (length > 0) sum += ((buf[i] & 0xFF) << 8);
+        while ((sum >> 16) > 0) sum = (sum & 0xFFFF) + (sum >> 16);
         return (int) (~sum & 0xFFFF);
     }
 
     private void stopVpn() {
         running = false;
-        if (vpnThread != null) {
-            vpnThread.interrupt();
-            vpnThread = null;
-        }
-        try { if (tunIn != null) tunIn.close(); } catch (IOException e) {}
-        try { if (tunOut != null) tunOut.close(); } catch (IOException e) {}
-        try { if (vpnInterface != null) vpnInterface.close(); } catch (IOException e) {}
+        if (vpnThread != null) { vpnThread.interrupt(); vpnThread = null; }
+        try { if (tunIn != null) tunIn.close(); } catch (IOException ignored) {}
+        try { if (tunOut != null) tunOut.close(); } catch (IOException ignored) {}
+        try { if (vpnInterface != null) vpnInterface.close(); } catch (IOException ignored) {}
         for (UdpSession session : udpSessions.values()) {
             if (session.socket != null && !session.socket.isClosed()) session.socket.close();
         }
         udpSessions.clear();
-        for (TcpSession session : tcpSessions.values()) {
-            try { if (session.socketChannel != null) session.socketChannel.close(); } catch (Exception ignored) {}
-        }
-        tcpSessions.clear();
         stopForeground(true);
         stopSelf();
     }
@@ -447,45 +438,6 @@ public class GamingVpnService extends VpnService implements Runnable {
         public HashMap<String, String> map;
         public SerializableHosts(HashMap<String, String> map) {
             this.map = map;
-        }
-    }
-
-    private class UdpSession {
-        private DatagramSocket socket;
-        private byte[] vpnClientIp;
-        private int vpnClientPort;
-        private byte[] serverIp;
-        private int serverPort;
-
-        UdpSession(byte[] vpnClientIp, int vpnClientPort, byte[] serverIp, int serverPort) throws Exception {
-            this.vpnClientIp = vpnClientIp;
-            this.vpnClientPort = vpnClientPort;
-            this.serverIp = serverIp;
-            this.serverPort = serverPort;
-
-            this.socket = new DatagramSocket();
-            protect(this.socket);
-
-            new Thread(() -> {
-                try {
-                    byte[] receiveData = new byte[65535];
-                    while (!socket.isClosed()) {
-                        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                        socket.receive(receivePacket);
-
-                        byte[] payload = new byte[receivePacket.getLength()];
-                        System.arraycopy(receiveData, 0, payload, 0, receivePacket.getLength());
-
-                        injectUdpToTun(serverIp, serverPort, vpnClientIp, vpnClientPort, payload);
-                    }
-                } catch (Exception ignored) {}
-            }).start();
-        }
-
-        void sendToServer(byte[] payload) throws Exception {
-            InetAddress destAddr = InetAddress.getByAddress(serverIp);
-            DatagramPacket packet = new DatagramPacket(payload, payload.length, destAddr, serverPort);
-            socket.send(packet);
         }
     }
 }
