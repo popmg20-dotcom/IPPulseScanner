@@ -86,6 +86,7 @@ public class GamingVpnService extends VpnService {
         }
         libSystem.setExecutable(true);
         writeLog("startVpn called, libs checked");
+        copyNativeLibs();
 
         writeLog("startVpn called");
         try {
@@ -107,7 +108,7 @@ public class GamingVpnService extends VpnService {
             dnsProxy.start();
 
             int fd = vpnInterface.getFd();
-            String nativeLibDir = getApplicationInfo().nativeLibraryDir;
+            String nativeLibDir = getFilesDir().getAbsolutePath();
             sockPath = getApplicationInfo().dataDir + "/sock_path";
             String pidPath = getFilesDir() + "/tun2socks.pid";
 
@@ -220,5 +221,29 @@ public class GamingVpnService extends VpnService {
             fos.write((msg + "\n").getBytes());
             fos.close();
         } catch (Exception ignored) {}
+    }
+
+    private void copyNativeLibs() {
+        try {
+            java.io.File destDir = getFilesDir();
+            String[] libs = {"libtun2socks.so", "libsystem.so"};
+            for (String lib : libs) {
+                java.io.File dest = new java.io.File(destDir, lib);
+                if (!dest.exists()) {
+                    java.io.InputStream in = getAssets().open(lib);
+                    java.io.FileOutputStream out = new java.io.FileOutputStream(dest);
+                    byte[] buf = new byte[8192];
+                    int len;
+                    while ((len = in.read(buf)) > 0) {
+                        out.write(buf, 0, len);
+                    }
+                    out.close();
+                    in.close();
+                    dest.setExecutable(true);
+                }
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "copyNativeLibs failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 }
