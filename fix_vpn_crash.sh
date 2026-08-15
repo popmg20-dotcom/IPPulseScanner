@@ -1,3 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Updating GamingVpnService.java to prevent native crash..."
+
+CAT_FILE="app/src/main/java/com/ippulse/scanner/GamingVpnService.java"
+
+cat << 'VPN_EOF' > "$CAT_FILE"
 package com.ippulse.scanner;
 
 import android.app.Notification;
@@ -190,3 +198,10 @@ public class GamingVpnService extends VpnService {
         public SerializableHosts(HashMap<String, String> map) { this.map = map; }
     }
 }
+VPN_EOF
+
+git add .
+git commit -m "Fix: Update configuration file structure and handle native exceptions safely"
+git push origin main
+
+echo "Pushed fix successfully!"
