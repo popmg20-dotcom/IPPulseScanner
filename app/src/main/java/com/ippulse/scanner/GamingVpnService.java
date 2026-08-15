@@ -13,6 +13,9 @@ import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -90,14 +93,14 @@ public class GamingVpnService extends VpnService {
             vpnInterface = interfaceFd;
             int fd = vpnInterface.getFd();
 
-            String config = buildHevConfig();
+            String configPath = writeHevConfigFile();
             running = true;
             final int nativeFd = fd;
-            final String nativeConfig = config;
+            final String nativeConfig = configPath;
             Thread nativeThread = new Thread(() -> {
                 try {
                     Log.i(TAG, "Starting HEV");
-                    boolean started = TProxyService.TProxyStartService(nativeConfig, nativeFd);
+                    boolean started = TProxyService.TProxyStartService(configPath, nativeFd);
                     Log.i(TAG, "HEV start result=" + started);
                     if (!started) {
                         Log.e(TAG, "HEV failed to start");
@@ -137,7 +140,7 @@ public class GamingVpnService extends VpnService {
         config.append("  port: ").append(SOCKS_PORT).append("\n");
         config.append("  udp: udp\n");
         config.append("  pipeline: false\n\n");
-        config.append("mapdns:\n");
+        // config.append("mapdns:\n");
         config.append("  address: ").append(DNS_ADDRESS).append("\n");
         config.append("  port: 53\n");
         config.append("  network: 100.64.0.0\n");
@@ -237,5 +240,24 @@ public class GamingVpnService extends VpnService {
     public static class SerializableHosts implements java.io.Serializable {
         public HashMap<String, String> map;
         public SerializableHosts(HashMap<String, String> map) { this.map = map; }
+    }
+
+    private String writeHevConfigFile() throws IOException {
+        String configPath = writeHevConfigFile();
+        File dir = new File(getFilesDir(), "hev");
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IOException("Cannot create HEV config directory");
+        }
+        File configFile = new File(dir, "hev.yml");
+        FileOutputStream fos = new FileOutputStream(configFile, false);
+        try {
+            fos.write(config.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            fos.flush();
+        } finally {
+            fos.close();
+        }
+        Log.i(TAG, "HEV config path: " + configFile.getAbsolutePath());
+        Log.i(TAG, "HEV config:\n" + config);
+        return configFile.getAbsolutePath();
     }
 }
