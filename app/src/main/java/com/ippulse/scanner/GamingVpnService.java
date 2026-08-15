@@ -155,7 +155,7 @@ public class GamingVpnService extends VpnService {
             else if (protocol == 17 && routedIps.contains(dstAddr.getHostAddress())) {
                 handleUdp(packet, length, headerLength, srcAddr, srcPort, dstAddr, dstPort, out);
             }
-            // بقیه (TCP یا IPهای دیگر) نادیده گرفته می‌شود
+            // بقیه ترافیک (TCP و IPهای دیگر) نادیده گرفته می‌شود → مستقیم از شبکه عادی
         } catch (Exception e) {
             e.printStackTrace();
         }
