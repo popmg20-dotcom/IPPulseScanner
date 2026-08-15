@@ -13,7 +13,7 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import java.io.File;
-import com.ippulse.scanner.NativeHelper;
+import net.typeblog.socks.System;
 import java.util.HashMap;
 
 public class GamingVpnService extends VpnService {
@@ -108,7 +108,7 @@ public class GamingVpnService extends VpnService {
             // ارسال fd از طریق سوکت (مثل SocksDroid)
             int attempts = 0;
             while (attempts < 5) {
-                int sent = NativeHelper.sendfd(fd, sockPath);
+                int sent = System.sendfd(fd, sockPath);
                 if (sent != -1) {
                     break;
                 }
