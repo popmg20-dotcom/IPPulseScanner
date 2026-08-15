@@ -63,11 +63,13 @@ public class GamingVpnService extends VpnService {
                 startForeground(1, notification);
             }
         } catch (Exception e) {
+            writeLog("ERROR: " + android.util.Log.getStackTraceString(e));
             startForeground(1, notification);
         }
     }
 
     private void startVpn() {
+        writeLog("startVpn called");
         try {
             Builder builder = new Builder();
             builder.setSession("Gaming VPN");
@@ -78,7 +80,7 @@ public class GamingVpnService extends VpnService {
             builder.setBlocking(false);
 
             vpnInterface = builder.establish();
-            if (vpnInterface == null) throw new IllegalStateException("establish failed");
+            if (vpnInterface == null) { writeLog("establish failed"); throw new IllegalStateException("establish failed"); }
 
             // شروع SOCKS5 و DNS Proxy بعد از ساخت TUN
             socks5 = new Socks5ProxyServer(this, SOCKS_PORT);
@@ -102,7 +104,7 @@ public class GamingVpnService extends VpnService {
                     + " --pid " + pidPath
                     + " --sock " + sockPath;
 
-            Log.i(TAG, "Executing: " + command);
+            writeLog("Executing: " + command);
             tun2socksProcess = Runtime.getRuntime().exec(command);
 
             // ارسال fd از طریق سوکت (مثل SocksDroid)
@@ -116,8 +118,9 @@ public class GamingVpnService extends VpnService {
                 Thread.sleep(1000L * attempts);
             }
             running = true;
-            Log.i(TAG, "VPN started");
+            writeLog("VPN started"); running = true;
         } catch (Exception e) {
+            writeLog("ERROR: " + android.util.Log.getStackTraceString(e));
             Log.e(TAG, "Error starting VPN", e);
             stopVpn();
         }
@@ -183,5 +186,14 @@ public class GamingVpnService extends VpnService {
     public static class SerializableHosts implements java.io.Serializable {
         public HashMap<String, String> map;
         public SerializableHosts(HashMap<String, String> map) { this.map = map; }
+    }
+
+    private void writeLog(String msg) {
+        try {
+            java.io.File logFile = new java.io.File(getExternalFilesDir(null), "vpn_log.txt");
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(logFile, true);
+            fos.write((msg + "\n").getBytes());
+            fos.close();
+        } catch (Exception ignored) {}
     }
 }
