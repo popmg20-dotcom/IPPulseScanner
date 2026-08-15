@@ -122,7 +122,7 @@ public class GamingVpnService extends VpnService {
                         Thread.sleep(2000);
                         if (!TProxyService.TProxyIsRunning()) {
                             Log.e(TAG, "HEV is not running, stopping VPN");
-                            runOnUiThread(this::stopVpn);
+                            stopVpn();
                             break;
                         }
                     } catch (InterruptedException e) {
