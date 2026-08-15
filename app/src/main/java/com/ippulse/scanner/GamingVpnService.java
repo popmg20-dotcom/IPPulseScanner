@@ -188,12 +188,23 @@ public class GamingVpnService extends VpnService {
         public SerializableHosts(HashMap<String, String> map) { this.map = map; }
     }
 
+
     private void writeLog(String msg) {
         try {
-            java.io.File logFile = new java.io.File(getExternalFilesDir(null), "vpn_log.txt");
+            java.io.File logFile = new java.io.File(getFilesDir(), "vpn_log.txt");
             java.io.FileOutputStream fos = new java.io.FileOutputStream(logFile, true);
             fos.write((msg + "\n").getBytes());
             fos.close();
+
+            // همچنین تلاش برای نوشتن در storage برای دسترسی آسان‌تر
+            java.io.File extDir = getExternalFilesDir(null);
+            if (extDir != null) {
+                extDir.mkdirs();
+                java.io.File extLog = new java.io.File(extDir, "vpn_log.txt");
+                java.io.FileOutputStream extFos = new java.io.FileOutputStream(extLog, true);
+                extFos.write((msg + "\n").getBytes());
+                extFos.close();
+            }
         } catch (Exception ignored) {}
     }
 }
