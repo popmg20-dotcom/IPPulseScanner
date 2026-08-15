@@ -15,12 +15,12 @@ public class LocalSocks5Server {
     private ServerSocket serverSocket;
     private boolean isRunning = false;
     private HashMap<String, String> hostsMap;
-    private String dns;
+    private GamingVpnService vpnService;
 
     public LocalSocks5Server(GamingVpnService context, int port, HashMap<String, String> hostsMap, String dns) {
+        this.vpnService = context;
         this.port = port;
         this.hostsMap = hostsMap;
-        this.dns = dns;
     }
 
     public void start() {
@@ -89,6 +89,7 @@ public class LocalSocks5Server {
             }
 
             Socket remote = new Socket();
+            vpnService.protect(remote); // حیاتی برای جلوگیری از لوپ و وصل شدن به اینترنت
             remote.connect(new InetSocketAddress(host, destPort), 10000);
 
             byte[] response = new byte[]{0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0};
@@ -101,7 +102,7 @@ public class LocalSocks5Server {
                     OutputStream remoteOut = remote.getOutputStream();
                     byte[] buffer = new byte[8192];
                     int read;
-                    while ((read = clientIn.read(buffer)) != -1) {
+                    while (isRunning && (read = clientIn.read(buffer)) != -1) {
                         remoteOut.write(buffer, 0, read);
                     }
                 } catch (Exception ignored) {}
@@ -115,7 +116,7 @@ public class LocalSocks5Server {
                     OutputStream clientOut = client.getOutputStream();
                     byte[] buffer = new byte[8192];
                     int read;
-                    while ((read = remoteIn.read(buffer)) != -1) {
+                    while (isRunning && (read = remoteIn.read(buffer)) != -1) {
                         clientOut.write(buffer, 0, read);
                     }
                 } catch (Exception ignored) {}
