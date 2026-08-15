@@ -20,8 +20,6 @@ public class LocalSocks5Server {
     private boolean isRunning = false;
     private HashMap<String, String> hostsMap;
     private GamingVpnService vpnService;
-    
-    // کش کردن پورت‌های UDP تا پورت‌ها در حین بازی مدام تغییر نکنند (جلوگیری از قطع ارتباط)
     private final HashMap<String, DatagramSocket> udpSessions = new HashMap<>();
 
     public LocalSocks5Server(GamingVpnService context, int port, HashMap<String, String> hostsMap, String dns) {
@@ -34,9 +32,13 @@ public class LocalSocks5Server {
         isRunning = true;
         new Thread(() -> {
             try {
-                serverSocket = new ServerSocket(port);
+                serverSocket = new ServerSocket();
+                serverSocket.setReuseAddress(true); // جلوگیری از خطای اشغال بودن پورت در صورت استارت مجدد
+                serverSocket.bind(new InetSocketAddress("127.0.0.1", port));
+                
                 while (isRunning) {
                     Socket clientSocket = serverSocket.accept();
+                    clientSocket.setTcpNoDelay(true); // مناسب برای کاهش پینگ گیمینگ
                     new Thread(() -> handleClient(clientSocket)).start();
                 }
             } catch (Exception e) { if (isRunning) Log.e(TAG, "SOCKS error", e); }
@@ -48,15 +50,17 @@ public class LocalSocks5Server {
             DataInputStream in = new DataInputStream(client.getInputStream());
             OutputStream out = client.getOutputStream();
 
-            in.readByte(); // Version
+            in.readByte(); 
             int nMethods = in.readUnsignedByte();
-            in.skipBytes(nMethods);
+            byte[] methods = new byte[nMethods];
+            in.readFully(methods); // جایگزینی skipBytes برای جلوگیری از باگ‌های بافر
+
             out.write(new byte[]{0x05, 0x00});
             out.flush();
 
-            in.readByte(); // Version
+            in.readByte(); 
             int cmd = in.readUnsignedByte();
-            in.readByte(); // RSV
+            in.readByte(); 
             int atyp = in.readUnsignedByte();
 
             String host = "";
@@ -73,9 +77,7 @@ public class LocalSocks5Server {
 
             int destPort = in.readUnsignedShort();
 
-            if (hostsMap != null && hostsMap.containsKey(host)) {
-                host = hostsMap.get(host);
-            }
+            if (hostsMap != null && hostsMap.containsKey(host)) host = hostsMap.get(host);
 
             if (cmd == 0x01) {
                 handleTcp(client, in, out, host, destPort);
@@ -91,9 +93,9 @@ public class LocalSocks5Server {
         Socket remote = new Socket();
         try {
             vpnService.protect(remote);
+            remote.setTcpNoDelay(true);
             remote.connect(new InetSocketAddress(host, destPort), 10000);
 
-            // ارسال آی‌پی و پورت فرضی 127.0.0.1:10808 تا کلاینت‌ها با 0.0.0.0 مشکل پیدا نکنند
             out.write(new byte[]{0x05, 0x00, 0x00, 0x01, 127, 0, 0, 1, (byte)(port >> 8), (byte)(port & 0xFF)});
             out.flush();
 
@@ -127,7 +129,9 @@ public class LocalSocks5Server {
 
     private void handleUdp(Socket client, OutputStream out) {
         try {
-            DatagramSocket udpSocket = new DatagramSocket(0, InetAddress.getByName("127.0.0.1"));
+            DatagramSocket udpSocket = new DatagramSocket(null);
+            udpSocket.setReuseAddress(true);
+            udpSocket.bind(new InetSocketAddress("127.0.0.1", 0));
             vpnService.protect(udpSocket);
             int udpPort = udpSocket.getLocalPort();
 
@@ -137,7 +141,7 @@ public class LocalSocks5Server {
             new Thread(() -> {
                 try {
                     byte[] buffer = new byte[65535];
-                    while (isRunning) {
+                    while (isRunning && !udpSocket.isClosed()) {
                         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                         udpSocket.receive(packet);
 
@@ -159,7 +163,7 @@ public class LocalSocks5Server {
                         int targetPort = ((buffer[headerLen] & 0xFF) << 8) | (buffer[headerLen + 1] & 0xFF);
                         headerLen += 2;
                         
-                        if (packet.getLength() <= headerLen) continue; // جلوگیری از کرش پکت‌های خالی
+                        if (packet.getLength() <= headerLen) continue;
 
                         if (hostsMap != null && hostsMap.containsKey(targetHost)) targetHost = hostsMap.get(targetHost);
 
@@ -182,7 +186,7 @@ public class LocalSocks5Server {
                                         byte[] resBuffer = new byte[65535];
                                         while (isRunning && !currentOutSocket.isClosed()) {
                                             DatagramPacket resPacket = new DatagramPacket(resBuffer, resBuffer.length);
-                                            currentOutSocket.setSoTimeout(30000); // تایم‌اوت 30 ثانیه‌ای نشست
+                                            currentOutSocket.setSoTimeout(45000); 
                                             currentOutSocket.receive(resPacket);
                                             
                                             byte[] finalData = new byte[finalSocksHeader.length + resPacket.getLength()];
@@ -197,7 +201,6 @@ public class LocalSocks5Server {
                                 }).start();
                             }
                         }
-
                         outSocket.send(new DatagramPacket(data, data.length, new InetSocketAddress(targetHost, targetPort)));
                     }
                 } catch (Exception ignored) {}

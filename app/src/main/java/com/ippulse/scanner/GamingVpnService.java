@@ -47,11 +47,13 @@ public class GamingVpnService extends VpnService {
         instance = this;
         try {
             String dns = "8.8.8.8";
-            int mtu = 1400; // MTU بهینه برای جلوگیری از قطعی پکت‌ها
+            int mtu = 1400;
             HashMap<String, String> hostsMap = new HashMap<>();
 
             if (intent != null) {
-                if (intent.getStringExtra("dns") != null) dns = intent.getStringExtra("dns");
+                if (intent.getStringExtra("dns") != null && !intent.getStringExtra("dns").isEmpty()) {
+                    dns = intent.getStringExtra("dns");
+                }
                 if (intent.getIntExtra("mtu", 1400) > 0) mtu = intent.getIntExtra("mtu", 1400);
                 try {
                     HashMap<?, ?> tempMap = (HashMap<?, ?>) intent.getSerializableExtra("hostsMap");
@@ -79,34 +81,25 @@ public class GamingVpnService extends VpnService {
 
             Builder builder = new Builder();
             builder.setSession("IPPulseScanner")
-                   .addAddress("10.0.0.2", 24) // رنج آی‌پی استانداردتر
+                   .addAddress("26.26.26.2", 24) // تغییر به رنج کاملاً ایزوله برای رفع تداخل با دیتای موبایل
                    .addRoute("0.0.0.0", 0)
                    .addDnsServer(dns)
                    .setMtu(mtu);
 
-            try {
-                builder.addDisallowedApplication(getPackageName());
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to exclude app from VPN", e);
-            }
+            try { builder.addDisallowedApplication(getPackageName()); } catch (Exception ignored) {}
 
             mInterface = builder.establish();
-            if (mInterface == null) {
-                stopSelf();
-                return;
-            }
+            if (mInterface == null) { stopSelf(); return; }
 
             int tunFd = mInterface.getFd();
             new Thread(() -> {
                 try {
                     System.loadLibrary("hev-socks5-tunnel");
                     startNativeTunnel(configFile.getAbsolutePath(), tunFd);
-                } catch (Throwable t) { Log.e(TAG, "Native tunnel thread error", t); }
+                } catch (Throwable t) { Log.e(TAG, "Native tunnel error", t); }
             }, "NativeTunnelThread").start();
 
-        } catch (Throwable t) {
-            stopSelf();
-        }
+        } catch (Throwable t) { stopSelf(); }
     }
 
     private native void startNativeTunnel(String configPath, int fd);
@@ -114,7 +107,7 @@ public class GamingVpnService extends VpnService {
 
     private File writeConfigFile(String dns, int mtu) throws IOException {
         File file = new File(getFilesDir(), "tunnel.yml");
-        String content = "tunnel:\n  name: tun0\n  mtu: " + mtu + "\n  ipv4: 10.0.0.2\nsocks5:\n  address: 127.0.0.1\n  port: " + SOCKS_PORT + "\n  udp: 'udp'\nmisc:\n  log-level: debug\n";
+        String content = "tunnel:\n  name: tun0\n  mtu: " + mtu + "\n  ipv4: 26.26.26.2\nsocks5:\n  address: 127.0.0.1\n  port: " + SOCKS_PORT + "\n  udp: 'udp'\nmisc:\n  log-level: error\n";
         FileOutputStream fos = new FileOutputStream(file);
         fos.write(content.getBytes());
         fos.close();
