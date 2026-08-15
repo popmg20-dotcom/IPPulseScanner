@@ -32,6 +32,7 @@ public class GamingVpnService extends VpnService {
     private ParcelFileDescriptor vpnInterface;
     private LocalSocks5Server socksServer;
     private volatile boolean running;
+    private Thread watchdogThread;
     private int currentMtu = 1400;
     private String upstreamDns = "8.8.8.8";
     private HashMap<String, String> hostsMap = new HashMap<>();
@@ -109,10 +110,27 @@ public class GamingVpnService extends VpnService {
                     Log.e(TAG, "HEV native error", t);
                 } finally {
                     running = false;
+                    stopVpn();
                 }
             }, "HEV-Tun2Socks");
             nativeThread.start();
             Log.i(TAG, "VPN started MTU=" + currentMtu + " DNS=" + upstreamDns);
+
+            watchdogThread = new Thread(() -> {
+                while (running) {
+                    try {
+                        Thread.sleep(2000);
+                        if (!TProxyService.TProxyIsRunning()) {
+                            Log.e(TAG, "HEV is not running, stopping VPN");
+                            runOnUiThread(this::stopVpn);
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+            }, "HEV-Watchdog");
+            watchdogThread.start();
         } catch (Throwable e) {
             Log.e(TAG, "startVpn() failed", e);
             if (interfaceFd != null) {
