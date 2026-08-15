@@ -156,13 +156,14 @@ public class LocalSocks5Server {
                         vpnService.protect(outSocket);
                         DatagramPacket outPacket = new DatagramPacket(data, data.length, new InetSocketAddress(targetHost, targetPort));
                         
+                        final byte[] socksHeader = Arrays.copyOfRange(buffer, 0, headerLen);
+                        
                         new Thread(() -> {
                             try {
                                 byte[] resBuffer = new byte[65535];
                                 DatagramPacket resPacket = new DatagramPacket(resBuffer, resBuffer.length);
                                 outSocket.setSoTimeout(10000); outSocket.receive(resPacket);
                                 
-                                byte[] socksHeader = Arrays.copyOfRange(buffer, 0, headerLen);
                                 byte[] finalData = new byte[socksHeader.length + resPacket.getLength()];
                                 System.arraycopy(socksHeader, 0, finalData, 0, socksHeader.length);
                                 System.arraycopy(resPacket.getData(), 0, finalData, socksHeader.length, resPacket.getLength());
