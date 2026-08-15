@@ -13,6 +13,7 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import java.io.File;
+import com.ippulse.scanner.NativeHelper;
 import java.util.HashMap;
 
 public class GamingVpnService extends VpnService {
@@ -27,6 +28,7 @@ public class GamingVpnService extends VpnService {
     private Socks5ProxyServer socks5;
     private DnsProxyServer dnsProxy;
     private Process tun2socksProcess;
+    private String sockPath;
     private HashMap<String, String> hostsMap = new HashMap<>();
     private String dns = "8.8.8.8";
     private int mtu = 1400;
@@ -86,6 +88,9 @@ public class GamingVpnService extends VpnService {
 
             int fd = vpnInterface.getFd();
             String nativeLibDir = getApplicationInfo().nativeLibraryDir;
+            sockPath = getApplicationInfo().dataDir + "/sock_path";
+            String pidPath = getFilesDir() + "/tun2socks.pid";
+
             String command = nativeLibDir + "/libtun2socks.so"
                     + " --netif-ipaddr 26.26.26.2"
                     + " --netif-netmask 255.255.255.0"
@@ -93,10 +98,23 @@ public class GamingVpnService extends VpnService {
                     + " --tunfd " + fd
                     + " --tunmtu " + mtu
                     + " --loglevel 1"
-                    + " --dnsgw 26.26.26.1:" + DNS_PORT;
+                    + " --dnsgw 26.26.26.1:" + DNS_PORT
+                    + " --pid " + pidPath
+                    + " --sock " + sockPath;
 
             Log.i(TAG, "Executing: " + command);
             tun2socksProcess = Runtime.getRuntime().exec(command);
+
+            // ارسال fd از طریق سوکت (مثل SocksDroid)
+            int attempts = 0;
+            while (attempts < 5) {
+                int sent = NativeHelper.sendfd(fd, sockPath);
+                if (sent != -1) {
+                    break;
+                }
+                attempts++;
+                Thread.sleep(1000L * attempts);
+            }
             running = true;
             Log.i(TAG, "VPN started");
         } catch (Exception e) {
