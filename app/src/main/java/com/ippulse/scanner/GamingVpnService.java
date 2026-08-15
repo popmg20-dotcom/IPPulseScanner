@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -155,7 +156,7 @@ public class GamingVpnService extends VpnService {
             else if (protocol == 17 && routedIps.contains(dstAddr.getHostAddress())) {
                 handleUdp(packet, length, headerLength, srcAddr, srcPort, dstAddr, dstPort, out);
             }
-            // بقیه ترافیک نادیده گرفته می‌شود (مستقیم از شبکه عادی)
+            // بقیه ترافیک نادیده گرفته می‌شود
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -181,8 +182,15 @@ public class GamingVpnService extends VpnService {
             }
 
             if (dnsResponse != null) {
-                byte[] responsePacket = buildUdpPacket(DNS_ADDRESS, 53, srcAddr, srcPort, dnsResponse);
-                out.write(responsePacket);
+                // ارسال پاسخ با DatagramSocket به کلاینت
+                DatagramSocket responseSocket = new DatagramSocket();
+                protect(responseSocket);
+                DatagramPacket responsePacket = new DatagramPacket(
+                    dnsResponse, dnsResponse.length,
+                    new InetSocketAddress(srcAddr, srcPort)
+                );
+                responseSocket.send(responsePacket);
+                responseSocket.close();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -233,77 +241,20 @@ public class GamingVpnService extends VpnService {
                 byte[] responsePayload = new byte[response.getLength()];
                 System.arraycopy(response.getData(), 0, responsePayload, 0, response.getLength());
 
-                byte[] responsePacket = buildUdpPacket(dstAddr.getHostAddress(), dstPort, srcAddr, srcPort, responsePayload);
-                out.write(responsePacket);
+                // ارسال پاسخ به کلاینت با DatagramSocket
+                DatagramSocket responseSocket = new DatagramSocket();
+                protect(responseSocket);
+                DatagramPacket responsePacket = new DatagramPacket(
+                    responsePayload, responsePayload.length,
+                    new InetSocketAddress(srcAddr, srcPort)
+                );
+                responseSocket.send(responsePacket);
+                responseSocket.close();
                 socket.close();
             } catch (Exception e) {
                 // timeout یا خطا
             }
         });
-    }
-
-    private byte[] buildUdpPacket(String sourceIp, int sourcePort, InetAddress clientAddr, int clientPort, byte[] payload) {
-        try {
-            int udpLength = 8 + payload.length;
-            ByteBuffer packet = ByteBuffer.allocate(20 + udpLength);
-            packet.put((byte) 0x45);
-            packet.put((byte) 0x00);
-            packet.putShort((short) (20 + udpLength));
-            packet.putShort((short) 0);
-            packet.putShort((short) 0);
-            packet.put((byte) 64);
-            packet.put((byte) 17);
-            packet.putShort((short) 0);
-            packet.put(InetAddress.getByName(sourceIp).getAddress());
-            packet.put(clientAddr.getAddress());
-            packet.putShort((short) sourcePort);
-            packet.putShort((short) clientPort);
-            packet.putShort((short) udpLength);
-            packet.putShort((short) 0);
-            packet.put(payload);
-
-            byte[] array = packet.array();
-            int udpChecksum = calculateUdpChecksum(array, 12, 20, udpLength);
-            packet.putShort(26, (short) udpChecksum);
-            int ipChecksum = calculateIpChecksum(array, 0, 20);
-            packet.putShort(10, (short) ipChecksum);
-            return array;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private int calculateUdpChecksum(byte[] packet, int srcIpOffset, int udpOffset, int udpLength) {
-        long sum = 0;
-        sum += ((packet[srcIpOffset] & 0xFF) << 8) | (packet[srcIpOffset + 1] & 0xFF);
-        sum += ((packet[srcIpOffset + 2] & 0xFF) << 8) | (packet[srcIpOffset + 3] & 0xFF);
-        sum += ((packet[srcIpOffset + 4] & 0xFF) << 8) | (packet[srcIpOffset + 5] & 0xFF);
-        sum += ((packet[srcIpOffset + 6] & 0xFF) << 8) | (packet[srcIpOffset + 7] & 0xFF);
-        sum += 0x0011;
-        sum += udpLength;
-        int end = udpOffset + udpLength;
-        for (int i = udpOffset; i < end; i += 2) {
-            int word = ((packet[i] & 0xFF) << 8);
-            if (i + 1 < end) word |= (packet[i + 1] & 0xFF);
-            sum += word;
-        }
-        while ((sum >> 16) != 0) {
-            sum = (sum & 0xFFFF) + (sum >> 16);
-        }
-        return (int) (~sum & 0xFFFF);
-    }
-
-    private int calculateIpChecksum(byte[] packet, int offset, int length) {
-        long sum = 0;
-        for (int i = offset; i < offset + length; i += 2) {
-            int word = ((packet[i] & 0xFF) << 8);
-            if (i + 1 < offset + length) word |= (packet[i + 1] & 0xFF);
-            sum += word;
-        }
-        while ((sum >> 16) != 0) {
-            sum = (sum & 0xFFFF) + (sum >> 16);
-        }
-        return (int) (~sum & 0xFFFF);
     }
 
     private String extractDomain(byte[] data) {
