@@ -17,9 +17,7 @@ public class GamingVpnService extends VpnService {
     private static final int SOCKS_PORT = 10808;
     private static GamingVpnService instance;
 
-    public static GamingVpnService getInstance() {
-        return instance;
-    }
+    public static GamingVpnService getInstance() { return instance; }
 
     public static void start(Context context, String dns, int mtu, HashMap<String, String> hostsMap) {
         try {
@@ -28,18 +26,14 @@ public class GamingVpnService extends VpnService {
             intent.putExtra("mtu", mtu);
             intent.putExtra("hostsMap", hostsMap);
             context.startService(intent);
-        } catch (Exception e) {
-            Log.e(TAG, "Error starting service", e);
-        }
+        } catch (Exception e) { Log.e(TAG, "Error starting service", e); }
     }
 
     public static void stop(Context context) {
         try {
             Intent intent = new Intent(context, GamingVpnService.class);
             context.stopService(intent);
-        } catch (Exception e) {
-            Log.e(TAG, "Error stopping service", e);
-        }
+        } catch (Exception e) { Log.e(TAG, "Error stopping service", e); }
     }
 
     @Override
@@ -57,9 +51,7 @@ public class GamingVpnService extends VpnService {
             HashMap<String, String> hostsMap = new HashMap<>();
 
             if (intent != null) {
-                if (intent.getStringExtra("dns") != null) {
-                    dns = intent.getStringExtra("dns");
-                }
+                if (intent.getStringExtra("dns") != null) dns = intent.getStringExtra("dns");
                 mtu = intent.getIntExtra("mtu", 1500);
                 try {
                     HashMap<?, ?> tempMap = (HashMap<?, ?>) intent.getSerializableExtra("hostsMap");
@@ -72,20 +64,14 @@ public class GamingVpnService extends VpnService {
                     }
                 } catch (Exception ignored) {}
             }
-
             startVpn(dns, mtu, hostsMap);
-        } catch (Throwable t) {
-            Log.e(TAG, "Error in onStartCommand", t);
-        }
+        } catch (Throwable t) { Log.e(TAG, "Error in onStartCommand", t); }
         return START_NOT_STICKY;
     }
 
     private void startVpn(String dns, int mtu, HashMap<String, String> hostsMap) {
         try {
-            if (socksServer != null) {
-                socksServer.stop();
-            }
-
+            if (socksServer != null) socksServer.stop();
             socksServer = new LocalSocks5Server(this, SOCKS_PORT, hostsMap, dns);
             socksServer.start();
 
@@ -98,27 +84,28 @@ public class GamingVpnService extends VpnService {
                    .addDnsServer(dns)
                    .setMtu(mtu);
 
+            // جلوگیری از لوپ شدن اینترنت با مستثنی کردن خود اپلیکیشن
+            try {
+                builder.addDisallowedApplication(getPackageName());
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to exclude app from VPN", e);
+            }
+
             mInterface = builder.establish();
             if (mInterface == null) {
-                Log.e(TAG, "Failed to establish VPN interface.");
                 stopSelf();
                 return;
             }
 
             int tunFd = mInterface.getFd();
-            Log.i(TAG, "VPN established with FD: " + tunFd);
-
             new Thread(() -> {
                 try {
                     System.loadLibrary("hev-socks5-tunnel");
                     startNativeTunnel(configFile.getAbsolutePath(), tunFd);
-                } catch (Throwable t) {
-                    Log.e(TAG, "Native tunnel thread error", t);
-                }
+                } catch (Throwable t) { Log.e(TAG, "Native tunnel thread error", t); }
             }, "NativeTunnelThread").start();
 
         } catch (Throwable t) {
-            Log.e(TAG, "Error starting VPN", t);
             stopSelf();
         }
     }
@@ -128,17 +115,7 @@ public class GamingVpnService extends VpnService {
 
     private File writeConfigFile(String dns, int mtu) throws IOException {
         File file = new File(getFilesDir(), "tunnel.yml");
-        String content = 
-            "tunnel:\n" +
-            "  name: tun0\n" +
-            "  mtu: " + mtu + "\n" +
-            "  ipv4: 198.18.0.1\n" +
-            "socks5:\n" +
-            "  address: 127.0.0.1\n" +
-            "  port: " + SOCKS_PORT + "\n" +
-            "  udp: 'udp'\n" +
-            "misc:\n" +
-            "  log-level: debug\n";
+        String content = "tunnel:\n  name: tun0\n  mtu: " + mtu + "\n  ipv4: 198.18.0.1\nsocks5:\n  address: 127.0.0.1\n  port: " + SOCKS_PORT + "\n  udp: 'udp'\nmisc:\n  log-level: debug\n";
         FileOutputStream fos = new FileOutputStream(file);
         fos.write(content.getBytes());
         fos.close();
@@ -148,26 +125,9 @@ public class GamingVpnService extends VpnService {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.i(TAG, "onDestroy called - Stopping VPN completely");
-        
-        try {
-            stopNativeTunnel();
-        } catch (Throwable ignored) {}
-
-        if (socksServer != null) {
-            try {
-                socksServer.stop();
-            } catch (Throwable ignored) {}
-        }
-
-        if (mInterface != null) {
-            try {
-                mInterface.close();
-            } catch (IOException ignored) {}
-            mInterface = null;
-        }
-
+        try { stopNativeTunnel(); } catch (Throwable ignored) {}
+        if (socksServer != null) { try { socksServer.stop(); } catch (Throwable ignored) {} }
+        if (mInterface != null) { try { mInterface.close(); } catch (IOException ignored) {} mInterface = null; }
         instance = null;
-        Log.i(TAG, "VPN stopped completely.");
     }
 }
