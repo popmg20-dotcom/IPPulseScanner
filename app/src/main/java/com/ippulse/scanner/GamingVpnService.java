@@ -11,16 +11,16 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -34,11 +34,10 @@ public class GamingVpnService extends VpnService {
     private String dns = "8.8.8.8";
     private int mtu = 1400;
     private HashMap<String, String> hostsMap = new HashMap<>();
-    private Socks5Server socks5Server;
-    private Process tun2socksProcess;
-    private Thread tunReaderThread;
+    private Set<String> routedIps = new HashSet<>();
+    private Thread tunThread;
     private volatile boolean running = false;
-    private ParcelFileDescriptor appFd;
+    private ExecutorService udpExecutor;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -80,103 +79,61 @@ public class GamingVpnService extends VpnService {
             Builder builder = new Builder();
             builder.setSession("Gaming VPN");
             builder.addAddress(VPN_ADDRESS, 32);
-            builder.addRoute("0.0.0.0", 0); // Full Tunnel
+            // مسیر DNS محلی
+            builder.addRoute(DNS_ADDRESS, 32);
             builder.addDnsServer(DNS_ADDRESS);
+
+            // اضافه کردن مسیر IPهای مپ‌شده (فقط برای UDP)
+            routedIps.clear();
+            for (String ip : hostsMap.values()) {
+                try {
+                    builder.addRoute(ip, 32);
+                    routedIps.add(ip);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
             builder.setMtu(mtu);
             builder.setBlocking(true);
             vpnInterface = builder.establish();
 
             running = true;
-
-            // Start SOCKS5 server
-            socks5Server = new Socks5Server();
-            socks5Server.start();
-
-            // Start tun2socks process
-            startTun2socksProcess();
-
-            // Start packet interceptor/forwarder
+            udpExecutor = Executors.newFixedThreadPool(10);
             startTunReader();
-
         } catch (Exception e) {
             e.printStackTrace();
             stopVpn();
         }
     }
 
-    private void startTun2socksProcess() {
-        try {
-            File binary = new File(getFilesDir(), "tun2socks");
-            if (!binary.exists() || binary.length() == 0) {
-                InputStream in = getAssets().open("tun2socks");
-                FileOutputStream out = new FileOutputStream(binary);
-                byte[] buffer = new byte[8192];
-                int len;
-                while ((len = in.read(buffer)) > 0) {
-                    out.write(buffer, 0, len);
-                }
-                out.flush();
-                out.close();
-                in.close();
-                binary.setExecutable(true);
-            }
-
-            // Create socketpair for separation
-            ParcelFileDescriptor[] pair = ParcelFileDescriptor.createSocketPair();
-            ParcelFileDescriptor tun2socksFd = pair[0];
-            appFd = pair[1];
-
-            // Start tun2socks with tun2socksFd
-            ProcessBuilder pb = new ProcessBuilder(
-                binary.getAbsolutePath(),
-                "-tun-fd", String.valueOf(tun2socksFd.getFd()),
-                "-socks5ServerAddr", "127.0.0.1:1080",
-                "-loglevel", "warn"
-            );
-            pb.redirectErrorStream(true);
-            tun2socksProcess = pb.start();
-
-            // Close our copy of tun2socksFd after passing to process (optional)
-            // tun2socksFd.close(); // Don't close before process uses it; process has its own copy.
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     private void startTunReader() {
-        tunReaderThread = new Thread(() -> {
+        tunThread = new Thread(() -> {
             try (FileInputStream in = new FileInputStream(vpnInterface.getFileDescriptor());
-                 FileOutputStream out = new FileOutputStream(vpnInterface.getFileDescriptor());
-                 FileOutputStream appOut = new FileOutputStream(appFd.getFileDescriptor())) {
+                 FileOutputStream out = new FileOutputStream(vpnInterface.getFileDescriptor())) {
                 byte[] buffer = new byte[32767];
                 while (running && !Thread.currentThread().isInterrupted()) {
                     int length = in.read(buffer);
                     if (length > 0) {
-                        if (handleDnsPacket(buffer, length, out)) {
-                            continue; // DNS handled
-                        }
-                        // Forward to tun2socks via socketpair
-                        appOut.write(buffer, 0, length);
-                        appOut.flush();
+                        handlePacket(buffer, length, out);
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
-        tunReaderThread.start();
+        tunThread.start();
     }
 
-    private boolean handleDnsPacket(byte[] packet, int length, FileOutputStream out) {
+    private void handlePacket(byte[] packet, int length, FileOutputStream out) {
         try {
             ByteBuffer buf = ByteBuffer.wrap(packet, 0, length);
             int versionIHL = buf.get(0) & 0xFF;
             int version = (versionIHL >> 4) & 0xF;
-            if (version != 4) return false;
+            if (version != 4) return;
 
             int headerLength = (versionIHL & 0xF) * 4;
             int protocol = buf.get(9) & 0xFF;
-            if (protocol != 17) return false;
 
             byte[] srcIpBytes = new byte[4];
             buf.position(12);
@@ -190,12 +147,28 @@ public class GamingVpnService extends VpnService {
             int srcPort = ((buf.get(headerLength) & 0xFF) << 8) | (buf.get(headerLength + 1) & 0xFF);
             int dstPort = ((buf.get(headerLength + 2) & 0xFF) << 8) | (buf.get(headerLength + 3) & 0xFF);
 
-            if (!dstAddr.getHostAddress().equals(DNS_ADDRESS) || dstPort != 53) return false;
+            // DNS
+            if (protocol == 17 && dstAddr.getHostAddress().equals(DNS_ADDRESS) && dstPort == 53) {
+                handleDns(packet, length, headerLength, srcAddr, srcPort, out);
+            }
+            // UDP به IPهای مپ‌شده
+            else if (protocol == 17 && routedIps.contains(dstAddr.getHostAddress())) {
+                handleUdp(packet, length, headerLength, srcAddr, srcPort, dstAddr, dstPort, out);
+            }
+            // بقیه (TCP یا IPهای دیگر) نادیده گرفته می‌شود
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-            int udpLength = ((buf.get(headerLength + 4) & 0xFF) << 8) | (buf.get(headerLength + 5) & 0xFF);
+    // ---------- DNS ----------
+    private void handleDns(byte[] packet, int length, int headerLength, InetAddress srcAddr, int srcPort, FileOutputStream out) {
+        try {
+            ByteBuffer buf = ByteBuffer.wrap(packet, headerLength, length - headerLength);
+            int udpLength = buf.getShort(4) & 0xFFFF;
             int dnsPayloadOffset = headerLength + 8;
             int dnsPayloadLength = udpLength - 8;
-            if (dnsPayloadLength <= 0) return false;
+            if (dnsPayloadLength <= 0) return;
 
             byte[] dnsQuery = new byte[dnsPayloadLength];
             System.arraycopy(packet, dnsPayloadOffset, dnsQuery, 0, dnsPayloadLength);
@@ -212,9 +185,8 @@ public class GamingVpnService extends VpnService {
                 byte[] responsePacket = buildUdpPacket(DNS_ADDRESS, 53, srcAddr, srcPort, dnsResponse);
                 out.write(responsePacket);
             }
-            return true;
         } catch (Exception e) {
-            return false;
+            e.printStackTrace();
         }
     }
 
@@ -235,6 +207,41 @@ public class GamingVpnService extends VpnService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    // ---------- UDP Forwarding ----------
+    private void handleUdp(byte[] packet, int length, int headerLength, InetAddress srcAddr, int srcPort, InetAddress dstAddr, int dstPort, FileOutputStream out) {
+        udpExecutor.execute(() -> {
+            try {
+                ByteBuffer udpBuf = ByteBuffer.wrap(packet, headerLength, length - headerLength);
+                int udpLength = udpBuf.getShort(4) & 0xFFFF;
+                int udpPayloadOffset = headerLength + 8;
+                int udpPayloadLength = udpLength - 8;
+                if (udpPayloadLength <= 0) return;
+
+                byte[] udpPayload = new byte[udpPayloadLength];
+                System.arraycopy(packet, udpPayloadOffset, udpPayload, 0, udpPayloadLength);
+
+                DatagramSocket socket = new DatagramSocket();
+                protect(socket);
+                socket.setSoTimeout(10000);
+                DatagramPacket request = new DatagramPacket(udpPayload, udpPayloadLength, dstAddr, dstPort);
+                socket.send(request);
+
+                byte[] responseBuffer = new byte[32767];
+                DatagramPacket response = new DatagramPacket(responseBuffer, responseBuffer.length);
+                socket.receive(response);
+
+                byte[] responsePayload = new byte[response.getLength()];
+                System.arraycopy(response.getData(), 0, responsePayload, 0, response.getLength());
+
+                byte[] responsePacket = buildUdpPacket(dstAddr.getHostAddress(), dstPort, srcAddr, srcPort, responsePayload);
+                out.write(responsePacket);
+                socket.close();
+            } catch (Exception e) {
+                // timeout یا خطا
+            }
+        });
     }
 
     private byte[] buildUdpPacket(String sourceIp, int sourcePort, InetAddress clientAddr, int clientPort, byte[] payload) {
@@ -393,39 +400,15 @@ public class GamingVpnService extends VpnService {
 
     private void stopVpn() {
         running = false;
-        if (tun2socksProcess != null) {
-            tun2socksProcess.destroy();
-            tun2socksProcess = null;
-        }
-        if (socks5Server != null) {
-            socks5Server.stop();
-            socks5Server = null;
-        }
-        if (tunReaderThread != null) {
-            tunReaderThread.interrupt();
-            tunReaderThread = null;
-        }
-        if (appFd != null) {
-            try { appFd.close(); } catch (IOException e) {}
-            appFd = null;
-        }
-        try {
-            if (vpnInterface != null) {
-                vpnInterface.close();
-                vpnInterface = null;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        if (tunThread != null) { tunThread.interrupt(); tunThread = null; }
+        if (udpExecutor != null) { udpExecutor.shutdownNow(); udpExecutor = null; }
+        try { if (vpnInterface != null) { vpnInterface.close(); vpnInterface = null; } } catch (IOException e) { e.printStackTrace(); }
         stopForeground(true);
         stopSelf();
     }
 
     @Override
-    public void onDestroy() {
-        stopVpn();
-        super.onDestroy();
-    }
+    public void onDestroy() { stopVpn(); super.onDestroy(); }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
