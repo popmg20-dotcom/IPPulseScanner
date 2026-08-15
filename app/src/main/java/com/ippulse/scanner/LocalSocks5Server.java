@@ -113,8 +113,8 @@ public class LocalSocks5Server {
                 out.write(new byte[]{0x05, 0x00, 0x00, 0x01, 127, 0, 0, 1, 0, 0});
                 out.flush();
 
-                executor.execute(() -> pipe(in, targetSocket.getOutputStream()));
-                pipe(targetSocket.getInputStream(), out);
+                executor.execute(() -> { try { pipe(in, targetSocket.getOutputStream()); } catch (Exception ignored) {} });
+                try { pipe(targetSocket.getInputStream(), out); } catch (Exception ignored) {}
 
                 targetSocket.close();
                 client.close();
