@@ -1,15 +1,26 @@
-plugins { id 'com.android.application' }
+plugins {
+    id 'com.android.application'
+}
 
-android { namespace 'com.ippulse.scanner'; compileSdk 35
-    defaultConfig { applicationId 'com.ippulse.scanner'; minSdk 26; targetSdk 35; versionCode 1; versionName '1.0' }
+android {
+    namespace 'com.ippulse.scanner'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.ippulse.scanner'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
 }
 
 dependencies {
-    }
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
+    implementation 'com.github.heiher:hev-socks5-tunnel:2.17.1'
 }
