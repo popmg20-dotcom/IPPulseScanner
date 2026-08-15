@@ -213,25 +213,16 @@ public class MainActivity extends Activity {
         if (intent != null) {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
-            Intent vpnIntent = new Intent(this, net.typeblog.socks.SocksVpnService.class);
-            vpnIntent.putExtra("name", "IPPulseScanner VPN");
-            vpnIntent.putExtra("server", "127.0.0.1");
-            vpnIntent.putExtra("port", 10800);
-            vpnIntent.putExtra("dns", dns);
-            vpnIntent.putExtra("route", "0.0.0.0/0");
-            vpnIntent.putExtra("perApp", false);
-            vpnIntent.putExtra("appBypass", false);
-            vpnIntent.putExtra("ipv6", false);
-            vpnIntent.putExtra("udpgw", (String)null);
-            startService(vpnIntent);
+            GamingVpnService.start(this, dns, mtu, hostsMap);
+
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void stopVpn() {
-        Intent stopIntent = new Intent(this, net.typeblog.socks.SocksVpnService.class);
-            stopService(stopIntent);
+        GamingVpnService.stop(this);
+            
         vpnStatus.setText("VPN: Stopped");
         Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
     }
@@ -255,17 +246,8 @@ public class MainActivity extends Activity {
             String dns = vpnDns.getText().toString().trim();
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
             HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-            Intent vpnIntent = new Intent(this, net.typeblog.socks.SocksVpnService.class);
-            vpnIntent.putExtra("name", "IPPulseScanner VPN");
-            vpnIntent.putExtra("server", "127.0.0.1");
-            vpnIntent.putExtra("port", 10800);
-            vpnIntent.putExtra("dns", dns);
-            vpnIntent.putExtra("route", "0.0.0.0/0");
-            vpnIntent.putExtra("perApp", false);
-            vpnIntent.putExtra("appBypass", false);
-            vpnIntent.putExtra("ipv6", false);
-            vpnIntent.putExtra("udpgw", (String)null);
-            startService(vpnIntent);
+            GamingVpnService.start(this, dns, mtu, hostsMap);
+
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         } else if (requestCode == REQUEST_VPN) {
