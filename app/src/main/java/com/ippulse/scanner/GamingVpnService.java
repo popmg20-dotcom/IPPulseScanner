@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,7 +30,6 @@ public class GamingVpnService extends VpnService {
     private static final String CHANNEL_ID = "gaming_vpn";
     private static final String VPN_ADDRESS = "10.0.0.2";
     private static final String DNS_ADDRESS = "10.0.0.1";
-
     private ParcelFileDescriptor vpnInterface;
     private String dns = "8.8.8.8";
     private int mtu = 1400;
@@ -85,7 +83,7 @@ public class GamingVpnService extends VpnService {
             builder.addRoute(DNS_ADDRESS, 32);
             builder.addDnsServer(DNS_ADDRESS);
 
-            // اضافه کردن مسیر IPهای مپ‌شده (برای UDP)
+            // اضافه کردن مسیر IPهای مپ‌شده (فقط برای UDP)
             routedIps.clear();
             for (String ip : hostsMap.values()) {
                 try {
