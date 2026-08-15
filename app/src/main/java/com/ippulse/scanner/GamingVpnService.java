@@ -243,6 +243,7 @@ public class GamingVpnService extends VpnService {
     }
 
     private String writeHevConfigFile() throws IOException {
+        String config = buildHevConfig();
         String configPath = writeHevConfigFile();
         File dir = new File(getFilesDir(), "hev");
         if (!dir.exists() && !dir.mkdirs()) {
