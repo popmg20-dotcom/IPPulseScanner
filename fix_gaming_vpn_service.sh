@@ -1,3 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Updating GamingVpnService with robust routing and configuration setup..."
+
+FILE="app/src/main/java/com/ippulse/scanner/GamingVpnService.java"
+
+cat << 'JAVA_EOF' > "$FILE"
 package com.ippulse.scanner;
 
 import android.content.Intent;
@@ -104,3 +112,10 @@ public class GamingVpnService extends VpnService {
         Log.i(TAG, "GamingVpnService destroyed and cleaned up.");
     }
 }
+JAVA_EOF
+
+git add .
+git commit -m "Fix: Standardize GamingVpnService routing, config generation, and tunnel startup"
+git push origin main
+
+echo "Pushed GamingVpnService fix successfully!"
