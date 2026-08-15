@@ -1,6 +1,7 @@
 package com.ippulse.scanner;
 
 import android.util.Log;
+import java.io.DataInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.DatagramPacket;
@@ -19,6 +20,9 @@ public class LocalSocks5Server {
     private boolean isRunning = false;
     private HashMap<String, String> hostsMap;
     private GamingVpnService vpnService;
+    
+    // کش کردن پورت‌های UDP تا پورت‌ها در حین بازی مدام تغییر نکنند (جلوگیری از قطع ارتباط)
+    private final HashMap<String, DatagramSocket> udpSessions = new HashMap<>();
 
     public LocalSocks5Server(GamingVpnService context, int port, HashMap<String, String> hostsMap, String dns) {
         this.vpnService = context;
@@ -41,34 +45,33 @@ public class LocalSocks5Server {
 
     private void handleClient(Socket client) {
         try {
-            InputStream in = client.getInputStream();
+            DataInputStream in = new DataInputStream(client.getInputStream());
             OutputStream out = client.getOutputStream();
 
-            in.read(); 
-            int nMethods = in.read();
-            in.read(new byte[nMethods]);
+            in.readByte(); // Version
+            int nMethods = in.readUnsignedByte();
+            in.skipBytes(nMethods);
             out.write(new byte[]{0x05, 0x00});
             out.flush();
 
-            in.read(); 
-            int cmd = in.read();
-            in.read(); 
-            int atyp = in.read();
+            in.readByte(); // Version
+            int cmd = in.readUnsignedByte();
+            in.readByte(); // RSV
+            int atyp = in.readUnsignedByte();
 
             String host = "";
             if (atyp == 0x01) {
-                byte[] addr = new byte[4]; in.read(addr);
+                byte[] addr = new byte[4]; in.readFully(addr);
                 host = InetAddress.getByAddress(addr).getHostAddress();
             } else if (atyp == 0x03) {
-                int len = in.read(); byte[] addr = new byte[len]; in.read(addr);
+                int len = in.readUnsignedByte(); byte[] addr = new byte[len]; in.readFully(addr);
                 host = new String(addr);
             } else if (atyp == 0x04) {
-                byte[] addr = new byte[16]; in.read(addr);
+                byte[] addr = new byte[16]; in.readFully(addr);
                 host = InetAddress.getByAddress(addr).getHostAddress();
             } else { client.close(); return; }
 
-            int port1 = in.read(); int port2 = in.read();
-            int destPort = ((port1 & 0xFF) << 8) | (port2 & 0xFF);
+            int destPort = in.readUnsignedShort();
 
             if (hostsMap != null && hostsMap.containsKey(host)) {
                 host = hostsMap.get(host);
@@ -85,34 +88,41 @@ public class LocalSocks5Server {
     }
 
     private void handleTcp(Socket client, InputStream in, OutputStream out, String host, int destPort) {
+        Socket remote = new Socket();
         try {
-            Socket remote = new Socket();
             vpnService.protect(remote);
             remote.connect(new InetSocketAddress(host, destPort), 10000);
 
-            out.write(new byte[]{0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0});
+            // ارسال آی‌پی و پورت فرضی 127.0.0.1:10808 تا کلاینت‌ها با 0.0.0.0 مشکل پیدا نکنند
+            out.write(new byte[]{0x05, 0x00, 0x00, 0x01, 127, 0, 0, 1, (byte)(port >> 8), (byte)(port & 0xFF)});
             out.flush();
 
             Thread t1 = new Thread(() -> {
                 try {
                     InputStream remoteIn = remote.getInputStream();
                     byte[] buffer = new byte[16384]; int read;
-                    while (isRunning && (read = remoteIn.read(buffer)) != -1) out.write(buffer, 0, read);
+                    while (isRunning && (read = remoteIn.read(buffer)) != -1) {
+                        out.write(buffer, 0, read); out.flush();
+                    }
                 } catch (Exception ignored) {}
-                closeSockets(client, remote);
+                try { client.shutdownOutput(); } catch (Exception ignored) {}
+                try { remote.shutdownInput(); } catch (Exception ignored) {}
             });
 
             Thread t2 = new Thread(() -> {
                 try {
                     OutputStream remoteOut = remote.getOutputStream();
                     byte[] buffer = new byte[16384]; int read;
-                    while (isRunning && (read = in.read(buffer)) != -1) remoteOut.write(buffer, 0, read);
+                    while (isRunning && (read = in.read(buffer)) != -1) {
+                        remoteOut.write(buffer, 0, read); remoteOut.flush();
+                    }
                 } catch (Exception ignored) {}
-                closeSockets(client, remote);
+                try { remote.shutdownOutput(); } catch (Exception ignored) {}
+                try { client.shutdownInput(); } catch (Exception ignored) {}
             });
 
             t1.start(); t2.start();
-        } catch (Exception e) { closeSockets(client, null); }
+        } catch (Exception e) { closeSockets(client, remote); }
     }
 
     private void handleUdp(Socket client, OutputStream out) {
@@ -148,32 +158,47 @@ public class LocalSocks5Server {
 
                         int targetPort = ((buffer[headerLen] & 0xFF) << 8) | (buffer[headerLen + 1] & 0xFF);
                         headerLen += 2;
+                        
+                        if (packet.getLength() <= headerLen) continue; // جلوگیری از کرش پکت‌های خالی
 
                         if (hostsMap != null && hostsMap.containsKey(targetHost)) targetHost = hostsMap.get(targetHost);
 
                         byte[] data = Arrays.copyOfRange(buffer, headerLen, packet.getLength());
-                        DatagramSocket outSocket = new DatagramSocket();
-                        vpnService.protect(outSocket);
-                        DatagramPacket outPacket = new DatagramPacket(data, data.length, new InetSocketAddress(targetHost, targetPort));
-                        
-                        final byte[] socksHeader = Arrays.copyOfRange(buffer, 0, headerLen);
-                        
-                        new Thread(() -> {
-                            try {
-                                byte[] resBuffer = new byte[65535];
-                                DatagramPacket resPacket = new DatagramPacket(resBuffer, resBuffer.length);
-                                outSocket.setSoTimeout(10000); outSocket.receive(resPacket);
-                                
-                                byte[] finalData = new byte[socksHeader.length + resPacket.getLength()];
-                                System.arraycopy(socksHeader, 0, finalData, 0, socksHeader.length);
-                                System.arraycopy(resPacket.getData(), 0, finalData, socksHeader.length, resPacket.getLength());
-                                
-                                udpSocket.send(new DatagramPacket(finalData, finalData.length, packet.getSocketAddress()));
-                            } catch (Exception ignored) {}
-                            outSocket.close();
-                        }).start();
+                        String sessionKey = targetHost + ":" + targetPort;
+                        DatagramSocket outSocket;
 
-                        outSocket.send(outPacket);
+                        synchronized (udpSessions) {
+                            outSocket = udpSessions.get(sessionKey);
+                            if (outSocket == null || outSocket.isClosed()) {
+                                outSocket = new DatagramSocket();
+                                vpnService.protect(outSocket);
+                                udpSessions.put(sessionKey, outSocket);
+
+                                final DatagramSocket currentOutSocket = outSocket;
+                                final byte[] finalSocksHeader = Arrays.copyOfRange(buffer, 0, headerLen);
+                                
+                                new Thread(() -> {
+                                    try {
+                                        byte[] resBuffer = new byte[65535];
+                                        while (isRunning && !currentOutSocket.isClosed()) {
+                                            DatagramPacket resPacket = new DatagramPacket(resBuffer, resBuffer.length);
+                                            currentOutSocket.setSoTimeout(30000); // تایم‌اوت 30 ثانیه‌ای نشست
+                                            currentOutSocket.receive(resPacket);
+                                            
+                                            byte[] finalData = new byte[finalSocksHeader.length + resPacket.getLength()];
+                                            System.arraycopy(finalSocksHeader, 0, finalData, 0, finalSocksHeader.length);
+                                            System.arraycopy(resPacket.getData(), 0, finalData, finalSocksHeader.length, resPacket.getLength());
+                                            
+                                            udpSocket.send(new DatagramPacket(finalData, finalData.length, packet.getSocketAddress()));
+                                        }
+                                    } catch (Exception ignored) {}
+                                    currentOutSocket.close();
+                                    synchronized (udpSessions) { udpSessions.remove(sessionKey); }
+                                }).start();
+                            }
+                        }
+
+                        outSocket.send(new DatagramPacket(data, data.length, new InetSocketAddress(targetHost, targetPort)));
                     }
                 } catch (Exception ignored) {}
             }).start();
@@ -194,5 +219,11 @@ public class LocalSocks5Server {
     public void stop() {
         isRunning = false;
         try { if (serverSocket != null) serverSocket.close(); } catch (Exception ignored) {}
+        synchronized (udpSessions) {
+            for (DatagramSocket socket : udpSessions.values()) {
+                if (socket != null && !socket.isClosed()) socket.close();
+            }
+            udpSessions.clear();
+        }
     }
 }

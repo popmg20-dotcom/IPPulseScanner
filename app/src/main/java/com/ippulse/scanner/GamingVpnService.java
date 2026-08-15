@@ -47,12 +47,12 @@ public class GamingVpnService extends VpnService {
         instance = this;
         try {
             String dns = "8.8.8.8";
-            int mtu = 1500;
+            int mtu = 1400; // MTU بهینه برای جلوگیری از قطعی پکت‌ها
             HashMap<String, String> hostsMap = new HashMap<>();
 
             if (intent != null) {
                 if (intent.getStringExtra("dns") != null) dns = intent.getStringExtra("dns");
-                mtu = intent.getIntExtra("mtu", 1500);
+                if (intent.getIntExtra("mtu", 1400) > 0) mtu = intent.getIntExtra("mtu", 1400);
                 try {
                     HashMap<?, ?> tempMap = (HashMap<?, ?>) intent.getSerializableExtra("hostsMap");
                     if (tempMap != null) {
@@ -79,12 +79,11 @@ public class GamingVpnService extends VpnService {
 
             Builder builder = new Builder();
             builder.setSession("IPPulseScanner")
-                   .addAddress("198.18.0.1", 32)
+                   .addAddress("10.0.0.2", 24) // رنج آی‌پی استانداردتر
                    .addRoute("0.0.0.0", 0)
                    .addDnsServer(dns)
                    .setMtu(mtu);
 
-            // جلوگیری از لوپ شدن اینترنت با مستثنی کردن خود اپلیکیشن
             try {
                 builder.addDisallowedApplication(getPackageName());
             } catch (Exception e) {
@@ -115,7 +114,7 @@ public class GamingVpnService extends VpnService {
 
     private File writeConfigFile(String dns, int mtu) throws IOException {
         File file = new File(getFilesDir(), "tunnel.yml");
-        String content = "tunnel:\n  name: tun0\n  mtu: " + mtu + "\n  ipv4: 198.18.0.1\nsocks5:\n  address: 127.0.0.1\n  port: " + SOCKS_PORT + "\n  udp: 'udp'\nmisc:\n  log-level: debug\n";
+        String content = "tunnel:\n  name: tun0\n  mtu: " + mtu + "\n  ipv4: 10.0.0.2\nsocks5:\n  address: 127.0.0.1\n  port: " + SOCKS_PORT + "\n  udp: 'udp'\nmisc:\n  log-level: debug\n";
         FileOutputStream fos = new FileOutputStream(file);
         fos.write(content.getBytes());
         fos.close();
