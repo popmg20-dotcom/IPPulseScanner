@@ -9,18 +9,9 @@ import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.net.VpnService;
 import android.os.Build;
-import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
-import com.ippulse.scanner.localvpn.ByteBufferPool;
-import com.ippulse.scanner.localvpn.Packet;
-import com.ippulse.scanner.localvpn.TCPInput;
-import com.ippulse.scanner.localvpn.TCPOutput;
-import com.ippulse.scanner.localvpn.UDPInput;
-import com.ippulse.scanner.localvpn.UDPOutput;
-
-import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -28,12 +19,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.Selector;
 import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -44,29 +30,18 @@ public class GamingVpnService extends VpnService {
     private static final String ACTION_STOP = "com.ippulse.scanner.STOP";
     private static final String CHANNEL_ID = "gaming_vpn";
     private static final String VPN_ADDRESS = "10.0.0.2";
-    private static final String VPN_DNS = "10.0.0.1";
-    private static final String DEFAULT_UPSTREAM_DNS = "8.8.8.8";
-    private static final int DNS_PORT = 53;
+    private static final String DNS_ADDRESS = "10.0.0.1";
 
-    private volatile boolean running;
-    private int mtu = 1400;
-    private String upstreamDns = DEFAULT_UPSTREAM_DNS;
     private ParcelFileDescriptor vpnInterface;
+    private FileInputStream tunIn;
+    private FileOutputStream tunOut;
 
-    private ConcurrentLinkedQueue<Packet> deviceToNetworkUDPQueue;
-    private ConcurrentLinkedQueue<Packet> deviceToNetworkTCPQueue;
-    private ConcurrentLinkedQueue<ByteBuffer> networkToDeviceQueue;
+    private HashMap<String, String> hostsMap = new HashMap<>();
+    private String dns = "8.8.8.8";
+    private int currentMtu = 1400;
+    private volatile boolean running = false;
 
-    private ExecutorService executorService;
-    private Selector udpSelector;
-    private Selector tcpSelector;
-
-    private final HashMap<String, String> hostsMap = new HashMap<>();
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return super.onBind(intent);
-    }
+    private Thread tunThread;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -75,378 +50,18 @@ public class GamingVpnService extends VpnService {
                 stopVpn();
                 return START_NOT_STICKY;
             }
-            mtu = intent.getIntExtra("mtu", 1400);
-            if (mtu < 1280 || mtu > 32767) mtu = 1400;
-
-            String dnsValue = intent.getStringExtra("dns");
-            if (dnsValue != null && !dnsValue.trim().isEmpty()) {
-                upstreamDns = dnsValue.trim();
-            }
-
-            try {
-                SerializableHosts serializedHosts = (SerializableHosts) intent.getSerializableExtra("hosts");
-                synchronized (hostsMap) {
-                    hostsMap.clear();
-                    if (serializedHosts != null && serializedHosts.map != null) {
-                        for (Map.Entry<String, String> entry : serializedHosts.map.entrySet()) {
-                            String key = normalizeHost(entry.getKey());
-                            String value = entry.getValue();
-                            if (key != null && value != null && !value.trim().isEmpty()) {
-                                hostsMap.put(key, value.trim());
-                            }
-                        }
-                    }
-                }
-            } catch (Throwable e) {
-                Log.e(TAG, "Failed loading hostsMap", e);
+            if (intent.hasExtra("dns")) dns = intent.getStringExtra("dns");
+            if (intent.hasExtra("mtu")) currentMtu = intent.getIntExtra("mtu", 1400);
+            SerializableHosts serializableHosts = (SerializableHosts) intent.getSerializableExtra("hosts");
+            if (serializableHosts != null && serializableHosts.map != null) {
+                hostsMap = serializableHosts.map;
             }
         }
 
         createNotificationChannel();
         startForegroundCompatible();
-        if (!running) startVpn();
+        startVpn();
         return START_STICKY;
-    }
-
-    private synchronized void startVpn() {
-        if (running) return;
-
-        try {
-            // مهم: running را قبل از شروع workerها true کن
-            running = true;
-
-            deviceToNetworkUDPQueue = new ConcurrentLinkedQueue<>();
-            deviceToNetworkTCPQueue = new ConcurrentLinkedQueue<>();
-            networkToDeviceQueue = new ConcurrentLinkedQueue<>();
-
-            udpSelector = Selector.open();
-            tcpSelector = Selector.open();
-
-            Builder builder = new Builder();
-            builder.setSession("IPPulseScanner");
-            builder.addAddress(VPN_ADDRESS, 32);
-            builder.addRoute("0.0.0.0", 0);
-            builder.addDnsServer(VPN_DNS);
-            builder.setMtu(mtu);
-            builder.setBlocking(true);
-            try {
-                builder.addDisallowedApplication(getPackageName());
-            } catch (Exception e) {
-                Log.w(TAG, "Could not exclude own package", e);
-            }
-
-            vpnInterface = builder.establish();
-            if (vpnInterface == null) throw new IOException("establish() returned null");
-
-            executorService = Executors.newFixedThreadPool(5);
-            executorService.submit(new UDPInput(networkToDeviceQueue, udpSelector));
-            executorService.submit(new UDPOutput(deviceToNetworkUDPQueue, udpSelector, this));
-            executorService.submit(new TCPInput(networkToDeviceQueue, tcpSelector));
-            executorService.submit(new TCPOutput(deviceToNetworkTCPQueue, networkToDeviceQueue, tcpSelector, this));
-            executorService.submit(new VPNRunnable(vpnInterface.getFileDescriptor(),
-                    deviceToNetworkUDPQueue, deviceToNetworkTCPQueue, networkToDeviceQueue));
-
-            Log.i(TAG, "VPN started. MTU=" + mtu + " DNS=" + upstreamDns);
-        } catch (Throwable e) {
-            Log.e(TAG, "Error starting VPN", e);
-            stopVpn();
-        }
-    }
-
-    private final class VPNRunnable implements Runnable {
-        private final FileDescriptor vpnFileDescriptor;
-        private final ConcurrentLinkedQueue<Packet> udpQueue;
-        private final ConcurrentLinkedQueue<Packet> tcpQueue;
-        private final ConcurrentLinkedQueue<ByteBuffer> outputQueue;
-
-        VPNRunnable(FileDescriptor vpnFileDescriptor,
-                    ConcurrentLinkedQueue<Packet> udpQueue,
-                    ConcurrentLinkedQueue<Packet> tcpQueue,
-                    ConcurrentLinkedQueue<ByteBuffer> outputQueue) {
-            this.vpnFileDescriptor = vpnFileDescriptor;
-            this.udpQueue = udpQueue;
-            this.tcpQueue = tcpQueue;
-            this.outputQueue = outputQueue;
-        }
-
-        @Override
-        public void run() {
-            Log.i(TAG, "VPNRunnable started");
-
-            FileChannel vpnInput = null;
-            FileChannel vpnOutput = null;
-
-            try {
-                vpnInput = new FileInputStream(vpnFileDescriptor).getChannel();
-                vpnOutput = new FileOutputStream(vpnFileDescriptor).getChannel();
-            } catch (IOException e) {
-                Log.e(TAG, "Could not open TUN channels", e);
-                stopVpn();
-                return;
-            }
-
-            ByteBuffer bufferToNetwork = null;
-            boolean dataSent = true;
-
-            try {
-                while (!Thread.interrupted() && running) {
-                    if (dataSent) {
-                        bufferToNetwork = ByteBufferPool.acquire();
-                    } else {
-                        if (bufferToNetwork != null) {
-                            bufferToNetwork.clear();
-                        } else {
-                            bufferToNetwork = ByteBufferPool.acquire();
-                        }
-                    }
-
-                    int readBytes = vpnInput.read(bufferToNetwork);
-                    if (readBytes > 0) {
-                        dataSent = true;
-                        bufferToNetwork.flip();
-
-                        Packet packet;
-                        try {
-                            packet = new Packet(bufferToNetwork);
-                        } catch (Throwable e) {
-                            Log.e(TAG, "Packet parsing failed", e);
-                            ByteBufferPool.release(bufferToNetwork);
-                            bufferToNetwork = null;
-                            continue;
-                        }
-
-                        if (packet.isUDP() && isDnsPacket(packet)) {
-                            byte[] dnsPayload = extractCurrentPayload(packet.backingBuffer);
-                            ByteBufferPool.release(packet.backingBuffer);
-                            bufferToNetwork = null;
-                            handleDns(packet, dnsPayload);
-                        } else if (packet.isUDP()) {
-                            udpQueue.offer(packet);
-                            bufferToNetwork = null;
-                        } else if (packet.isTCP()) {
-                            tcpQueue.offer(packet);
-                            bufferToNetwork = null;
-                        } else {
-                            Log.w(TAG, "Unknown IP protocol");
-                            dataSent = false;
-                        }
-                    } else {
-                        dataSent = false;
-                    }
-
-                    // Drain responses from workers to TUN
-                    ByteBuffer bufferFromNetwork;
-                    while ((bufferFromNetwork = outputQueue.poll()) != null) {
-                        try {
-                            bufferFromNetwork.flip();
-                            while (bufferFromNetwork.hasRemaining()) {
-                                vpnOutput.write(bufferFromNetwork);
-                            }
-                        } finally {
-                            ByteBufferPool.release(bufferFromNetwork);
-                        }
-                    }
-
-                    if (!dataSent && outputQueue.isEmpty()) {
-                        try {
-                            Thread.sleep(10);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            break;
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                if (running) Log.e(TAG, "VPN I/O error", e);
-            } finally {
-                if (bufferToNetwork != null) {
-                    try { ByteBufferPool.release(bufferToNetwork); } catch (Throwable ignored) {}
-                }
-                try { vpnInput.close(); } catch (Exception ignored) {}
-                try { vpnOutput.close(); } catch (Exception ignored) {}
-                Log.i(TAG, "VPNRunnable stopped");
-            }
-        }
-    }
-
-    private boolean isDnsPacket(Packet packet) {
-        try {
-            return packet.ip4Header != null &&
-                    packet.udpHeader != null &&
-                    DNS_PORT == packet.udpHeader.destinationPort &&
-                    VPN_DNS.equals(packet.ip4Header.destinationAddress.getHostAddress());
-        } catch (Throwable e) {
-            return false;
-        }
-    }
-
-    private byte[] extractCurrentPayload(ByteBuffer buffer) {
-        ByteBuffer duplicate = buffer.duplicate();
-        int length = duplicate.remaining();
-        byte[] payload = new byte[length];
-        duplicate.get(payload);
-        return payload;
-    }
-
-    private void handleDns(Packet request, byte[] query) {
-        new Thread(() -> {
-            try {
-                String domain = extractDnsQuestionName(query);
-                if (domain == null) {
-                    forwardDns(request, query);
-                    return;
-                }
-                String mappedIp = hostsMap.get(normalizeHost(domain));
-                if (mappedIp != null && isIpv4(mappedIp)) {
-                    byte[] dnsResponse = buildMappedDnsResponse(query, mappedIp);
-                    enqueueDnsResponse(request, dnsResponse);
-                    Log.d(TAG, "DNS mapped: " + domain + " -> " + mappedIp);
-                } else {
-                    forwardDns(request, query);
-                }
-            } catch (Throwable e) {
-                Log.e(TAG, "DNS handling error", e);
-            }
-        }).start();
-    }
-
-    private void forwardDns(Packet request, byte[] query) {
-        DatagramSocket socket = null;
-        try {
-            socket = new DatagramSocket();
-            protect(socket);
-            socket.setSoTimeout(3000);
-            InetAddress upstream = InetAddress.getByName(upstreamDns);
-            DatagramPacket outPacket = new DatagramPacket(query, query.length, upstream, DNS_PORT);
-            socket.send(outPacket);
-            byte[] responseBuffer = new byte[1024];
-            DatagramPacket inPacket = new DatagramPacket(responseBuffer, responseBuffer.length);
-            socket.receive(inPacket);
-            byte[] dnsResponse = new byte[inPacket.getLength()];
-            System.arraycopy(responseBuffer, 0, dnsResponse, 0, inPacket.getLength());
-            enqueueDnsResponse(request, dnsResponse);
-        } catch (Exception e) {
-            Log.e(TAG, "DNS forward failed", e);
-        } finally {
-            if (socket != null) socket.close();
-        }
-    }
-
-    private void enqueueDnsResponse(Packet requestPacket, byte[] dnsPayload) {
-        try {
-            ByteBuffer response = buildUdpPacket(
-                requestPacket.ip4Header.destinationAddress.getHostAddress(), DNS_PORT,
-                requestPacket.ip4Header.sourceAddress.getHostAddress(), requestPacket.udpHeader.sourcePort,
-                dnsPayload);
-            synchronized (networkToDeviceQueue) {
-                networkToDeviceQueue.offer(response);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "enqueueDnsResponse failed", e);
-        }
-    }
-
-    private ByteBuffer buildUdpPacket(String srcIp, int srcPort, String dstIp, int dstPort, byte[] payload) throws Exception {
-        int udpLen = 8 + payload.length;
-        int totalLen = 20 + udpLen;
-        ByteBuffer res = ByteBuffer.allocate(totalLen);
-        res.put((byte) 0x45);
-        res.put((byte) 0x00);
-        res.putShort((short) totalLen);
-        res.putShort((short) 0);
-        res.putShort((short) 0);
-        res.put((byte) 64);
-        res.put((byte) 17);
-        res.putShort((short) 0);
-        res.put(InetAddress.getByName(srcIp).getAddress());
-        res.put(InetAddress.getByName(dstIp).getAddress());
-        res.putShort((short) srcPort);
-        res.putShort((short) dstPort);
-        res.putShort((short) udpLen);
-        res.putShort((short) 0);
-        res.put(payload);
-        byte[] array = res.array();
-        int ipChecksum = calculateChecksum(array, 0, 20);
-        array[10] = (byte) (ipChecksum >> 8);
-        array[11] = (byte) (ipChecksum & 0xFF);
-        return ByteBuffer.wrap(array);
-    }
-
-    private int calculateChecksum(byte[] buf, int offset, int length) {
-        long sum = 0;
-        int i = offset;
-        while (length > 1) {
-            sum += (((buf[i] & 0xFF) << 8) | (buf[i + 1] & 0xFF));
-            i += 2;
-            length -= 2;
-        }
-        if (length > 0) sum += ((buf[i] & 0xFF) << 8);
-        while ((sum >> 16) > 0) sum = (sum & 0xFFFF) + (sum >> 16);
-        return (int) (~sum & 0xFFFF);
-    }
-
-    private String extractDnsQuestionName(byte[] dnsPayload) {
-        try {
-            StringBuilder domain = new StringBuilder();
-            int pos = 12;
-            while (pos < dnsPayload.length && dnsPayload[pos] != 0) {
-                int len = dnsPayload[pos++];
-                if (len > 63 || pos + len > dnsPayload.length) return null;
-                if (domain.length() > 0) domain.append('.');
-                domain.append(new String(dnsPayload, pos, len, java.nio.charset.StandardCharsets.UTF_8));
-                pos += len;
-            }
-            return domain.length() > 0 ? domain.toString() : null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private byte[] buildMappedDnsResponse(byte[] query, String ip) {
-        ByteBuffer res = ByteBuffer.allocate(512);
-        res.put(query[0]); res.put(query[1]);
-        res.put((byte) 0x81); res.put((byte) 0x80);
-        res.putShort((short) 1); res.putShort((short) 1);
-        res.putShort((short) 0); res.putShort((short) 0);
-        int pos = 12;
-        while (pos < query.length && query[pos] != 0) res.put(query[pos++]);
-        res.put((byte) 0); pos++;
-        res.put(query[pos++]); res.put(query[pos++]);
-        res.put(query[pos++]); res.put(query[pos++]);
-        res.put((byte) 0xC0); res.put((byte) 0x0C);
-        res.putShort((short) 1); res.putShort((short) 1);
-        res.putInt(60); res.putShort((short) 4);
-        for (String part : ip.split("\\.")) res.put((byte) Integer.parseInt(part));
-        byte[] result = new byte[res.position()];
-        System.arraycopy(res.array(), 0, result, 0, res.position());
-        return result;
-    }
-
-    private boolean isIpv4(String ip) {
-        return ip.matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
-    }
-
-    private String normalizeHost(String host) {
-        if (host == null) return null;
-        host = host.trim().toLowerCase(Locale.US);
-        while (host.endsWith(".")) host = host.substring(0, host.length() - 1);
-        return host;
-    }
-
-    private synchronized void stopVpn() {
-        Log.i(TAG, "Stopping VPN");
-        running = false;
-        if (executorService != null) {
-            executorService.shutdownNow();
-            executorService = null;
-        }
-        try { if (vpnInterface != null) vpnInterface.close(); } catch (IOException ignored) {}
-        vpnInterface = null;
-        deviceToNetworkUDPQueue = null;
-        deviceToNetworkTCPQueue = null;
-        networkToDeviceQueue = null;
-        stopForeground(true);
-        stopSelf();
     }
 
     private void startForegroundCompatible() {
@@ -458,8 +73,276 @@ public class GamingVpnService extends VpnService {
                 startForeground(1, notification);
             }
         } catch (Exception e) {
-            Log.e(TAG, "startForeground failed", e);
+            startForeground(1, notification);
         }
+    }
+
+    private void startVpn() {
+        try {
+            if (vpnInterface != null) return;
+            running = true;
+
+            Builder builder = new Builder();
+            builder.setSession("Gaming VPN");
+            builder.addAddress(VPN_ADDRESS, 32);
+            builder.addRoute(DNS_ADDRESS, 32); // فقط DNS از تونل رد می‌شود
+            builder.addDnsServer(DNS_ADDRESS);
+            builder.setMtu(currentMtu);
+            builder.setBlocking(true);
+
+            vpnInterface = builder.establish();
+            tunIn = new FileInputStream(vpnInterface.getFileDescriptor());
+            tunOut = new FileOutputStream(vpnInterface.getFileDescriptor());
+
+            tunThread = new Thread(this::runTunLoop, "TunReaderThread");
+            tunThread.start();
+
+            Log.i(TAG, "DNS-only VPN started. MTU=" + currentMtu);
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting VPN", e);
+            stopVpn();
+        }
+    }
+
+    private void runTunLoop() {
+        byte[] buffer = new byte[32767];
+        while (running && !Thread.currentThread().isInterrupted()) {
+            try {
+                int length = tunIn.read(buffer);
+                if (length > 0) {
+                    handlePacket(buffer, length);
+                }
+            } catch (IOException e) {
+                if (running) Log.e(TAG, "TUN read error", e);
+                break;
+            }
+        }
+    }
+
+    private void handlePacket(byte[] packet, int length) {
+        try {
+            ByteBuffer buf = ByteBuffer.wrap(packet, 0, length);
+            int versionIhl = buf.get(0) & 0xFF;
+            int version = (versionIhl >> 4) & 0xF;
+            if (version != 4) return;
+
+            int headerLength = (versionIhl & 0x0F) * 4;
+            int protocol = buf.get(9) & 0xFF;
+            if (protocol != 17) return; // فقط UDP
+
+            byte[] srcIpBytes = new byte[4];
+            buf.position(12);
+            buf.get(srcIpBytes);
+            InetAddress srcAddr = InetAddress.getByAddress(srcIpBytes);
+
+            byte[] dstIpBytes = new byte[4];
+            buf.get(dstIpBytes);
+            InetAddress dstAddr = InetAddress.getByAddress(dstIpBytes);
+
+            int srcPort = ((buf.get(headerLength) & 0xFF) << 8) | (buf.get(headerLength + 1) & 0xFF);
+            int dstPort = ((buf.get(headerLength + 2) & 0xFF) << 8) | (buf.get(headerLength + 3) & 0xFF);
+
+            if (!dstAddr.getHostAddress().equals(DNS_ADDRESS) || dstPort != 53) return;
+
+            int udpLength = ((buf.get(headerLength + 4) & 0xFF) << 8) | (buf.get(headerLength + 5) & 0xFF);
+            int dnsPayloadOffset = headerLength + 8;
+            int dnsPayloadLength = udpLength - 8;
+            if (dnsPayloadLength <= 0) return;
+
+            byte[] dnsQuery = new byte[dnsPayloadLength];
+            System.arraycopy(packet, dnsPayloadOffset, dnsQuery, 0, dnsPayloadLength);
+
+            String domain = extractDomain(dnsQuery);
+            byte[] dnsResponse;
+            if (domain != null && hostsMap.containsKey(domain)) {
+                dnsResponse = buildDnsResponse(dnsQuery, hostsMap.get(domain));
+            } else {
+                dnsResponse = forwardDns(dnsQuery);
+            }
+
+            if (dnsResponse != null) {
+                byte[] responsePacket = buildUdpPacket(DNS_ADDRESS, 53, srcAddr, srcPort, dnsResponse);
+                tunOut.write(responsePacket);
+                tunOut.flush();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Packet handling error", e);
+        }
+    }
+
+    private byte[] forwardDns(byte[] query) {
+        try {
+            DatagramSocket socket = new DatagramSocket();
+            protect(socket);
+            socket.setSoTimeout(2000);
+            DatagramPacket request = new DatagramPacket(query, query.length, InetAddress.getByName(dns), 53);
+            socket.send(request);
+            byte[] responseBuffer = new byte[1024];
+            DatagramPacket response = new DatagramPacket(responseBuffer, responseBuffer.length);
+            socket.receive(response);
+            byte[] data = new byte[response.getLength()];
+            System.arraycopy(response.getData(), 0, data, 0, response.getLength());
+            socket.close();
+            return data;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private byte[] buildUdpPacket(String sourceIp, int sourcePort, InetAddress clientAddr, int clientPort, byte[] payload) {
+        try {
+            int udpLength = 8 + payload.length;
+            int totalLength = 20 + udpLength;
+            ByteBuffer packet = ByteBuffer.allocate(totalLength);
+
+            // IPv4 Header
+            packet.put((byte) 0x45); // version/IHL
+            packet.put((byte) 0x00); // TOS
+            packet.putShort((short) totalLength);
+            packet.putShort((short) 0); // ID
+            packet.putShort((short) 0); // flags/fragment
+            packet.put((byte) 64); // TTL
+            packet.put((byte) 17); // protocol UDP
+            packet.putShort((short) 0); // checksum placeholder
+            packet.put(InetAddress.getByName(sourceIp).getAddress());
+            packet.put(clientAddr.getAddress());
+
+            // UDP Header
+            packet.putShort((short) sourcePort);
+            packet.putShort((short) clientPort);
+            packet.putShort((short) udpLength);
+            packet.putShort((short) 0); // UDP checksum = 0 (optional in IPv4)
+
+            packet.put(payload);
+
+            byte[] array = packet.array();
+            int ipChecksum = calculateIpChecksum(array, 0, 20);
+            array[10] = (byte) (ipChecksum >> 8);
+            array[11] = (byte) (ipChecksum & 0xFF);
+
+            return array;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private int calculateIpChecksum(byte[] packet, int offset, int length) {
+        long sum = 0;
+        for (int i = offset; i < offset + length; i += 2) {
+            int word = ((packet[i] & 0xFF) << 8);
+            if (i + 1 < offset + length) word |= (packet[i + 1] & 0xFF);
+            sum += word;
+        }
+        while ((sum >> 16) != 0) {
+            sum = (sum & 0xFFFF) + (sum >> 16);
+        }
+        return (int) (~sum & 0xFFFF);
+    }
+
+    private String extractDomain(byte[] data) {
+        try {
+            int pos = 12;
+            StringBuilder sb = new StringBuilder();
+            boolean first = true;
+            while (pos < data.length) {
+                int labelLength = data[pos] & 0xFF;
+                if (labelLength == 0) break;
+                if ((labelLength & 0xC0) == 0xC0) {
+                    if (pos + 1 >= data.length) return null;
+                    int pointer = ((labelLength & 0x3F) << 8) | (data[pos + 1] & 0xFF);
+                    return extractDomainFromOffset(data, pointer);
+                }
+                if (labelLength > 63) return null;
+                pos++;
+                if (pos + labelLength > data.length) return null;
+                if (!first) sb.append('.');
+                for (int i = 0; i < labelLength; i++) sb.append((char) (data[pos + i] & 0xFF));
+                first = false;
+                pos += labelLength;
+            }
+            return sb.toString().toLowerCase();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String extractDomainFromOffset(byte[] data, int offset) {
+        try {
+            int pos = offset;
+            StringBuilder sb = new StringBuilder();
+            boolean first = true;
+            while (pos < data.length) {
+                int labelLength = data[pos] & 0xFF;
+                if (labelLength == 0) break;
+                if ((labelLength & 0xC0) == 0xC0) {
+                    if (pos + 1 >= data.length) return null;
+                    int pointer = ((labelLength & 0x3F) << 8) | (data[pos + 1] & 0xFF);
+                    return extractDomainFromOffset(data, pointer);
+                }
+                if (labelLength > 63) return null;
+                pos++;
+                if (pos + labelLength > data.length) return null;
+                if (!first) sb.append('.');
+                for (int i = 0; i < labelLength; i++) sb.append((char) (data[pos + i] & 0xFF));
+                first = false;
+                pos += labelLength;
+            }
+            return sb.toString().toLowerCase();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private byte[] buildDnsResponse(byte[] query, String ip) {
+        ByteBuffer response = ByteBuffer.allocate(1024);
+        response.put(query[0]);
+        response.put(query[1]);
+        response.put((byte) 0x81);
+        response.put((byte) 0x80);
+        response.putShort((short) 1); // QDCOUNT
+        response.putShort((short) 1); // ANCOUNT
+        response.putShort((short) 0);
+        response.putShort((short) 0);
+
+        int pos = 12;
+        while (pos < query.length && query[pos] != 0) {
+            response.put(query[pos++]);
+        }
+        response.put((byte) 0);
+        pos++;
+        response.put(query[pos++]); // QTYPE high
+        response.put(query[pos++]); // QTYPE low
+        response.put(query[pos++]); // QCLASS high
+        response.put(query[pos++]); // QCLASS low
+
+        response.put((byte) 0xC0);
+        response.put((byte) 0x0C);
+        response.putShort((short) 1); // Type A
+        response.putShort((short) 1); // Class IN
+        response.putInt(60); // TTL
+        response.putShort((short) 4); // RDLENGTH
+        String[] ipParts = ip.split("\\.");
+        for (String part : ipParts) {
+            response.put((byte) Integer.parseInt(part));
+        }
+
+        byte[] result = new byte[response.position()];
+        System.arraycopy(response.array(), 0, result, 0, response.position());
+        return result;
+    }
+
+    private void stopVpn() {
+        running = false;
+        if (tunThread != null) {
+            tunThread.interrupt();
+            tunThread = null;
+        }
+        try { if (tunIn != null) tunIn.close(); } catch (IOException ignored) {}
+        try { if (tunOut != null) tunOut.close(); } catch (IOException ignored) {}
+        try { if (vpnInterface != null) vpnInterface.close(); } catch (IOException ignored) {}
+        vpnInterface = null;
+        stopForeground(true);
+        stopSelf();
     }
 
     private void createNotificationChannel() {
@@ -472,8 +355,9 @@ public class GamingVpnService extends VpnService {
     }
 
     private Notification buildNotification(String text) {
-        Intent intent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent,
+                PendingIntent.FLAG_IMMUTABLE);
         Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 ? new Notification.Builder(this, CHANNEL_ID)
                 : new Notification.Builder(this);
