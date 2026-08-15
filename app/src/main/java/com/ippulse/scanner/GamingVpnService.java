@@ -73,7 +73,7 @@ public class GamingVpnService extends VpnService {
 
             // اینجاست که موتور Surfboard وارد میشه
             int fd = vpnInterface.getFd();
-            SurfboardJni.startVPN(fd, Build.VERSION.SDK_INT, mtu, true, true, true);
+            Jni.startVPN(fd, Build.VERSION.SDK_INT, mtu, true, true, true);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -83,7 +83,7 @@ public class GamingVpnService extends VpnService {
 
     private void stopVpn() {
         try {
-            SurfboardJni.stopVPN();
+            Jni.stopVPN();
         } catch (Exception e) {
             e.printStackTrace();
         }
