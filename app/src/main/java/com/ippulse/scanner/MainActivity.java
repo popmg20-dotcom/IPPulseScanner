@@ -25,6 +25,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
+import java.io.IOException;
 
 public class MainActivity extends Activity {
 
@@ -50,6 +51,8 @@ public class MainActivity extends Activity {
     private TextView status2;
     private TableLayout table2Live;
     private Button btnStop2;
+    private EditText manualIpInput;
+    private Button btnManualDeepTest;
 
     private EditText vpnDns, vpnMtu, vpnHosts, vpnMasterIp;
     private Button btnStartVpn, btnStopVpn, btnApplyIp;
@@ -99,6 +102,8 @@ public class MainActivity extends Activity {
         logScroll2 = findViewById(R.id.logScroll2);
         table2Live = findViewById(R.id.table2Live);
         btnStop2 = findViewById(R.id.btnStop2);
+        manualIpInput = findViewById(R.id.manualIpInput);
+        btnManualDeepTest = findViewById(R.id.btnManualDeepTest);
 
         tab3Container = findViewById(R.id.tab3Container);
         vpnDns = findViewById(R.id.vpnDns);
@@ -137,6 +142,7 @@ public class MainActivity extends Activity {
         btnStart1.setOnClickListener(v -> startRangeScan());
         btnStop1.setOnClickListener(v -> stopRangeScan());
         btnStop2.setOnClickListener(v -> stopDeepTest());
+        btnManualDeepTest.setOnClickListener(v -> manualDeepTest());
 
         btnStartVpn.setOnClickListener(v -> startVpn());
         btnStopVpn.setOnClickListener(v -> stopVpn());
@@ -213,7 +219,8 @@ public class MainActivity extends Activity {
         if (intent != null) {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
-            GamingVpnService.start(this, dns, mtu, hostsMap);
+            int mtu = 1400;
+        GamingVpnService.start(this, dns, mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         }
@@ -244,7 +251,8 @@ public class MainActivity extends Activity {
             String dns = vpnDns.getText().toString().trim();
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
             HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-            GamingVpnService.start(this, dns, mtu, hostsMap);
+            int mtu = 1400;
+        GamingVpnService.start(this, dns, mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         } else if (requestCode == REQUEST_VPN) {
@@ -882,5 +890,14 @@ public class MainActivity extends Activity {
             this.sent = sent;
             this.alive = alive;
         }
+    }
+
+    private void manualDeepTest() {
+        String ip = manualIpInput.getText().toString().trim();
+        if (ip.isEmpty()) {
+            Toast.makeText(this, "لطفاً یک IP وارد کنید", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        startDeepTestOn(ip);
     }
 }

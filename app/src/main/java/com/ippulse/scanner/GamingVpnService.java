@@ -31,7 +31,7 @@ public class GamingVpnService extends VpnService {
     private static final String CHANNEL_ID = "gaming_vpn";
     private static final String VPN_ADDRESS = "10.0.0.2"; // آدرس خود VPN
     private ParcelFileDescriptor vpnInterface;
-    private String dns = "8.8.8.8";
+    private String dns = "9.9.9.9";
     private int mtu = 1400;
     private HashMap<String, String> hostsMap = new HashMap<>();
     private Set<String> routedIps = new HashSet<>();

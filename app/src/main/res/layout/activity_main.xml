@@ -123,6 +123,33 @@
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="Select an IP to start Live Deep Test:" android:textColor="#FBBF24"
                 android:textStyle="bold" android:gravity="center" android:layout_marginBottom="12dp"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <EditText
+                    android:id="@+id/manualIpInput"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="45dp"
+                    android:hint="Enter IP manually"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#64748B"
+                    android:background="#18181B"
+                    android:padding="8dp"
+                    android:inputType="text" />
+                <Button
+                    android:id="@+id/btnManualDeepTest"
+                    android:layout_width="wrap_content"
+                    android:layout_height="45dp"
+                    android:text="Start"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:backgroundTint="#2563EB"
+                    android:layout_marginStart="8dp" />
+            </LinearLayout>
+
             <LinearLayout android:id="@+id/top5Container" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:orientation="vertical"
                 android:layout_marginBottom="12dp">
