@@ -3,274 +3,530 @@ package com.ippulse.scanner;
 import android.net.VpnService;
 import android.util.Log;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.Closeable;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class Socks5ProxyServer {
 
-    private static final String TAG = "IPPulseSocks5";
-    private final VpnService vpnService;
-    private final String dnsServer;
-    private volatile Map<String, String> hostsMap;
-    private volatile boolean running;
-    private ServerSocket tcpServer;
-    private final ExecutorService pool = Executors.newCachedThreadPool();
+    private static final String TAG =
+            "IPPulseSocks5";
 
-    public Socks5ProxyServer(VpnService vpnService, String dnsServer, Map<String, String> hostsMap) {
-        this.vpnService = vpnService;
+    private final VpnService vpn;
+    private final String dnsServer;
+    private volatile Map<String, String> hosts;
+    private volatile boolean running;
+    private ServerSocket server;
+
+    private final ExecutorService pool =
+            Executors.newCachedThreadPool();
+
+    public Socks5ProxyServer(
+            VpnService vpn,
+            String dnsServer,
+            Map<String, String> hosts
+    ) {
+        this.vpn = vpn;
         this.dnsServer = dnsServer;
-        this.hostsMap = hostsMap;
+        this.hosts = hosts;
     }
 
     public synchronized boolean start() {
+
         if (running) return true;
+
         try {
-            tcpServer = new ServerSocket(1080, 64, InetAddress.getByName("127.0.0.1"));
+
+            server = new ServerSocket();
+            server.setReuseAddress(true);
+
+            server.bind(
+                    new InetSocketAddress(
+                            "127.0.0.1",
+                            1080
+                    )
+            );
+
             running = true;
-            pool.execute(this::acceptLoop);
-            Log.i(TAG, "SOCKS5 listening on 127.0.0.1:1080");
+
+            pool.execute(
+                    this::acceptLoop
+            );
+
+            Log.i(
+                    TAG,
+                    "SOCKS5 127.0.0.1:1080"
+            );
+
             return true;
-        } catch (Exception e) {
-            Log.e(TAG, "SOCKS5 start failed", e);
+
+        } catch (Throwable e) {
+
+            Log.e(
+                    TAG,
+                    "SOCKS start failed",
+                    e
+            );
+
             stop();
             return false;
         }
     }
 
     public synchronized void stop() {
+
         running = false;
-        if (tcpServer != null) try { tcpServer.close(); } catch (Exception ignored) {}
+
+        try {
+            if (server != null) {
+                server.close();
+            }
+        } catch (Throwable ignored) {}
+
+        server = null;
         pool.shutdownNow();
     }
 
-    public void updateHostsMap(Map<String, String> map) { hostsMap = map; }
-
     private void acceptLoop() {
+
         while (running) {
+
             try {
-                Socket client = tcpServer.accept();
-                pool.execute(() -> handleClient(client));
-            } catch (SocketException e) {
-                if (running) Log.e(TAG, "accept()", e);
-                break;
-            } catch (Exception e) {
-                if (running) Log.e(TAG, "accept failed", e);
+
+                final Socket client =
+                        server.accept();
+
+                pool.execute(
+                        () -> handleClient(
+                                client
+                        )
+                );
+
+            } catch (Throwable e) {
+
+                if (running) {
+                    Log.e(
+                            TAG,
+                            "accept failed",
+                            e
+                    );
+                }
             }
         }
     }
 
-    private void handleClient(Socket client) {
-        try (Socket socket = client) {
-            socket.setTcpNoDelay(true);
-            InputStream in = new BufferedInputStream(socket.getInputStream());
-            OutputStream out = new BufferedOutputStream(socket.getOutputStream());
+    private void handleClient(
+            Socket client
+    ) {
 
-            int version = in.read();
-            if (version != 5) return;
-            int nMethods = in.read();
-            if (nMethods < 0 || nMethods > 255) return;
-            byte[] methods = new byte[nMethods];
-            readFully(in, methods);
-            out.write(5); out.write(0); out.flush();
-
-            int reqVersion = in.read();
-            int cmd = in.read();
-            in.read(); // reserved
-            int atyp = in.read();
-            if (reqVersion != 5) return;
-
-            HostPort hp = readHostPort(in, atyp);
-            if (hp == null) { sendFailure(out); return; }
-
-            if (cmd == 1) {
-                handleConnect(socket, in, out, hp);
-            } else if (cmd == 3) {
-                handleUdpAssociate(socket, out, hp);
-            } else {
-                sendCommandFailure(out, 0x07);
-            }
-        } catch (Exception e) {
-            Log.d(TAG, "client closed");
-        }
-    }
-
-    private void handleConnect(Socket client, InputStream in, OutputStream out, HostPort hp) {
         Socket remote = null;
-        try {
-            remote = new Socket();
-            if (!vpnService.protect(remote)) throw new IOException("protect failed");
-            remote.setTcpNoDelay(true);
-            remote.connect(new InetSocketAddress(resolveForConnect(hp.host), hp.port), 12000);
-            sendSuccess(out, remote);
 
-            if (hp.port == 53) {
-                if (tryHandleTcpDns(client, in, out, remote)) return;
+        try {
+
+            InputStream in =
+                    client.getInputStream();
+
+            OutputStream out =
+                    client.getOutputStream();
+
+            if (in.read() != 5) {
+                close(client);
+                return;
             }
 
-            relayBidirectional(client, remote);
-        } catch (Exception e) {
-            try { sendCommandFailure(out, 0x05); } catch (Exception ignored) {}
-        } finally {
-            closeQuietly(remote);
-        }
-    }
+            int methods =
+                    in.read();
 
-    private void handleUdpAssociate(Socket controlSocket, OutputStream out, HostPort hp) {
-        DatagramSocket udpRelay = null;
-        DatagramSocket outboundUdp = null;
-        try {
-            udpRelay = new DatagramSocket(0, InetAddress.getByName("127.0.0.1"));
-            if (!vpnService.protect(udpRelay)) throw new IOException("protect UDP failed");
+            if (methods < 0) {
+                close(client);
+                return;
+            }
 
-            outboundUdp = new DatagramSocket();
-            if (!vpnService.protect(outboundUdp)) throw new IOException("protect outbound UDP failed");
+            byte[] buffer =
+                    new byte[methods];
 
-            int relayPort = udpRelay.getLocalPort();
-            byte[] resp = new byte[]{5, 0, 0, 1, 127, 0, 0, 1, (byte)(relayPort >> 8), (byte)(relayPort & 0xFF)};
-            out.write(resp); out.flush();
+            readFully(
+                    in,
+                    buffer
+            );
 
-            final DatagramSocket udpRelayFinal = udpRelay;
-            final DatagramSocket outboundUdpFinal = outboundUdp;
+            out.write(5);
+            out.write(0);
+            out.flush();
 
-            pool.execute(() -> runUdpRelay(udpRelayFinal, outboundUdpFinal));
+            int version =
+                    in.read();
 
-            InputStream in = controlSocket.getInputStream();
-            while (in.read() != -1) {}
-        } catch (Exception e) {
-            Log.d(TAG, "UDP associate failed: " + e.getMessage());
-        } finally {
-            closeQuietly(udpRelay);
-            closeQuietly(outboundUdp);
-        }
-    }
+            int command =
+                    in.read();
 
-    private void runUdpRelay(DatagramSocket relaySocket, DatagramSocket outboundSocket) {
-        byte[] buffer = new byte[65535];
-        while (running && !relaySocket.isClosed() && !outboundSocket.isClosed()) {
+            in.read();
+
+            int atyp =
+                    in.read();
+
+            if (version != 5) {
+                close(client);
+                return;
+            }
+
+            HostPort target =
+                    readTarget(
+                            in,
+                            atyp
+                    );
+
+            if (target == null) {
+                sendFailure(out, 8);
+                close(client);
+                return;
+            }
+
+            /*
+             * TCP CONNECT
+             */
+            if (command == 1) {
+
+                remote =
+                        new Socket();
+
+                if (!vpn.protect(remote)) {
+                    throw new Exception(
+                            "protect() failed"
+                    );
+                }
+
+                remote.setTcpNoDelay(true);
+
+                InetAddress destination =
+                        resolveHost(
+                                target.host
+                        );
+
+                remote.connect(
+                        new InetSocketAddress(
+                                destination,
+                                target.port
+                        ),
+                        12000
+                );
+
+                sendSuccess(
+                        out,
+                        remote
+                );
+
+                relay(
+                        client,
+                        remote
+                );
+
+                return;
+            }
+
+            /*
+             * UDP ASSOCIATE is intentionally handled by
+             * HEV/Java side later; TCP must work first.
+             */
+            sendFailure(
+                    out,
+                    7
+            );
+
+        } catch (Throwable e) {
+
+            Log.d(
+                    TAG,
+                    "client error: "
+                            + e.getMessage()
+            );
+
             try {
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                relaySocket.receive(packet);
+                sendFailure(
+                        client.getOutputStream(),
+                        5
+                );
+            } catch (Throwable ignored) {}
 
-                byte[] data = packet.getData();
-                int length = packet.getLength();
-                if (length < 10) continue;
-                if (data[0] != 0 || data[1] != 0 || data[2] != 0) continue;
+        } finally {
 
-                int atyp = data[3] & 0xFF;
-                int headerLen = 4;
-                String targetHost = "";
-                if (atyp == 1) {
-                    targetHost = InetAddress.getByAddress(new byte[]{data[4], data[5], data[6], data[7]}).getHostAddress();
-                    headerLen = 10;
-                } else if (atyp == 3) {
-                    int dlen = data[4] & 0xFF;
-                    targetHost = new String(data, 5, dlen);
-                    headerLen = 7 + dlen;
-                } else continue;
-
-                int targetPort = ((data[headerLen - 2] & 0xFF) << 8) | (data[headerLen - 1] & 0xFF);
-                int payloadLen = length - headerLen;
-                if (payloadLen <= 0) continue;
-
-                String mapped = hostsMap != null ? hostsMap.get(DnsProxyServer.normalizeDomain(targetHost)) : null;
-                if (mapped != null) targetHost = mapped;
-
-                DatagramPacket outbound = new DatagramPacket(data, headerLen, payloadLen, InetAddress.getByName(targetHost), targetPort);
-                outboundSocket.send(outbound);
-            } catch (Exception e) {
-                if (running) Log.d(TAG, "UDP relay error");
-                break;
-            }
+            close(remote);
+            close(client);
         }
     }
 
-    private boolean tryHandleTcpDns(Socket client, InputStream in, OutputStream out, Socket remote) {
-        return false; // برای نسخه‌ی اول، DNS-over-TCP را به‌صورت ساده رد می‌کنیم
+    private InetAddress resolveHost(
+            String host
+    ) throws Exception {
+
+        String normalized =
+                DnsProxyServer
+                        .normalizeDomain(
+                                host
+                        );
+
+        String mapped =
+                hosts == null
+                        ? null
+                        : hosts.get(
+                                normalized
+                        );
+
+        if (mapped != null) {
+
+            return InetAddress.getByName(
+                    mapped
+            );
+        }
+
+        return InetAddress.getByName(
+                host
+        );
     }
 
-    private InetAddress resolveForConnect(String host) throws Exception {
-        String mapped = hostsMap != null ? hostsMap.get(DnsProxyServer.normalizeDomain(host)) : null;
-        if (mapped != null) return InetAddress.getByName(mapped);
-        return InetAddress.getByName(host);
+    private void relay(
+            final Socket client,
+            final Socket remote
+    ) throws Exception {
+
+        Thread a =
+                new Thread(
+                        () -> copy(
+                                client,
+                                remote
+                        ),
+                        "IPPulse-C2R"
+                );
+
+        Thread b =
+                new Thread(
+                        () -> copy(
+                                remote,
+                                client
+                        ),
+                        "IPPulse-R2C"
+                );
+
+        a.start();
+        b.start();
+
+        a.join();
+        b.join();
     }
 
-    private void relayBidirectional(Socket client, Socket remote) {
-        pool.execute(() -> pipe(client, remote));
-        pool.execute(() -> pipe(remote, client));
-    }
+    private void copy(
+            Socket from,
+            Socket to
+    ) {
 
-    private void pipe(Socket source, Socket dest) {
         try {
-            InputStream in = source.getInputStream();
-            OutputStream out = dest.getOutputStream();
-            byte[] buffer = new byte[8192];
-            int len;
-            while ((len = in.read(buffer)) != -1) {
-                out.write(buffer, 0, len);
-                out.flush();
+
+            InputStream in =
+                    from.getInputStream();
+
+            OutputStream out =
+                    to.getOutputStream();
+
+            byte[] buffer =
+                    new byte[16384];
+
+            int n;
+
+            while ((n =
+                    in.read(buffer)) != -1) {
+
+                if (n > 0) {
+
+                    out.write(
+                            buffer,
+                            0,
+                            n
+                    );
+
+                    out.flush();
+                }
             }
-        } catch (Exception ignored) {}
-        finally {
-            closeQuietly(source);
-            closeQuietly(dest);
-        }
+
+        } catch (Throwable ignored) {}
     }
 
-    private void sendSuccess(OutputStream out, Socket remote) throws IOException {
-        byte[] ip = remote.getLocalAddress().getAddress();
-        out.write(new byte[]{5, 0, 0, 1, ip[0], ip[1], ip[2], ip[3], (byte)(remote.getLocalPort() >> 8), (byte)(remote.getLocalPort() & 0xFF)});
+    private HostPort readTarget(
+            InputStream in,
+            int atyp
+    ) throws Exception {
+
+        HostPort result =
+                new HostPort();
+
+        if (atyp == 1) {
+
+            byte[] ip = new byte[4];
+
+            readFully(in, ip);
+
+            result.host =
+                    InetAddress
+                            .getByAddress(ip)
+                            .getHostAddress();
+
+        } else if (atyp == 3) {
+
+            int len =
+                    in.read();
+
+            if (len <= 0) {
+                return null;
+            }
+
+            byte[] domain =
+                    new byte[len];
+
+            readFully(
+                    in,
+                    domain
+            );
+
+            result.host =
+                    new String(
+                            domain,
+                            StandardCharsets.UTF_8
+                    );
+
+        } else if (atyp == 4) {
+
+            byte[] ip = new byte[16];
+
+            readFully(in, ip);
+
+            result.host =
+                    InetAddress
+                            .getByAddress(ip)
+                            .getHostAddress();
+
+        } else {
+
+            return null;
+        }
+
+        int hi =
+                in.read();
+
+        int lo =
+                in.read();
+
+        result.port =
+                ((hi & 0xff) << 8)
+                        | (lo & 0xff);
+
+        return result;
+    }
+
+    private void sendSuccess(
+            OutputStream out,
+            Socket remote
+    ) throws Exception {
+
+        byte[] ip =
+                remote
+                        .getLocalAddress()
+                        .getAddress();
+
+        out.write(5);
+        out.write(0);
+        out.write(0);
+
+        out.write(
+                ip.length == 4
+                        ? 1
+                        : 4
+        );
+
+        out.write(ip);
+
+        int port =
+                remote.getLocalPort();
+
+        out.write(
+                (port >> 8) & 0xff
+        );
+
+        out.write(
+                port & 0xff
+        );
+
         out.flush();
     }
 
-    private void sendFailure(OutputStream out) { try { out.write(new byte[]{5, 1, 0, 1, 0,0,0,0,0,0}); out.flush(); } catch (Exception ignored) {} }
+    private void sendFailure(
+            OutputStream out,
+            int code
+    ) {
 
-    private void sendCommandFailure(OutputStream out, int status) { try { out.write(new byte[]{5, (byte)status, 0, 1, 0,0,0,0,0,0}); out.flush(); } catch (Exception ignored) {} }
+        try {
 
-    private HostPort readHostPort(InputStream in, int atyp) throws IOException {
-        String host = "";
-        if (atyp == 1) {
-            byte[] b = new byte[4]; readFully(in, b); host = InetAddress.getByAddress(b).getHostAddress();
-        } else if (atyp == 3) {
-            int len = in.read(); byte[] b = new byte[len]; readFully(in, b); host = new String(b);
-        } else if (atyp == 4) {
-            byte[] b = new byte[16]; readFully(in, b); host = InetAddress.getByAddress(b).getHostAddress();
-        } else {
-            return null;
-        }
-        int port = (in.read() << 8) | in.read();
-        return new HostPort(host, port);
+            out.write(5);
+            out.write(code);
+            out.write(0);
+            out.write(1);
+
+            out.write(0);
+            out.write(0);
+            out.write(0);
+            out.write(0);
+
+            out.write(0);
+            out.write(0);
+
+            out.flush();
+
+        } catch (Throwable ignored) {}
     }
 
-    private void readFully(InputStream in, byte[] buf) throws IOException {
+    private void readFully(
+            InputStream in,
+            byte[] data
+    ) throws Exception {
+
         int offset = 0;
-        while (offset < buf.length) {
-            int read = in.read(buf, offset, buf.length - offset);
-            if (read < 0) throw new IOException("EOF");
-            offset += read;
+
+        while (offset < data.length) {
+
+            int count =
+                    in.read(
+                            data,
+                            offset,
+                            data.length - offset
+                    );
+
+            if (count < 0) {
+                throw new Exception("EOF");
+            }
+
+            offset += count;
         }
     }
 
-    private void closeQuietly(Closeable closeable) {
-        if (closeable != null) try { closeable.close(); } catch (Exception ignored) {}
+    private void close(
+            Closeable c
+    ) {
+
+        if (c == null) return;
+
+        try {
+            c.close();
+        } catch (Throwable ignored) {}
     }
 
-    private static class HostPort {
+    private static final class HostPort {
         String host;
         int port;
-        HostPort(String host, int port) { this.host = host; this.port = port; }
     }
 }
