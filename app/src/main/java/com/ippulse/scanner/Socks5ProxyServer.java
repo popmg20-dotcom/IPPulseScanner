@@ -191,8 +191,6 @@ public final class Socks5ProxyServer {
 
                 DatagramPacket outbound = new DatagramPacket(data, headerLen, payloadLen, InetAddress.getByName(targetHost), targetPort);
                 outboundSocket.send(outbound);
-
-                // Wait for response in separate thread (simplified: echo response not implemented)
             } catch (Exception e) {
                 if (running) Log.d(TAG, "UDP relay error");
                 break;
@@ -201,8 +199,7 @@ public final class Socks5ProxyServer {
     }
 
     private boolean tryHandleTcpDns(Socket client, InputStream in, OutputStream out, Socket remote) {
-        // Simplified: not full DNS over TCP handling, just close and return false to use normal relay
-        return false;
+        return false; // برای نسخه‌ی اول، DNS-over-TCP را به‌صورت ساده رد می‌کنیم
     }
 
     private InetAddress resolveForConnect(String host) throws Exception {
