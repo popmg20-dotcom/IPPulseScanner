@@ -50,6 +50,10 @@ public class GamingVpnService extends VpnService {
 
     private int mtu = 1400;
 
+    private int appliedMtu = -1;
+    private String appliedDns = null;
+    private String appliedHosts = null;
+
     private HashMap<String, String> hostsMap =
             new HashMap<>();
 
@@ -163,6 +167,16 @@ public class GamingVpnService extends VpnService {
 
             startForegroundCompat();
 
+            String currentHosts = serializeHosts(hostsMap);
+            boolean changed =
+                    appliedMtu != mtu
+                    || !equalsSafe(appliedDns, dns)
+                    || !equalsSafe(appliedHosts, currentHosts);
+
+            if (running && changed) {
+                stopVpn();
+            }
+
             if (!running) {
                 startVpn();
             }
@@ -256,6 +270,12 @@ public class GamingVpnService extends VpnService {
                     "VPN establish returned null"
             );
         }
+
+        appliedMtu = mtu;
+        appliedDns = dns;
+        appliedHosts = serializeHosts(hostsMap);
+
+        Log.i(TAG, "REAL VPN MTU=" + appliedMtu);
 
         final int tunFd =
                 vpnInterface.getFd();
@@ -489,6 +509,11 @@ public class GamingVpnService extends VpnService {
 
         writer.flush();
         writer.close();
+    }
+
+    private static boolean equalsSafe(String a, String b) {
+        if (a == null) return b == null;
+        return a.equals(b);
     }
 
     private static String normalizeDns(
