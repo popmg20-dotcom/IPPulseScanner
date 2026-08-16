@@ -37,6 +37,7 @@ public class GamingVpnService extends VpnService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        writeLog2("onStartCommand entered");
         if (intent != null) {
             if (ACTION_STOP.equals(intent.getAction())) {
                 stopVpn();
@@ -49,9 +50,11 @@ public class GamingVpnService extends VpnService {
             if (s != null && s.map != null) hostsMap = s.map;
         }
 
+        writeLog2("before startVpn");
         createNotificationChannel();
         startForegroundCompatible();
         if (!running) startVpn();
+        writeLog2("after startVpn");
         return START_STICKY;
     }
 
@@ -249,5 +252,18 @@ public class GamingVpnService extends VpnService {
         }
         libTun.setExecutable(true);
         libSystem.setExecutable(true);
+    }
+
+    private void writeLog2(String msg) {
+        try {
+            java.io.File extDir = getExternalFilesDir(null);
+            if (extDir != null) {
+                extDir.mkdirs();
+                java.io.File logFile = new java.io.File(extDir, "vpn_log.txt");
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(logFile, true);
+                fos.write((msg + "\n").getBytes());
+                fos.close();
+            }
+        } catch (Exception ignored) {}
     }
 }
