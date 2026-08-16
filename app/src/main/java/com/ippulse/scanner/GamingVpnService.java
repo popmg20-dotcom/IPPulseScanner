@@ -73,13 +73,15 @@ public class GamingVpnService extends VpnService {
     }
 
     private void startVpn() {
+        writeLog2("startVpn: begin");
         writeLog("startVpn called");
         copyNativeLibs();
         checkFilesForLibs();
 
         writeLog("startVpn called");
         try {
-            Builder builder = new Builder();
+            writeLog2("startVpn: builder created");
+        Builder builder = new Builder();
             builder.setSession("Gaming VPN");
             builder.addAddress("26.26.26.1", 24);
             builder.addRoute("0.0.0.0", 0);
@@ -87,20 +89,26 @@ public class GamingVpnService extends VpnService {
             builder.setMtu(mtu);
             builder.setBlocking(false);
 
+            writeLog2("startVpn: establishing VPN...");
             vpnInterface = builder.establish();
-            if (vpnInterface == null) { writeLog("establish failed"); throw new IllegalStateException("establish failed"); }
+            if (vpnInterface == null) {
+                writeLog2("startVpn: establish returned null"); { writeLog("establish failed"); throw new IllegalStateException("establish failed"); }
 
             // شروع SOCKS5 و DNS Proxy بعد از ساخت TUN
+            writeLog2("startVpn: creating SOCKS5");
             socks5 = new Socks5ProxyServer(this, SOCKS_PORT);
             socks5.start();
+            writeLog2("startVpn: creating DNS proxy");
             dnsProxy = new DnsProxyServer(DNS_PORT, dns, hostsMap);
             dnsProxy.start();
 
+            writeLog2("startVpn: getting fd");
             int fd = vpnInterface.getFd();
             String nativeLibDir = getFilesDir().getAbsolutePath();
             sockPath = getApplicationInfo().dataDir + "/sock_path";
             String pidPath = getFilesDir() + "/tun2socks.pid";
 
+            writeLog2("startVpn: building command");
             String command = nativeLibDir + "/libtun2socks.so"
                     + " --netif-ipaddr 26.26.26.2"
                     + " --netif-netmask 255.255.255.0"
@@ -113,9 +121,11 @@ public class GamingVpnService extends VpnService {
                     + " --sock " + sockPath;
 
             writeLog("Executing: " + command);
+            writeLog2("startVpn: executing tun2socks");
             tun2socksProcess = Runtime.getRuntime().exec(command);
 
             // ارسال fd از طریق سوکت (مثل SocksDroid)
+            writeLog2("startVpn: sending fd via socket");
             int attempts = 0;
             int sentFd = -1;
             while (attempts < 5) {
@@ -131,8 +141,10 @@ public class GamingVpnService extends VpnService {
                 stopVpn();
                 return;
             }
+            writeLog2("startVpn: running=true");
             running = true;
-            writeLog("VPN started"); running = true;
+            writeLog("VPN started"); writeLog2("startVpn: running=true");
+            running = true;
         } catch (Exception e) {
             writeLog("ERROR: " + android.util.Log.getStackTraceString(e));
             Log.e(TAG, "Error starting VPN", e);
