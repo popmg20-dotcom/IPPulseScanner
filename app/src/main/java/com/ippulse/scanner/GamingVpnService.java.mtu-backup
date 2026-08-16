@@ -185,19 +185,10 @@ public class GamingVpnService extends VpnService {
     private synchronized void startVpn()
             throws Exception {
 
-        if (running || vpnInterface != null || hevThread != null || socksServer != null) {
-            Log.i(TAG, "Rebuilding VPN for new MTU/settings");
-            stopVpn();
-
-            try {
-                Thread.sleep(150L);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-
-        Log.i(TAG, "Starting Full Tunnel");
-        Log.i(TAG, "REAL VPN MTU = " + mtu);
+        Log.i(
+                TAG,
+                "Starting Full Tunnel"
+        );
 
         /*
          * SOCKS5
@@ -238,11 +229,6 @@ public class GamingVpnService extends VpnService {
 
         builder.setMtu(
                 mtu
-        );
-
-        Log.i(
-                TAG,
-                "Builder.setMtu(" + mtu + ")"
         );
 
         builder.addDnsServer(
