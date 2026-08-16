@@ -81,13 +81,12 @@ public class GamingVpnService extends VpnService {
 
             Builder builder = new Builder();
             builder.setSession("IPPulseScanner")
-                   .addAddress("172.16.0.2", 24) // رنج ایزوله
+                   .addAddress("172.16.0.2", 24)
                    .addRoute("0.0.0.0", 0)
                    .addDnsServer(dns)
                    .addDnsServer("8.8.8.8")
-                   .setMtu(mtu); // MTU دریافتی از UI
+                   .setMtu(mtu);
 
-            // جلوگیری از گیر افتادن اینترنت خود برنامه در تونل
             try { builder.addDisallowedApplication(getPackageName()); } catch (Exception ignored) {}
 
             mInterface = builder.establish();
