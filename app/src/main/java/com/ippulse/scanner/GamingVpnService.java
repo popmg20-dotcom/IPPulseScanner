@@ -1,3 +1,4 @@
+
 package com.ippulse.scanner;
 
 import android.app.Notification;
@@ -11,11 +12,14 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
+import android.widget.Toast;
+
+import net.typeblog.socks.system;
 
 import java.io.File;
-import net.typeblog.socks.system;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.HashMap;
-import android.widget.Toast;
 
 public class GamingVpnService extends VpnService {
     private static final String TAG = "GamingVpn";
@@ -26,35 +30,31 @@ public class GamingVpnService extends VpnService {
     private static final int DNS_PORT = 8091;
 
     private ParcelFileDescriptor vpnInterface;
+    private Process tun2socksProcess;
     private Socks5ProxyServer socks5;
     private DnsProxyServer dnsProxy;
-    private Process tun2socksProcess;
-    private String sockPath;
     private HashMap<String, String> hostsMap = new HashMap<>();
     private String dns = "8.8.8.8";
     private int mtu = 1400;
     private boolean running = false;
+    private String sockPath;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        writeLog2("onStartCommand entered");
         if (intent != null) {
             if (ACTION_STOP.equals(intent.getAction())) {
                 stopVpn();
                 return START_NOT_STICKY;
             }
-            dns = intent.getStringExtra("dns");
-            if (dns == null || dns.isEmpty()) dns = "8.8.8.8";
-            mtu = intent.getIntExtra("mtu", 1400);
+            if (intent.hasExtra("dns")) dns = intent.getStringExtra("dns");
+            if (intent.hasExtra("mtu")) mtu = intent.getIntExtra("mtu", 1400);
             SerializableHosts s = (SerializableHosts) intent.getSerializableExtra("hosts");
             if (s != null && s.map != null) hostsMap = s.map;
         }
 
-        writeLog2("before startVpn");
         createNotificationChannel();
         startForegroundCompatible();
         if (!running) startVpn();
-        writeLog2("after startVpn");
         return START_STICKY;
     }
 
@@ -67,21 +67,15 @@ public class GamingVpnService extends VpnService {
                 startForeground(1, notification);
             }
         } catch (Exception e) {
-            writeLog("ERROR: " + android.util.Log.getStackTraceString(e));
             startForeground(1, notification);
         }
     }
 
     private void startVpn() {
-        writeLog2("startVpn: begin");
-        writeLog("startVpn called");
-        copyNativeLibs();
-        checkFilesForLibs();
-
-        writeLog("startVpn called");
+        if (running) return;
         try {
-            writeLog2("startVpn: builder created");
-        Builder builder = new Builder();
+            // ۱. ساخت VPN
+            Builder builder = new Builder();
             builder.setSession("Gaming VPN");
             builder.addAddress("26.26.26.1", 24);
             builder.addRoute("0.0.0.0", 0);
@@ -89,26 +83,28 @@ public class GamingVpnService extends VpnService {
             builder.setMtu(mtu);
             builder.setBlocking(false);
 
-            writeLog2("startVpn: establishing VPN...");
             vpnInterface = builder.establish();
             if (vpnInterface == null) {
-                writeLog2("startVpn: establish returned null"); { writeLog("establish failed"); throw new IllegalStateException("establish failed"); }
+                Toast.makeText(this, "VPN establish failed", Toast.LENGTH_SHORT).show();
+                stopVpn();
+                return;
+            }
 
-            // شروع SOCKS5 و DNS Proxy بعد از ساخت TUN
-            writeLog2("startVpn: creating SOCKS5");
+            // ۲. کپی کتابخانه‌ها از assets به filesDir
+            copyNativeLibs();
+
+            // ۳. شروع SOCKS5 و DNS
             socks5 = new Socks5ProxyServer(this, SOCKS_PORT);
             socks5.start();
-            writeLog2("startVpn: creating DNS proxy");
             dnsProxy = new DnsProxyServer(DNS_PORT, dns, hostsMap);
             dnsProxy.start();
 
-            writeLog2("startVpn: getting fd");
+            // ۴. اجرای tun2socks
             int fd = vpnInterface.getFd();
-            String nativeLibDir = getFilesDir().getAbsolutePath();
             sockPath = getApplicationInfo().dataDir + "/sock_path";
             String pidPath = getFilesDir() + "/tun2socks.pid";
+            String nativeLibDir = getFilesDir().getAbsolutePath();
 
-            writeLog2("startVpn: building command");
             String command = nativeLibDir + "/libtun2socks.so"
                     + " --netif-ipaddr 26.26.26.2"
                     + " --netif-netmask 255.255.255.0"
@@ -120,35 +116,52 @@ public class GamingVpnService extends VpnService {
                     + " --pid " + pidPath
                     + " --sock " + sockPath;
 
-            writeLog("Executing: " + command);
-            writeLog2("startVpn: executing tun2socks");
             tun2socksProcess = Runtime.getRuntime().exec(command);
 
-            // ارسال fd از طریق سوکت (مثل SocksDroid)
-            writeLog2("startVpn: sending fd via socket");
+            // ۵. ارسال fd از طریق سوکت
             int attempts = 0;
-            int sentFd = -1;
+            int sent = -1;
             while (attempts < 5) {
-                sentFd = system.sendfd(fd, sockPath);
-                if (sentFd != -1) {
-                    break;
-                }
+                sent = system.sendfd(fd, sockPath);
+                if (sent != -1) break;
                 attempts++;
                 Thread.sleep(1000L * attempts);
             }
-            if (sentFd == -1) {
-                Toast.makeText(this, "sendfd failed after retries", Toast.LENGTH_LONG).show();
+            if (sent == -1) {
+                Toast.makeText(this, "sendfd failed", Toast.LENGTH_SHORT).show();
                 stopVpn();
                 return;
             }
-            writeLog2("startVpn: running=true");
+
             running = true;
-            writeLog("VPN started"); writeLog2("startVpn: running=true");
-            running = true;
+            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            writeLog("ERROR: " + android.util.Log.getStackTraceString(e));
-            Log.e(TAG, "Error starting VPN", e);
+            Toast.makeText(this, "VPN Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
             stopVpn();
+        }
+    }
+
+    private void copyNativeLibs() {
+        try {
+            File destDir = getFilesDir();
+            String[] libs = {"libtun2socks.so", "libsystem.so"};
+            for (String lib : libs) {
+                File dest = new File(destDir, lib);
+                if (!dest.exists()) {
+                    InputStream in = getAssets().open(lib);
+                    FileOutputStream out = new FileOutputStream(dest);
+                    byte[] buf = new byte[8192];
+                    int len;
+                    while ((len = in.read(buf)) > 0) {
+                        out.write(buf, 0, len);
+                    }
+                    out.close();
+                    in.close();
+                    dest.setExecutable(true);
+                }
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "copyNativeLibs failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -212,70 +225,5 @@ public class GamingVpnService extends VpnService {
     public static class SerializableHosts implements java.io.Serializable {
         public HashMap<String, String> map;
         public SerializableHosts(HashMap<String, String> map) { this.map = map; }
-    }
-
-
-    private void writeLog(String msg) {
-        try {
-            java.io.File logFile = new java.io.File(getFilesDir(), "vpn_log.txt");
-            java.io.FileOutputStream fos = new java.io.FileOutputStream(logFile, true);
-            fos.write((msg + "\n").getBytes());
-            fos.close();
-        } catch (Exception ignored) {}
-    }
-
-    private void copyNativeLibs() {
-        try {
-            java.io.File destDir = getFilesDir();
-            String[] libs = {"libtun2socks.so", "libsystem.so"};
-            for (String lib : libs) {
-                java.io.File dest = new java.io.File(destDir, lib);
-                if (!dest.exists()) {
-                    java.io.InputStream in = getAssets().open(lib);
-                    java.io.FileOutputStream out = new java.io.FileOutputStream(dest);
-                    byte[] buf = new byte[8192];
-                    int len;
-                    while ((len = in.read(buf)) > 0) {
-                        out.write(buf, 0, len);
-                    }
-                    out.close();
-                    in.close();
-                    dest.setExecutable(true);
-                }
-            }
-        } catch (Exception e) {
-            Toast.makeText(this, "copyNativeLibs failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    private void checkFilesForLibs() {
-        java.io.File dir = getFilesDir();
-        java.io.File libTun = new java.io.File(dir, "libtun2socks.so");
-        java.io.File libSystem = new java.io.File(dir, "libsystem.so");
-        if (!libTun.exists()) {
-            Toast.makeText(this, "libtun2socks.so missing", Toast.LENGTH_LONG).show();
-            stopVpn();
-            return;
-        }
-        if (!libSystem.exists()) {
-            Toast.makeText(this, "libsystem.so missing", Toast.LENGTH_LONG).show();
-            stopVpn();
-            return;
-        }
-        libTun.setExecutable(true);
-        libSystem.setExecutable(true);
-    }
-
-    private void writeLog2(String msg) {
-        try {
-            java.io.File extDir = getExternalFilesDir(null);
-            if (extDir != null) {
-                extDir.mkdirs();
-                java.io.File logFile = new java.io.File(extDir, "vpn_log.txt");
-                java.io.FileOutputStream fos = new java.io.FileOutputStream(logFile, true);
-                fos.write((msg + "\n").getBytes());
-                fos.close();
-            }
-        } catch (Exception ignored) {}
     }
 }
