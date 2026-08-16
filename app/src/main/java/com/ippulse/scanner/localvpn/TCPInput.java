@@ -27,7 +27,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import xyz.hexene.localvpn.TCB.TCBStatus;
+import com.ippulse.scanner.localvpn.TCB.TCBStatus;
 
 public class TCPInput implements Runnable
 {

@@ -16,6 +16,8 @@
 
 package com.ippulse.scanner.localvpn;
 
+import android.net.VpnService;
+
 import android.util.Log;
 
 import java.io.IOException;
@@ -28,8 +30,8 @@ import java.nio.channels.SocketChannel;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import xyz.hexene.localvpn.Packet.TCPHeader;
-import xyz.hexene.localvpn.TCB.TCBStatus;
+import com.ippulse.scanner.localvpn.Packet.TCPHeader;
+import com.ippulse.scanner.localvpn.TCB.TCBStatus;
 
 public class TCPOutput implements Runnable
 {
