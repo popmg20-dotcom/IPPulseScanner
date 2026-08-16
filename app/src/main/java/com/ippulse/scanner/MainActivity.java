@@ -26,6 +26,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
 import java.io.IOException;
+import java.io.File;
 
 public class MainActivity extends Activity {
 
@@ -54,7 +55,6 @@ public class MainActivity extends Activity {
     private EditText manualIpInput;
     private Button btnManualDeepTest;
 
-    private EditText vpnDns, , vpnHosts, vpnMasterIp;
     private Button btnStartVpn, btnStopVpn, btnApplyIp;
     private TextView vpnStatus;
 
@@ -107,7 +107,6 @@ public class MainActivity extends Activity {
 
         tab3Container = findViewById(R.id.tab3Container);
         vpnDns = findViewById(R.id.vpnDns);
-         = findViewById(R.id.);
         vpnHosts = findViewById(R.id.vpnHosts);
         vpnMasterIp = findViewById(R.id.vpnMasterIp);
         btnStartVpn = findViewById(R.id.btnStartVpn);
@@ -167,7 +166,6 @@ public class MainActivity extends Activity {
     private void loadVpnSettings() {
         SharedPreferences prefs = getSharedPreferences(VPN_PREFS, MODE_PRIVATE);
         vpnDns.setText(prefs.getString("dns", "8.8.8.8"));
-        .setText(String.valueOf(prefs.getInt("mtu", 1400)));
         vpnHosts.setText(prefs.getString("hosts", ""));
         if (vpnHosts.getText().toString().trim().isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -182,7 +180,6 @@ public class MainActivity extends Activity {
         SharedPreferences prefs = getSharedPreferences(VPN_PREFS, MODE_PRIVATE);
         prefs.edit()
             .putString("dns", vpnDns.getText().toString().trim())
-            .putInt("mtu", parseIntSafe(.getText().toString().trim(), 1400))
             .putString("hosts", vpnHosts.getText().toString().trim())
             .apply();
     }
@@ -218,7 +215,7 @@ public class MainActivity extends Activity {
         if (intent != null) {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
-        int mtu = 1400;
+            int mtu = 1400;
         GamingVpnService.start(this, dns, mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
@@ -249,7 +246,7 @@ public class MainActivity extends Activity {
         if (requestCode == REQUEST_VPN && resultCode == RESULT_OK) {
             String dns = vpnDns.getText().toString().trim();
             HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-        int mtu = 1400;
+            int mtu = 1400;
         GamingVpnService.start(this, dns, mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
