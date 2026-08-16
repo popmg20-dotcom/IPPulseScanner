@@ -3,23 +3,26 @@ plugins {
 }
 
 android {
-    namespace 'com.ippulse.scanner'
+    namespace "com.ippulse.scanner"
     compileSdk 35
 
     defaultConfig {
-        applicationId 'com.ippulse.scanner'
-        minSdk 26
+        applicationId "com.ippulse.scanner"
+        minSdk 23
         targetSdk 35
         versionCode 1
-        versionName '1.0'
+        versionName "1.0"
     }
 
     buildTypes {
-        release {
-            minifyEnabled false
-        }
+        debug { minifyEnabled false }
+        release { minifyEnabled false }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
-dependencies {
-}
+dependencies {}
