@@ -46,7 +46,7 @@ public class GamingVpnService extends VpnService {
     private FileOutputStream tunOut;
 
     private HashMap<String, String> hostsMap = new HashMap<>();
-    private String dns = "8.8.8.8";
+    private String dns = "9.9.9.9"; // پیش‌فرض به 9.9.9.9 تغییر کرد
     private int currentMtu = 1400;
     private volatile boolean running = false;
 
@@ -108,7 +108,10 @@ public class GamingVpnService extends VpnService {
             builder.addRoute("0.0.0.0", 0); // Full Tunnel
             builder.addDnsServer(DNS_ADDRESS);
             builder.setMtu(currentMtu);
-            builder.setBlocking(true);
+            // ⭐ تغییر کلیدی: غیربلاکینگ کردن TUN
+            // در حالت بلاکینگ، read() تا ورود داده جدید مسدود می‌شود و
+            // پمپ نمی‌تواند پاسخ‌ها را به TUN برگرداند -> اینترنت قطع می‌شود
+            builder.setBlocking(false);
             builder.addDisallowedApplication(getPackageName());
 
             vpnInterface = builder.establish();
@@ -125,7 +128,7 @@ public class GamingVpnService extends VpnService {
             executorService.submit(new TunRunnable());
 
             running = true;
-            Log.i(TAG, "VPN started with full tunnel, MTU=" + currentMtu);
+            Log.i(TAG, "VPN started with full tunnel, MTU=" + currentMtu + ", non-blocking TUN");
         } catch (Exception e) {
             Log.e(TAG, "Error starting VPN", e);
             stopVpn();
@@ -147,13 +150,23 @@ public class GamingVpnService extends VpnService {
                     } else {
                         dataSent = true;
                     }
+
                     int read = inputChannel.read(buffer);
                     if (read > 0) {
                         buffer.flip();
-                        Packet packet = new Packet(buffer);
+                        Packet packet = null;
+                        try {
+                            packet = new Packet(buffer);
+                        } catch (Exception e) {
+                            // بسته نامعتبر را رها کرده و ادامه می‌دهیم
+                            Log.w(TAG, "Skipping malformed packet");
+                            ByteBufferPool.release(buffer);
+                            buffer = ByteBufferPool.acquire();
+                            continue;
+                        }
 
                         if (packet.isUDP() && isDnsPacket(packet)) {
-                            // DNS interception
+                            // DNS interception (بدون مسدود کردن پمپ)
                             handleDns(packet);
                             ByteBufferPool.release(buffer);
                             buffer = ByteBufferPool.acquire();
@@ -171,6 +184,7 @@ public class GamingVpnService extends VpnService {
                         dataSent = false;
                     }
 
+                    // پاسخ‌های آماده را به TUN بنویس
                     ByteBuffer outBuffer;
                     while ((outBuffer = networkToDeviceQueue.poll()) != null) {
                         outBuffer.flip();
@@ -185,7 +199,8 @@ public class GamingVpnService extends VpnService {
                     }
                 } catch (Exception e) {
                     if (running) Log.e(TAG, "TUN loop error", e);
-                    break;
+                    // نذاریم کل حلقه بمیرد
+                    try { Thread.sleep(10); } catch (InterruptedException ie) { break; }
                 }
             }
             ByteBufferPool.release(buffer);
@@ -207,17 +222,29 @@ public class GamingVpnService extends VpnService {
             duplicate.get(dnsQuery);
 
             String domain = extractDomain(dnsQuery);
-            byte[] response;
-            if (domain != null && hostsMap.containsKey(domain)) {
-                response = buildDnsResponse(dnsQuery, hostsMap.get(domain));
-            } else {
-                response = forwardDns(dnsQuery);
-            }
 
-            if (response != null) {
-                ByteBuffer output = buildUdpPacket(DNS_ADDRESS, 53,
-                        packet.ip4Header.sourceAddress, packet.udpHeader.sourcePort, response);
-                networkToDeviceQueue.offer(output);
+            if (domain != null && hostsMap.containsKey(domain)) {
+                // دامنه مپ‌شده: پاسخ را بلافاصله بسازیم
+                byte[] response = buildDnsResponse(dnsQuery, hostsMap.get(domain));
+                if (response != null) {
+                    ByteBuffer output = buildUdpPacket(DNS_ADDRESS, 53,
+                            packet.ip4Header.sourceAddress, packet.udpHeader.sourcePort, response);
+                    networkToDeviceQueue.offer(output);
+                }
+            } else {
+                // غیر مپ‌شده: در پس‌زمینه فوروارد کن تا پمپ مسدود نشود
+                final byte[] query = dnsQuery;
+                final Packet reqPacket = packet;
+                new Thread(() -> {
+                    byte[] response = forwardDns(query);
+                    if (response != null) {
+                        try {
+                            ByteBuffer output = buildUdpPacket(DNS_ADDRESS, 53,
+                                    reqPacket.ip4Header.sourceAddress, reqPacket.udpHeader.sourcePort, response);
+                            networkToDeviceQueue.offer(output);
+                        } catch (Exception ignored) {}
+                    }
+                }).start();
             }
         } catch (Exception e) {
             Log.e(TAG, "DNS handling error", e);
