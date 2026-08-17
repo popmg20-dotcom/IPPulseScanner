@@ -173,17 +173,26 @@ public class GamingVpnService extends VpnService {
             System.arraycopy(packet, dnsPayloadOffset, dnsQuery, 0, dnsPayloadLength);
 
             String domain = extractDomain(dnsQuery);
-            byte[] dnsResponse;
             if (domain != null && hostsMap.containsKey(domain)) {
-                dnsResponse = buildDnsResponse(dnsQuery, hostsMap.get(domain));
+                byte[] dnsResponse = buildDnsResponse(dnsQuery, hostsMap.get(domain));
+                if (dnsResponse != null) {
+                    byte[] responsePacket = buildUdpPacket(VPN_ADDRESS, 53, srcAddr, srcPort, dnsResponse);
+                    out.write(responsePacket);
+                    out.flush();
+                }
             } else {
-                dnsResponse = forwardDns(dnsQuery);
-            }
-
-            if (dnsResponse != null) {
-                byte[] responsePacket = buildUdpPacket(VPN_ADDRESS, 53, srcAddr, srcPort, dnsResponse);
-                out.write(responsePacket);
-                out.flush(); // فلاش برای ارسال فوری
+                udpExecutor.execute(() -> {
+                    byte[] asyncResponse = forwardDns(dnsQuery);
+                    if (asyncResponse != null) {
+                        try {
+                            byte[] responsePacket = buildUdpPacket(VPN_ADDRESS, 53, srcAddr, srcPort, asyncResponse);
+                            out.write(responsePacket);
+                            out.flush();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
             }
         } catch (Exception e) {
             e.printStackTrace();
