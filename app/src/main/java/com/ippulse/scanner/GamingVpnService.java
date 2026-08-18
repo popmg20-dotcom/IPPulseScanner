@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -175,6 +176,9 @@ public class GamingVpnService extends VpnService {
                     e
             );
 
+            getSharedPreferences("vpn_debug", MODE_PRIVATE).edit().putString("last_error", Log.getStackTraceString(e)).apply();
+            Toast.makeText(getApplicationContext(), "VPN error: " + e.getClass().getSimpleName() + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
+
             stopVpn();
             stopSelf();
         }
@@ -314,6 +318,9 @@ public class GamingVpnService extends VpnService {
                                         "HEV ERROR",
                                         e
                                 );
+
+                                getSharedPreferences("vpn_debug", MODE_PRIVATE).edit().putString("last_error", Log.getStackTraceString(e)).apply();
+                                new android.os.Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "HEV error: " + e.getClass().getSimpleName() + ": " + e.getMessage(), Toast.LENGTH_LONG).show());
 
                                 stopVpn();
                             }
