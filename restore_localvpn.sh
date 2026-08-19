@@ -1,3 +1,53 @@
+#!/usr/bin/env bash
+# Switches GamingVpnService from the broken hev-socks5-tunnel native build
+# (its .so exports zero JNI symbols - unfixable without NDK) to a pure-Java
+# full-tunnel implementation based on hexene/LocalVPN, with the blocking-mode
+# deadlock and synchronous-DNS-stall bugs already fixed in the version below.
+#
+# No NDK, no native code, no AndroidX. Requires network (Termux has it) only
+# to git clone the reference source - nothing is guessed or hand-written from
+# memory for the TCP/UDP core.
+
+set -e
+
+PROJECT_DIR="$HOME/IPPulseScanner"
+cd "$PROJECT_DIR" || { echo "ERROR: $PROJECT_DIR not found."; exit 1; }
+
+PKG_DIR="app/src/main/java/com/ippulse/scanner"
+LV_DIR="$PKG_DIR/localvpn"
+mkdir -p "$LV_DIR"
+
+echo "=== Cloning hexene/LocalVPN (reference TCP/UDP core) ==="
+rm -rf /data/data/com.termux/files/home/_lv_clone
+git clone --depth 1 https://github.com/hexene/LocalVPN.git /data/data/com.termux/files/home/_lv_clone
+SRC="/data/data/com.termux/files/home/_lv_clone/app/src/main/java/xyz/hexene/localvpn"
+if [ ! -d "$SRC" ]; then
+  echo "ERROR: expected source folder not found at $SRC"
+  find /data/data/com.termux/files/home/_lv_clone -iname "*.java"
+  exit 1
+fi
+
+echo "=== Copying and repackaging core files ==="
+for f in ByteBufferPool Packet TCB TCPInput TCPOutput UDPInput UDPOutput LRUCache; do
+  if [ -f "$SRC/$f.java" ]; then
+    cp "$SRC/$f.java" "$LV_DIR/$f.java"
+    sed -i 's/xyz\.hexene\.localvpn/com.ippulse.scanner.localvpn/g' "$LV_DIR/$f.java"
+    sed -i 's/LocalVPNService/GamingVpnService/g' "$LV_DIR/$f.java"
+    echo "  copied $f.java"
+  else
+    echo "  WARNING: $f.java not found upstream - skipping"
+  fi
+done
+
+echo "=== Removing dead hev/socks5 files ==="
+rm -f "$PKG_DIR/Socks5ProxyServer.java"
+rm -f "$PKG_DIR/DnsProxyServer.java"
+rm -rf "app/src/main/java/hev"
+rm -rf "app/src/main/jniLibs"
+echo "  done"
+
+echo "=== Writing corrected GamingVpnService.java ==="
+cat << 'JAVA_EOF' > "$PKG_DIR/GamingVpnService.java"
 package com.ippulse.scanner;
 
 import android.app.Notification;
@@ -393,3 +443,15 @@ public class GamingVpnService extends VpnService {
         public SerializableHosts(HashMap<String, String> map) { this.map = map; }
     }
 }
+JAVA_EOF
+
+echo "=== Verifying no leftover references ==="
+grep -rn "hev\.sockstun\|Socks5ProxyServer\|DnsProxyServer\|TProxyService" app/src/main/java/ 2>/dev/null && echo "WARNING: leftover references found above" || echo "  clean"
+
+echo ""
+echo "=== git status ==="
+git status --short
+
+echo ""
+echo "Review looks OK? Then run:"
+echo "  git add -A && git commit -m 'Switch to pure-Java full-tunnel VPN (hexene/LocalVPN based)' && git push"
