@@ -16,6 +16,8 @@
 
 package com.ippulse.scanner.localvpn;
 
+import com.ippulse.scanner.GamingVpnService;
+
 import android.util.Log;
 
 import java.io.IOException;
