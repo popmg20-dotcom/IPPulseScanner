@@ -36,11 +36,13 @@ public class TCPInput implements Runnable
 
     private ConcurrentLinkedQueue<ByteBuffer> outputQueue;
     private Selector selector;
+    private int mtu;
 
-    public TCPInput(ConcurrentLinkedQueue<ByteBuffer> outputQueue, Selector selector)
+    public TCPInput(ConcurrentLinkedQueue<ByteBuffer> outputQueue, Selector selector, int mtu)
     {
         this.outputQueue = outputQueue;
         this.selector = selector;
+        this.mtu = mtu;
     }
 
     @Override
@@ -121,6 +123,12 @@ public class TCPInput implements Runnable
         ByteBuffer receiveBuffer = ByteBufferPool.acquire();
         // Leave space for the header
         receiveBuffer.position(HEADER_SIZE);
+        // Cap this read so header+payload never exceeds the tunnel MTU -
+        // an oversized single write gets rejected (EINVAL) by the TUN device.
+        int maxPayload = Math.max(1, mtu - HEADER_SIZE);
+        if (receiveBuffer.capacity() - HEADER_SIZE > maxPayload) {
+            receiveBuffer.limit(HEADER_SIZE + maxPayload);
+        }
 
         TCB tcb = (TCB) key.attachment();
         synchronized (tcb)
