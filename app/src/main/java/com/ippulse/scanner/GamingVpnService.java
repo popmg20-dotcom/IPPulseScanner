@@ -11,6 +11,7 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.ippulse.scanner.localvpn.ByteBufferPool;
 import com.ippulse.scanner.localvpn.Packet;
@@ -132,6 +133,7 @@ public class GamingVpnService extends VpnService {
             Log.i(TAG, "VPN started with full tunnel, MTU=" + currentMtu);
         } catch (Exception e) {
             Log.e(TAG, "Error starting VPN", e);
+            Toast.makeText(getApplicationContext(), "VPN error: " + e.getClass().getSimpleName() + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
             stopVpn();
         }
     }
@@ -190,7 +192,11 @@ public class GamingVpnService extends VpnService {
                         Thread.sleep(10);
                     }
                 } catch (Exception e) {
-                    if (running) Log.e(TAG, "TUN loop error", e);
+                    if (running) {
+                        Log.e(TAG, "TUN loop error", e);
+                        final String msg = "TUN error: " + e.getClass().getSimpleName() + ": " + e.getMessage();
+                        new android.os.Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show());
+                    }
                     break;
                 }
             }
