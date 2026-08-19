@@ -193,12 +193,8 @@ public class GamingVpnService extends VpnService {
                             new android.os.Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "TUN alive: first response written back", Toast.LENGTH_LONG).show());
                         }
                         outBuffer.flip();
-                        try {
-                            while (outBuffer.hasRemaining()) {
-                                outputChannel.write(outBuffer);
-                            }
-                        } catch (IOException writeErr) {
-                            Log.w(TAG, "Dropped oversized/invalid outgoing packet", writeErr);
+                        while (outBuffer.hasRemaining()) {
+                            outputChannel.write(outBuffer);
                         }
                         ByteBufferPool.release(outBuffer);
                     }
