@@ -145,8 +145,6 @@ public class GamingVpnService extends VpnService {
             FileChannel outputChannel = tunOut.getChannel();
             ByteBuffer buffer = ByteBufferPool.acquire();
             boolean dataSent = true;
-            boolean[] firstRead = {false};
-            boolean[] firstWrite = {false};
 
             while (running && !Thread.interrupted()) {
                 try {
@@ -157,11 +155,6 @@ public class GamingVpnService extends VpnService {
                     }
                     int read = inputChannel.read(buffer);
                     if (read > 0) {
-                        if (!firstRead[0]) {
-                            firstRead[0] = true;
-                            final int rlen = read;
-                            new android.os.Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "TUN alive: first packet " + rlen + " bytes", Toast.LENGTH_LONG).show());
-                        }
                         buffer.flip();
                         boolean bufferConsumed = false;
                         try {
@@ -188,10 +181,6 @@ public class GamingVpnService extends VpnService {
 
                     ByteBuffer outBuffer;
                     while ((outBuffer = networkToDeviceQueue.poll()) != null) {
-                        if (!firstWrite[0]) {
-                            firstWrite[0] = true;
-                            new android.os.Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "TUN alive: first response written back", Toast.LENGTH_LONG).show());
-                        }
                         outBuffer.flip();
                         while (outBuffer.hasRemaining()) {
                             outputChannel.write(outBuffer);
