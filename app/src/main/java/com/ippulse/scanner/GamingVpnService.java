@@ -299,9 +299,8 @@ public class GamingVpnService extends VpnService {
 
         if (network != null) {
             try {
-                debug("NETWORK.bindSocket(TCP) SUCCESS");
-                debug("NETWORK.bindSocket(UDP) SUCCESS");
                 network.bindSocket(socket);
+                debug("NETWORK.bindSocket(TCP) SUCCESS");
                 return true;
             } catch (IOException e) {
                 Log.w(TAG, "bindSocket(TCP) failed; fallback to protect()", e);
@@ -309,7 +308,7 @@ public class GamingVpnService extends VpnService {
         }
 
         boolean result = protect(socket);
-        debug("VpnService.protect(Socket)=" + result);
+        debug("VpnService.protect(TCP)=" + result);
         return result;
     }
 

@@ -1,8 +1,8 @@
 package com.ippulse.scanner.localvpn;
 
-import com.ippulse.scanner.GamingVpnService;
-
 import android.util.Log;
+
+import com.ippulse.scanner.GamingVpnService;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -11,18 +11,17 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.ippulse.scanner.localvpn.Packet.TCPHeader;
 import com.ippulse.scanner.localvpn.TCB.TCBStatus;
 
-public class TCPOutput implements Runnable
-{
-    private static final String TAG = TCPOutput.class.getSimpleName();
+public class TCPOutput implements Runnable {
 
-    private static final long CONNECT_TIMEOUT_MS = 10000L;
-    private static final long CONNECT_POLL_MS = 20L;
+    private static final String TAG = "TCPOutput";
 
     private final GamingVpnService vpnService;
     private final ConcurrentLinkedQueue<Packet> inputQueue;
@@ -35,8 +34,8 @@ public class TCPOutput implements Runnable
             ConcurrentLinkedQueue<Packet> inputQueue,
             ConcurrentLinkedQueue<ByteBuffer> outputQueue,
             Selector selector,
-            GamingVpnService vpnService)
-    {
+            GamingVpnService vpnService) {
+
         this.inputQueue = inputQueue;
         this.outputQueue = outputQueue;
         this.selector = selector;
@@ -44,31 +43,18 @@ public class TCPOutput implements Runnable
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         Log.i(TAG, "Started");
 
-        try
-        {
-            Thread currentThread = Thread.currentThread();
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
 
-            while (!currentThread.isInterrupted())
-            {
-                Packet currentPacket;
+                Packet currentPacket = inputQueue.poll();
 
-                do
-                {
-                    currentPacket = inputQueue.poll();
-
-                    if (currentPacket != null)
-                        break;
-
-                    Thread.sleep(10);
+                if (currentPacket == null) {
+                    Thread.sleep(5);
+                    continue;
                 }
-                while (!currentThread.isInterrupted());
-
-                if (currentThread.isInterrupted())
-                    break;
 
                 ByteBuffer payloadBuffer = currentPacket.backingBuffer;
                 currentPacket.backingBuffer = null;
@@ -88,8 +74,9 @@ public class TCPOutput implements Runnable
                                 + ":" + destinationPort
                                 + ":" + sourcePort;
 
-                Log.i(TAG,
-                        "TCP packet "
+                Log.i(
+                        TAG,
+                        "TCPOutput PACKET RECEIVED "
                                 + ipAndPort
                                 + " SYN=" + tcpHeader.isSYN()
                                 + " ACK=" + tcpHeader.isACK()
@@ -98,8 +85,8 @@ public class TCPOutput implements Runnable
 
                 TCB tcb = TCB.getTCB(ipAndPort);
 
-                if (tcb == null)
-                {
+                if (tcb == null) {
+
                     initializeConnection(
                             ipAndPort,
                             destinationAddress,
@@ -107,27 +94,27 @@ public class TCPOutput implements Runnable
                             currentPacket,
                             tcpHeader,
                             responseBuffer);
-                }
-                else if (tcpHeader.isSYN())
-                {
+
+                } else if (tcpHeader.isSYN()) {
+
                     processDuplicateSYN(
                             tcb,
                             tcpHeader,
                             responseBuffer);
-                }
-                else if (tcpHeader.isRST())
-                {
+
+                } else if (tcpHeader.isRST()) {
+
                     closeCleanly(tcb, responseBuffer);
-                }
-                else if (tcpHeader.isFIN())
-                {
+
+                } else if (tcpHeader.isFIN()) {
+
                     processFIN(
                             tcb,
                             tcpHeader,
                             responseBuffer);
-                }
-                else if (tcpHeader.isACK())
-                {
+
+                } else if (tcpHeader.isACK()) {
+
                     processACK(
                             tcb,
                             tcpHeader,
@@ -135,24 +122,20 @@ public class TCPOutput implements Runnable
                             responseBuffer);
                 }
 
-                if (responseBuffer.position() == 0)
-                {
+                if (responseBuffer.position() == 0) {
                     ByteBufferPool.release(responseBuffer);
                 }
 
                 ByteBufferPool.release(payloadBuffer);
             }
-        }
-        catch (InterruptedException e)
-        {
+
+        } catch (InterruptedException e) {
             Log.i(TAG, "Stopping");
-        }
-        catch (Exception e)
-        {
+
+        } catch (Exception e) {
             Log.e(TAG, "TCPOutput fatal error", e);
-        }
-        finally
-        {
+
+        } finally {
             TCB.closeAll();
         }
     }
@@ -164,15 +147,11 @@ public class TCPOutput implements Runnable
             Packet currentPacket,
             TCPHeader tcpHeader,
             ByteBuffer responseBuffer)
-            throws IOException
-    {
+            throws IOException {
+
         currentPacket.swapSourceAndDestination();
 
-        /*
-         * Only an initial SYN can create a new outbound connection.
-         */
-        if (!tcpHeader.isSYN())
-        {
+        if (!tcpHeader.isSYN()) {
             currentPacket.updateTCPBuffer(
                     responseBuffer,
                     (byte) TCPHeader.RST,
@@ -192,34 +171,26 @@ public class TCPOutput implements Runnable
         SocketChannel outputChannel = SocketChannel.open();
 
         /*
-         * IMPORTANT:
-         *
-         * Connect while blocking, with a real timeout.
-         * After the physical connection succeeds, switch the channel
-         * back to non-blocking mode for the existing TCPInput selector.
-         *
-         * This completely avoids the selector connect-event path.
+         * LocalVPN model:
+         * non-blocking connect + OP_CONNECT
          */
-        outputChannel.configureBlocking(true);
+        outputChannel.configureBlocking(false);
 
         vpnService.debug(
                 "TCP SOCKET CREATED "
                         + destinationAddress.getHostAddress()
                         + ":" + destinationPort);
 
-        if (!vpnService.protectOrBind(outputChannel.socket()))
-        {
+        boolean protectedOrBound =
+                vpnService.protectOrBind(outputChannel.socket());
+
+        if (!protectedOrBound) {
+
             vpnService.debug(
                     "TCP PROTECT/BIND FAILED "
                             + ipAndPort);
 
-            try
-            {
-                outputChannel.close();
-            }
-            catch (IOException ignored)
-            {
-            }
+            outputChannel.close();
 
             currentPacket.updateTCPBuffer(
                     responseBuffer,
@@ -229,7 +200,6 @@ public class TCPOutput implements Runnable
                     0);
 
             outputQueue.offer(responseBuffer);
-
             return;
         }
 
@@ -246,6 +216,9 @@ public class TCPOutput implements Runnable
                 outputChannel,
                 currentPacket);
 
+        /*
+         * The outbound physical connection is being attempted.
+         */
         tcb.status = TCBStatus.SYN_SENT;
 
         TCB.putTCB(
@@ -257,78 +230,77 @@ public class TCPOutput implements Runnable
                         + destinationAddress.getHostAddress()
                         + ":" + destinationPort);
 
-        try
-        {
-            /*
-             * The bind/protect has already happened.
-             * Therefore this connect must go through the physical
-             * network instead of returning to the VPN.
-             */
-            outputChannel.socket().connect(
+        try {
+
+            outputChannel.connect(
                     new InetSocketAddress(
                             destinationAddress,
-                            destinationPort),
-                    (int) CONNECT_TIMEOUT_MS);
-
-            vpnService.debug(
-                    "TCP CONNECTED "
-                            + ipAndPort);
+                            destinationPort));
 
             /*
-             * Existing TCPInput expects a selectable non-blocking
-             * SocketChannel for OP_READ.
+             * Fast path: already connected.
              */
-            outputChannel.configureBlocking(false);
+            if (outputChannel.finishConnect()) {
 
-            synchronized (tcb)
-            {
                 tcb.status =
                         TCBStatus.SYN_RECEIVED;
+
+                currentPacket.updateTCPBuffer(
+                        responseBuffer,
+                        (byte) (TCPHeader.SYN | TCPHeader.ACK),
+                        tcb.mySequenceNum,
+                        tcb.myAcknowledgementNum,
+                        0);
+
+                tcb.mySequenceNum++;
+
+                outputQueue.offer(responseBuffer);
+
+                selector.wakeup();
+
+                tcb.selectionKey =
+                        outputChannel.register(
+                                selector,
+                                SelectionKey.OP_READ,
+                                tcb);
+
+                tcb.waitingForNetworkData = true;
+
+                vpnService.debug(
+                        "TCP CONNECTED FAST "
+                                + ipAndPort);
+
+                vpnService.debug(
+                        "TCP SYN-ACK QUEUED "
+                                + ipAndPort);
+
+            } else {
+
+                /*
+                 * Normal non-blocking path.
+                 */
+                selector.wakeup();
+
+                tcb.selectionKey =
+                        outputChannel.register(
+                                selector,
+                                SelectionKey.OP_CONNECT,
+                                tcb);
+
+                vpnService.debug(
+                        "TCP CONNECT PENDING -> OP_CONNECT "
+                                + ipAndPort);
             }
 
-            /*
-             * Register only OP_READ.
-             * There is intentionally no selector connect-event path anymore.
-             */
-            selector.wakeup();
-
-            SelectionKey key =
-                    outputChannel.register(
-                            selector,
-                            SelectionKey.OP_READ,
-                            tcb);
-
-            tcb.selectionKey = key;
-            tcb.waitingForNetworkData = true;
-
-            currentPacket.updateTCPBuffer(
-                    responseBuffer,
-                    (byte)
-                            (TCPHeader.SYN
-                                    | TCPHeader.ACK),
-                    tcb.mySequenceNum,
-                    tcb.myAcknowledgementNum,
-                    0);
-
-            tcb.mySequenceNum++;
-
-            outputQueue.offer(
-                    responseBuffer);
+        } catch (Exception e) {
 
             vpnService.debug(
-                    "TCP SYN-ACK QUEUED "
-                            + ipAndPort);
-        }
-        catch (IOException e)
-        {
-            vpnService.debug(
-                    "TCP CONNECT FAILED "
+                    "TCP CONNECT START FAILED "
                             + ipAndPort
                             + " "
                             + e);
 
-            try
-            {
+            try {
                 currentPacket.updateTCPBuffer(
                         responseBuffer,
                         (byte) TCPHeader.RST,
@@ -336,11 +308,9 @@ public class TCPOutput implements Runnable
                         tcb.myAcknowledgementNum,
                         0);
 
-                outputQueue.offer(
-                        responseBuffer);
-            }
-            finally
-            {
+                outputQueue.offer(responseBuffer);
+
+            } finally {
                 TCB.closeTCB(tcb);
             }
         }
@@ -349,17 +319,16 @@ public class TCPOutput implements Runnable
     private void processDuplicateSYN(
             TCB tcb,
             TCPHeader tcpHeader,
-            ByteBuffer responseBuffer)
-    {
-        synchronized (tcb)
-        {
-            if (tcb.status == TCBStatus.SYN_SENT)
-            {
+            ByteBuffer responseBuffer) {
+
+        synchronized (tcb) {
+
+            if (tcb.status == TCBStatus.SYN_SENT) {
+
                 tcb.myAcknowledgementNum =
                         tcpHeader.sequenceNumber + 1;
 
                 ByteBufferPool.release(responseBuffer);
-
                 return;
             }
         }
@@ -373,10 +342,10 @@ public class TCPOutput implements Runnable
     private void processFIN(
             TCB tcb,
             TCPHeader tcpHeader,
-            ByteBuffer responseBuffer)
-    {
-        synchronized (tcb)
-        {
+            ByteBuffer responseBuffer) {
+
+        synchronized (tcb) {
+
             Packet referencePacket =
                     tcb.referencePacket;
 
@@ -386,8 +355,8 @@ public class TCPOutput implements Runnable
             tcb.theirAcknowledgementNum =
                     tcpHeader.acknowledgementNumber;
 
-            if (tcb.waitingForNetworkData)
-            {
+            if (tcb.waitingForNetworkData) {
+
                 tcb.status =
                         TCBStatus.CLOSE_WAIT;
 
@@ -397,17 +366,15 @@ public class TCPOutput implements Runnable
                         tcb.mySequenceNum,
                         tcb.myAcknowledgementNum,
                         0);
-            }
-            else
-            {
+
+            } else {
+
                 tcb.status =
                         TCBStatus.LAST_ACK;
 
                 referencePacket.updateTCPBuffer(
                         responseBuffer,
-                        (byte)
-                                (TCPHeader.FIN
-                                        | TCPHeader.ACK),
+                        (byte) (TCPHeader.FIN | TCPHeader.ACK),
                         tcb.mySequenceNum,
                         tcb.myAcknowledgementNum,
                         0);
@@ -424,19 +391,19 @@ public class TCPOutput implements Runnable
             TCPHeader tcpHeader,
             ByteBuffer payloadBuffer,
             ByteBuffer responseBuffer)
-            throws IOException
-    {
+            throws IOException {
+
         int payloadSize =
                 payloadBuffer.limit()
                         - payloadBuffer.position();
 
-        synchronized (tcb)
-        {
+        synchronized (tcb) {
+
             SocketChannel outputChannel =
                     tcb.channel;
 
-            if (tcb.status == TCBStatus.SYN_RECEIVED)
-            {
+            if (tcb.status == TCBStatus.SYN_RECEIVED) {
+
                 tcb.status =
                         TCBStatus.ESTABLISHED;
 
@@ -446,44 +413,44 @@ public class TCPOutput implements Runnable
                 selector.wakeup();
 
                 if (tcb.selectionKey == null
-                        || !tcb.selectionKey.isValid())
-                {
+                        || !tcb.selectionKey.isValid()) {
+
                     tcb.selectionKey =
                             outputChannel.register(
                                     selector,
                                     SelectionKey.OP_READ,
                                     tcb);
-                }
-                else
-                {
+
+                } else {
+
                     tcb.selectionKey.interestOps(
                             SelectionKey.OP_READ);
                 }
 
                 tcb.waitingForNetworkData = true;
 
-                Log.i(TAG,
+                Log.i(
+                        TAG,
                         "TCP ESTABLISHED: "
                                 + tcb.ipAndPort);
             }
-            else if (tcb.status == TCBStatus.LAST_ACK)
-            {
+
+            if (tcb.status == TCBStatus.LAST_ACK) {
+
                 closeCleanly(
                         tcb,
                         responseBuffer);
-                return;
-            }
-
-            if (payloadSize == 0)
-            {
-                ByteBufferPool.release(
-                        responseBuffer);
 
                 return;
             }
 
-            if (!tcb.waitingForNetworkData)
-            {
+            if (payloadSize == 0) {
+                ByteBufferPool.release(responseBuffer);
+                return;
+            }
+
+            if (!tcb.waitingForNetworkData) {
+
                 selector.wakeup();
 
                 tcb.selectionKey.interestOps(
@@ -492,33 +459,18 @@ public class TCPOutput implements Runnable
                 tcb.waitingForNetworkData = true;
             }
 
-            try
-            {
-                while (payloadBuffer.hasRemaining())
-                {
-                    int written =
-                            outputChannel.write(
-                                    payloadBuffer);
+            while (payloadBuffer.hasRemaining()) {
 
-                    if (written == 0)
-                    {
-                        break;
-                    }
+                int written =
+                        outputChannel.write(payloadBuffer);
+
+                if (written == 0) {
+                    /*
+                     * Socket is temporarily not writable.
+                     * Do not pretend the entire packet was sent.
+                     */
+                    break;
                 }
-            }
-            catch (IOException e)
-            {
-                Log.e(TAG,
-                        "TCP network write error: "
-                                + tcb.ipAndPort,
-                        e);
-
-                sendRST(
-                        tcb,
-                        payloadSize,
-                        responseBuffer);
-
-                return;
             }
 
             tcb.myAcknowledgementNum =
@@ -544,34 +496,34 @@ public class TCPOutput implements Runnable
 
     private void sendRST(
             TCB tcb,
-            int prevPayloadSize,
-            ByteBuffer buffer)
-    {
-        try
-        {
-            synchronized (tcb)
-            {
+            int previousPayloadSize,
+            ByteBuffer buffer) {
+
+        try {
+
+            synchronized (tcb) {
+
                 tcb.referencePacket.updateTCPBuffer(
                         buffer,
                         (byte) TCPHeader.RST,
                         0,
                         tcb.myAcknowledgementNum
-                                + prevPayloadSize,
+                                + previousPayloadSize,
                         0);
             }
 
             outputQueue.offer(buffer);
-        }
-        finally
-        {
+
+        } finally {
+
             TCB.closeTCB(tcb);
         }
     }
 
     private void closeCleanly(
             TCB tcb,
-            ByteBuffer buffer)
-    {
+            ByteBuffer buffer) {
+
         ByteBufferPool.release(buffer);
         TCB.closeTCB(tcb);
     }
