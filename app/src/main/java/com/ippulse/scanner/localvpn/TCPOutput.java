@@ -78,7 +78,10 @@ public class TCPOutput implements Runnable
                 vpnService.debug("TCPOutput PACKET RECEIVED "
                         + currentPacket.ip4Header.destinationAddress.getHostAddress()
                         + ":" + currentPacket.tcpHeader.destinationPort
-                        + " flags=" + currentPacket.tcpHeader.getFlags());
+                        + " SYN=" + currentPacket.tcpHeader.isSYN()
+                        + " ACK=" + currentPacket.tcpHeader.isACK()
+                        + " FIN=" + currentPacket.tcpHeader.isFIN()
+                        + " RST=" + currentPacket.tcpHeader.isRST());
 
                 ByteBuffer payloadBuffer = currentPacket.backingBuffer;
                 currentPacket.backingBuffer = null;
