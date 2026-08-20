@@ -8,6 +8,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.net.VpnService;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
@@ -26,6 +30,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.Selector;
@@ -50,6 +55,11 @@ public class GamingVpnService extends VpnService {
     private String dns = "8.8.8.8";
     private int currentMtu = 1400;
     private volatile boolean running = false;
+
+    private volatile Network upstreamNetwork;
+    private ConnectivityManager connectivityManager;
+    private ConnectivityManager.NetworkCallback networkCallback;
+
 
     private ConcurrentLinkedQueue<Packet> deviceToNetworkUDPQueue;
     private ConcurrentLinkedQueue<Packet> deviceToNetworkTCPQueue;
@@ -93,6 +103,135 @@ public class GamingVpnService extends VpnService {
         }
     }
 
+    private void startUpstreamNetworkMonitor() {
+        connectivityManager =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if (connectivityManager == null) {
+            Log.w(TAG, "ConnectivityManager unavailable");
+            return;
+        }
+
+        try {
+            Network active = connectivityManager.getActiveNetwork();
+            if (active != null) {
+                NetworkCapabilities caps =
+                        connectivityManager.getNetworkCapabilities(active);
+
+                if (isUsablePhysicalNetwork(caps)) {
+                    upstreamNetwork = active;
+                    Log.i(TAG, "Initial upstream network: " + active);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Initial network lookup failed", e);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            NetworkRequest request = new NetworkRequest.Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
+                    .build();
+
+            networkCallback = new ConnectivityManager.NetworkCallback() {
+                @Override
+                public void onAvailable(Network network) {
+                    try {
+                        NetworkCapabilities caps =
+                                connectivityManager.getNetworkCapabilities(network);
+
+                        if (isUsablePhysicalNetwork(caps)) {
+                            upstreamNetwork = network;
+                            Log.i(TAG, "Upstream network available: " + network);
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "Network callback error", e);
+                    }
+                }
+
+                @Override
+                public void onLost(Network network) {
+                    if (network.equals(upstreamNetwork)) {
+                        upstreamNetwork = null;
+                        Log.w(TAG, "Upstream network lost: " + network);
+                    }
+                }
+            };
+
+            try {
+                connectivityManager.registerNetworkCallback(
+                        request, networkCallback);
+            } catch (Exception e) {
+                Log.w(TAG, "registerNetworkCallback failed", e);
+            }
+        }
+    }
+
+    private boolean isUsablePhysicalNetwork(NetworkCapabilities caps) {
+        if (caps == null) return false;
+
+        if (!caps.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
+            return false;
+        }
+
+        if (!caps.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_NOT_VPN)) {
+            return false;
+        }
+
+        return caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                || caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                || caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+                || caps.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH);
+    }
+
+    public boolean protectOrBind(Socket socket) {
+        if (socket == null) return false;
+
+        Network network = upstreamNetwork;
+
+        if (network != null) {
+            try {
+                network.bindSocket(socket);
+                return true;
+            } catch (IOException e) {
+                Log.w(TAG, "bindSocket(TCP) failed; fallback to protect()", e);
+            }
+        }
+
+        return protect(socket);
+    }
+
+    public boolean protectOrBind(DatagramSocket socket) {
+        if (socket == null) return false;
+
+        Network network = upstreamNetwork;
+
+        if (network != null) {
+            try {
+                network.bindSocket(socket);
+                return true;
+            } catch (IOException e) {
+                Log.w(TAG, "bindSocket(UDP) failed; fallback to protect()", e);
+            }
+        }
+
+        return protect(socket);
+    }
+
+    private void stopUpstreamNetworkMonitor() {
+        if (connectivityManager != null && networkCallback != null) {
+            try {
+                connectivityManager.unregisterNetworkCallback(networkCallback);
+            } catch (Exception ignored) {
+            }
+        }
+
+        networkCallback = null;
+        upstreamNetwork = null;
+    }
+
     private void startVpn() {
         if (running) return;
         try {
@@ -115,6 +254,8 @@ public class GamingVpnService extends VpnService {
             // (e.g. a TCP SYN-ACK) never get flushed back - every connection deadlocks.
             builder.setBlocking(false);
             builder.addDisallowedApplication(getPackageName());
+
+            startUpstreamNetworkMonitor();
 
             vpnInterface = builder.establish();
             if (vpnInterface == null) throw new IOException("establish() failed");
@@ -358,6 +499,7 @@ public class GamingVpnService extends VpnService {
     }
 
     private void stopVpn() {
+        stopUpstreamNetworkMonitor();
         running = false;
         if (executorService != null) executorService.shutdownNow();
         try { if (tunIn != null) tunIn.close(); } catch (IOException ignored) {}

@@ -129,7 +129,13 @@ public class TCPOutput implements Runnable
         {
             SocketChannel outputChannel = SocketChannel.open();
             outputChannel.configureBlocking(false);
-            vpnService.protect(outputChannel.socket());
+            if (!vpnService.protectOrBind(outputChannel.socket())) {
+                try {
+                    outputChannel.close();
+                } catch (IOException ignored) {
+                }
+                throw new IOException("Unable to bind/protect TCP socket");
+            }
 
             TCB tcb = new TCB(ipAndPort, random.nextInt(Short.MAX_VALUE + 1), tcpHeader.sequenceNumber, tcpHeader.sequenceNumber + 1,
                     tcpHeader.acknowledgementNumber, outputChannel, currentPacket);

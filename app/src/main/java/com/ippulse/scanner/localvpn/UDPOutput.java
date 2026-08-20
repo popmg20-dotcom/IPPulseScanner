@@ -88,7 +88,11 @@ public class UDPOutput implements Runnable
                 DatagramChannel outputChannel = channelCache.get(ipAndPort);
                 if (outputChannel == null) {
                     outputChannel = DatagramChannel.open();
-                    vpnService.protect(outputChannel.socket());
+                    if (!vpnService.protectOrBind(outputChannel.socket())) {
+                        closeChannel(outputChannel);
+                        ByteBufferPool.release(currentPacket.backingBuffer);
+                        continue;
+                    }
                     try
                     {
                         outputChannel.connect(new InetSocketAddress(destinationAddress, destinationPort));
