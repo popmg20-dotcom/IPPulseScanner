@@ -75,11 +75,6 @@ public class TCPOutput implements Runnable
                 if (currentThread.isInterrupted())
                     break;
 
-                vpnService.debug("TCPOutput PACKET RECEIVED "
-                        + currentPacket.ip4Header.destinationAddress.getHostAddress()
-                        + ":" + currentPacket.tcpHeader.destinationPort
-                        + " flags=" + currentPacket.tcpHeader.getFlags());
-
                 ByteBuffer payloadBuffer = currentPacket.backingBuffer;
                 currentPacket.backingBuffer = null;
                 ByteBuffer responseBuffer = ByteBufferPool.acquire();
@@ -134,8 +129,6 @@ public class TCPOutput implements Runnable
         {
             SocketChannel outputChannel = SocketChannel.open();
             outputChannel.configureBlocking(false);
-            vpnService.debug("TCP SOCKET CREATED");
-
             if (!vpnService.protectOrBind(outputChannel.socket())) {
                 try {
                     outputChannel.close();
@@ -150,14 +143,9 @@ public class TCPOutput implements Runnable
 
             try
             {
-                vpnService.debug("TCP CONNECT START "
-                    + destinationAddress.getHostAddress() + ":" + destinationPort);
-
-            outputChannel.connect(new InetSocketAddress(destinationAddress, destinationPort));
+                outputChannel.connect(new InetSocketAddress(destinationAddress, destinationPort));
                 if (outputChannel.finishConnect())
                 {
-                    vpnService.debug("TCP CONNECTED IMMEDIATELY "
-                            + destinationAddress.getHostAddress() + ":" + destinationPort);
                     tcb.status = TCBStatus.SYN_RECEIVED;
                     // TODO: Set MSS for receiving larger packets from the device
                     currentPacket.updateTCPBuffer(responseBuffer, (byte) (TCPHeader.SYN | TCPHeader.ACK),
@@ -167,7 +155,6 @@ public class TCPOutput implements Runnable
                 else
                 {
                     tcb.status = TCBStatus.SYN_SENT;
-                    vpnService.debug("TCP CONNECT PENDING -> SELECTOR");
                     selector.wakeup();
                     tcb.selectionKey = outputChannel.register(selector, SelectionKey.OP_CONNECT, tcb);
                     return;
@@ -176,7 +163,6 @@ public class TCPOutput implements Runnable
             catch (IOException e)
             {
                 Log.e(TAG, "Connection error: " + ipAndPort, e);
-                vpnService.debug("TCP CONNECT ERROR " + ipAndPort + " " + e);
                 currentPacket.updateTCPBuffer(responseBuffer, (byte) TCPHeader.RST, 0, tcb.myAcknowledgementNum, 0);
                 TCB.closeTCB(tcb);
             }

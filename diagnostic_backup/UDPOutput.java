@@ -80,8 +80,6 @@ public class UDPOutput implements Runnable
                 if (currentThread.isInterrupted())
                     break;
 
-                vpnService.debug("UDPOutput PACKET RECEIVED");
-
                 InetAddress destinationAddress = currentPacket.ip4Header.destinationAddress;
                 int destinationPort = currentPacket.udpHeader.destinationPort;
                 int sourcePort = currentPacket.udpHeader.sourcePort;
@@ -90,8 +88,6 @@ public class UDPOutput implements Runnable
                 DatagramChannel outputChannel = channelCache.get(ipAndPort);
                 if (outputChannel == null) {
                     outputChannel = DatagramChannel.open();
-                    vpnService.debug("UDP SOCKET CREATED");
-
                     if (!vpnService.protectOrBind(outputChannel.socket())) {
                         closeChannel(outputChannel);
                         ByteBufferPool.release(currentPacket.backingBuffer);
@@ -99,15 +95,11 @@ public class UDPOutput implements Runnable
                     }
                     try
                     {
-                        vpnService.debug("UDP CONNECT START "
-                                + destinationAddress.getHostAddress() + ":" + destinationPort);
                         outputChannel.connect(new InetSocketAddress(destinationAddress, destinationPort));
-                        vpnService.debug("UDP CONNECT SUCCESS");
                     }
                     catch (IOException e)
                     {
                         Log.e(TAG, "Connection error: " + ipAndPort, e);
-                        vpnService.debug("UDP CONNECT ERROR " + ipAndPort + " " + e);
                         closeChannel(outputChannel);
                         ByteBufferPool.release(currentPacket.backingBuffer);
                         continue;

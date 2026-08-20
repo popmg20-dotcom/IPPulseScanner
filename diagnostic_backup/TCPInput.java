@@ -51,11 +51,9 @@ public class TCPInput implements Runnable
         try
         {
             Log.d(TAG, "Started");
-            Log.i(TAG, "TCPInput started");
             while (!Thread.interrupted())
             {
                 int readyChannels = selector.select();
-
 
                 if (readyChannels == 0) {
                     Thread.sleep(10);
@@ -104,7 +102,6 @@ public class TCPInput implements Runnable
                 referencePacket.updateTCPBuffer(responseBuffer, (byte) (Packet.TCPHeader.SYN | Packet.TCPHeader.ACK),
                         tcb.mySequenceNum, tcb.myAcknowledgementNum, 0);
                 outputQueue.offer(responseBuffer);
-                Log.i(TAG, "TCP RESPONSE QUEUED ip=" + tcb.ipAndPort);
 
                 tcb.mySequenceNum++; // SYN counts as a byte
                 key.interestOps(SelectionKey.OP_READ);
@@ -142,8 +139,6 @@ public class TCPInput implements Runnable
             try
             {
                 readBytes = inputChannel.read(receiveBuffer);
-                Log.i(TAG, "TCP NETWORK READ ip=" + tcb.ipAndPort
-                        + " bytes=" + readBytes);
             }
             catch (IOException e)
             {

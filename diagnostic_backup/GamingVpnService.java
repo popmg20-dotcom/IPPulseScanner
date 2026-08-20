@@ -14,10 +14,6 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
-import android.os.Environment;
-import android.provider.MediaStore;
-import android.content.ContentValues;
-import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -59,107 +55,6 @@ public class GamingVpnService extends VpnService {
     private String dns = "8.8.8.8";
     private int currentMtu = 1400;
     private volatile boolean running = false;
-
-    private final Object debugLock = new Object();
-    private java.io.File debugFile;
-
-    private void initDebugLog() {
-        try {
-            java.io.File dir = getExternalFilesDir(null);
-            if (dir == null) {
-                dir = getFilesDir();
-            }
-            debugFile = new java.io.File(dir, "vpn_debug.log");
-
-            synchronized (debugLock) {
-                java.io.FileOutputStream fos =
-                        new java.io.FileOutputStream(debugFile, false);
-                fos.write(("=== IPPulseScanner VPN DEBUG ===\n").getBytes("UTF-8"));
-                fos.flush();
-                fos.close();
-            }
-
-            debug("DEBUG LOG INITIALIZED: " + debugFile.getAbsolutePath());
-        } catch (Exception e) {
-            Log.e(TAG, "debug init failed", e);
-        }
-    }
-
-    public void debug(String msg) {
-        String line = System.currentTimeMillis()
-                + " | " + Thread.currentThread().getName()
-                + " | " + msg + "\n";
-
-        Log.i(TAG, line.trim());
-
-        synchronized (debugLock) {
-            try {
-                if (debugFile == null) {
-                    initDebugLog();
-                }
-
-                if (debugFile != null) {
-                    java.io.FileOutputStream fos =
-                            new java.io.FileOutputStream(debugFile, true);
-                    fos.write(line.getBytes("UTF-8"));
-                    fos.flush();
-                    fos.close();
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "debug write failed", e);
-            }
-        }
-    }
-
-    private void copyDebugLogToDownloads() {
-        if (debugFile == null || !debugFile.exists()) {
-            return;
-        }
-
-        try {
-            if (Build.VERSION.SDK_INT >= 29) {
-                ContentValues values = new ContentValues();
-                values.put(MediaStore.Downloads.DISPLAY_NAME,
-                        "IPPulseScanner_vpn_debug.txt");
-                values.put(MediaStore.Downloads.MIME_TYPE,
-                        "text/plain");
-                values.put(MediaStore.Downloads.RELATIVE_PATH,
-                        Environment.DIRECTORY_DOWNLOADS
-                                + "/IPPulseScanner");
-
-                ContentResolver resolver = getContentResolver();
-
-                Uri uri = resolver.insert(
-                        MediaStore.Downloads.EXTERNAL_CONTENT_URI,
-                        values);
-
-                if (uri != null) {
-                    java.io.OutputStream out =
-                            resolver.openOutputStream(uri);
-
-                    java.io.FileInputStream in =
-                            new java.io.FileInputStream(debugFile);
-
-                    byte[] buf = new byte[8192];
-                    int n;
-
-                    while ((n = in.read(buf)) != -1) {
-                        out.write(buf, 0, n);
-                    }
-
-                    out.flush();
-                    out.close();
-                    in.close();
-
-                    debug("DEBUG LOG COPIED TO DOWNLOADS: " + uri);
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "copy debug log failed", e);
-            debug("COPY DEBUG LOG FAILED: " + e);
-        }
-    }
-
 
     private volatile Network upstreamNetwork;
     private ConnectivityManager connectivityManager;
@@ -298,8 +193,6 @@ public class GamingVpnService extends VpnService {
 
         if (network != null) {
             try {
-                debug("NETWORK.bindSocket(TCP) SUCCESS");
-                debug("NETWORK.bindSocket(UDP) SUCCESS");
                 network.bindSocket(socket);
                 return true;
             } catch (IOException e) {
@@ -307,9 +200,7 @@ public class GamingVpnService extends VpnService {
             }
         }
 
-        boolean result = protect(socket);
-        debug("VpnService.protect(Socket)=" + result);
-        return result;
+        return protect(socket);
     }
 
     public boolean protectOrBind(DatagramSocket socket) {
@@ -342,8 +233,6 @@ public class GamingVpnService extends VpnService {
     }
 
     private void startVpn() {
-        initDebugLog();
-        debug("startVpn() ENTER");
         if (running) return;
         try {
             deviceToNetworkUDPQueue = new ConcurrentLinkedQueue<>();
@@ -366,19 +255,15 @@ public class GamingVpnService extends VpnService {
             builder.setBlocking(false);
             builder.addDisallowedApplication(getPackageName());
 
-            debug("START UPSTREAM NETWORK MONITOR");
             startUpstreamNetworkMonitor();
 
-            debug("ABOUT TO ESTABLISH VPN");
             vpnInterface = builder.establish();
-            debug("VPN ESTABLISHED: " + (vpnInterface != null));
             if (vpnInterface == null) throw new IOException("establish() failed");
 
             tunIn = new FileInputStream(vpnInterface.getFileDescriptor());
             tunOut = new FileOutputStream(vpnInterface.getFileDescriptor());
 
             executorService = Executors.newFixedThreadPool(5);
-            debug("WORKER EXECUTOR CREATED");
             executorService.submit(new UDPInput(networkToDeviceQueue, udpSelector));
             executorService.submit(new UDPOutput(deviceToNetworkUDPQueue, udpSelector, this));
             executorService.submit(new TCPInput(networkToDeviceQueue, tcpSelector, currentMtu));
@@ -386,7 +271,6 @@ public class GamingVpnService extends VpnService {
             executorService.submit(new TunRunnable());
 
             running = true;
-            debug("VPN RUNNING: MTU=" + currentMtu);
             Log.i(TAG, "VPN started with full tunnel, MTU=" + currentMtu);
         } catch (Exception e) {
             Log.e(TAG, "Error starting VPN", e);
@@ -414,7 +298,6 @@ public class GamingVpnService extends VpnService {
                     }
                     int read = inputChannel.read(buffer);
                     if (read > 0) {
-                        debug("TUN READ bytes=" + read);
                         if (!firstRead[0]) {
                             firstRead[0] = true;
                             final int rlen = read;
@@ -425,20 +308,16 @@ public class GamingVpnService extends VpnService {
                         try {
                             Packet packet = new Packet(buffer);
                             if (packet.isUDP() && isDnsPacket(packet)) {
-                                debug("TUN PACKET UDP DNS");
                                 handleDns(packet);
                             } else if (packet.isUDP()) {
-                                debug("TUN PACKET UDP -> QUEUE");
                                 deviceToNetworkUDPQueue.offer(packet);
                                 bufferConsumed = true;
                             } else if (packet.isTCP()) {
-                                debug("TUN PACKET TCP -> QUEUE");
                                 deviceToNetworkTCPQueue.offer(packet);
                                 bufferConsumed = true;
                             }
                         } catch (Exception parseErr) {
                             Log.w(TAG, "Skipped unparseable packet", parseErr);
-                            debug("PACKET PARSE ERROR: " + parseErr);
                         }
                         if (!bufferConsumed) {
                             ByteBufferPool.release(buffer);
@@ -450,7 +329,6 @@ public class GamingVpnService extends VpnService {
 
                     ByteBuffer outBuffer;
                     while ((outBuffer = networkToDeviceQueue.poll()) != null) {
-                        debug("TUN WRITE RESPONSE bytes=" + outBuffer.limit());
                         if (!firstWrite[0]) {
                             firstWrite[0] = true;
                             new android.os.Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "TUN alive: first response written back", Toast.LENGTH_LONG).show());
@@ -621,8 +499,6 @@ public class GamingVpnService extends VpnService {
     }
 
     private void stopVpn() {
-        debug("STOP VPN");
-
         stopUpstreamNetworkMonitor();
         running = false;
         if (executorService != null) executorService.shutdownNow();
@@ -631,7 +507,6 @@ public class GamingVpnService extends VpnService {
         try { if (vpnInterface != null) vpnInterface.close(); } catch (IOException ignored) {}
         vpnInterface = null;
         stopForeground(true);
-        copyDebugLogToDownloads();
         stopSelf();
     }
 

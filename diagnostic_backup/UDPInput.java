@@ -74,7 +74,6 @@ public class UDPInput implements Runnable
                         // XXX: We should handle any IOExceptions here immediately,
                         // but that probably won't happen with UDP
                         int readBytes = inputChannel.read(receiveBuffer);
-                        Log.i(TAG, "UDP NETWORK READ bytes=" + readBytes);
 
                         Packet referencePacket = (Packet) key.attachment();
                         referencePacket.updateUDPBuffer(receiveBuffer, readBytes);
