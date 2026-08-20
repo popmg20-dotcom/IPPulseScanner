@@ -99,10 +99,6 @@ public class TCPInput implements Runnable {
                 }
             }
 
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
         } catch (Exception e) {
 
             Log.e(
