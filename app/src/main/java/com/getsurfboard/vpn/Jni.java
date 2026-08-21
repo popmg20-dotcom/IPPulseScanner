@@ -1,187 +1,184 @@
 package com.getsurfboard.vpn;
 
-import android.net.ConnectivityManager;
-import android.net.LinkProperties;
-import android.net.Network;
-import android.net.VpnService;
 import android.os.Build;
 import android.util.Log;
 
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.List;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.ippulse.scanner.GamingVpnService;
 
 public final class Jni {
 
-    private static volatile VpnService vpnService;
-    private static volatile Network activeNetwork;
+    private static final String TAG = "SurfboardJni";
+
+    private static final String TUN_ADDRESS = "";
+    private static final String TUN6_ADDRESS = " ";
+    private static final String DNS_ADDRESS = "";
+
+    private static volatile WeakReference<GamingVpnService> serviceRef =
+            new WeakReference<>(null);
+
+    private static final ConcurrentHashMap<Integer, String> DNS_RESTORE =
+            new ConcurrentHashMap<>();
+
+    static {
+        System.loadLibrary("surfboard");
+    }
 
     public Jni() {
     }
 
-    public static void attach(VpnService service, Network network) {
-        vpnService = service;
-        activeNetwork = network;
+    public Jni(GamingVpnService service) {
+        attachService(service);
     }
 
-    public static void detach() {
-        vpnService = null;
-        activeNetwork = null;
+    public static void attachService(GamingVpnService service) {
+        serviceRef = new WeakReference<>(service);
+    }
+
+    public static void detachService(GamingVpnService service) {
+        GamingVpnService s = serviceRef.get();
+        if (s == service) {
+            serviceRef = new WeakReference<>(null);
+        }
+    }
+
+    private static GamingVpnService service() {
+        return serviceRef.get();
+    }
+
+    public static String getTunAddress() {
+        return TUN_ADDRESS;
+    }
+
+    public static String getTun6Address() {
+        return TUN6_ADDRESS;
+    }
+
+    public static String getDnsAddress() {
+        return DNS_ADDRESS;
     }
 
     /*
-     * Native -> Java callbacks expected by libsurfboard.so.
+     * Exact native entry point:
+     *
+     * startVPN(int tunFd,
+     *          int sdkInt,
+     *          int logMode,
+     *          boolean logEnabled,
+     *          boolean sshDump,
+     *          boolean ipv6)
      */
+    public native void startVPN(
+            int tunFd,
+            int sdkInt,
+            int logMode,
+            boolean logEnabled,
+            boolean sshDump,
+            boolean ipv6
+    );
 
-    private byte[] getProxyStrategy(byte[] data) {
-        /*
-         * Keep the original payload intact.
-         * Native side owns the actual proxy/TCP/UDP machinery.
-         */
-        return data;
-    }
+    public native void stopVPN();
 
-    private String getSystemDns(String ignored) {
+    public native void returnAsyncDnsResult(int id, byte[] data);
+
+    public native void resetAllTCPConnections();
+
+    public native void printAllTCPConnectionsInfo();
+
+    public boolean protect(int fd) {
+        GamingVpnService s = service();
+        if (s == null) return false;
+
         try {
-            Network n = activeNetwork;
-            if (n != null && vpnService != null) {
-                ConnectivityManager cm =
-                        (ConnectivityManager)
-                                vpnService.getSystemService(VpnService.CONNECTIVITY_SERVICE);
-
-                if (cm != null) {
-                    LinkProperties lp = cm.getLinkProperties(n);
-                    if (lp != null) {
-                        List<InetAddress> dns = lp.getDnsServers();
-                        if (dns != null && !dns.isEmpty()) {
-                            return dns.get(0).getHostAddress();
-                        }
-                    }
-                }
-            }
+            return s.protect(fd);
         } catch (Throwable t) {
-            Log.w("SurfboardJni", "getSystemDns failed", t);
-        }
-
-        return "8.8.8.8";
-    }
-
-    private byte[] onDnsQuery(byte[] data) {
-        return data;
-    }
-
-    private byte[] onDnsResponse(byte[] data) {
-        return data;
-    }
-
-    private void onVpnStarted() {
-        Log.i("SurfboardJni", "onVpnStarted");
-    }
-
-    private void onVpnStopped() {
-        Log.i("SurfboardJni", "onVpnStopped");
-    }
-
-    private boolean protect(int fd) {
-        try {
-            VpnService service = vpnService;
-            if (service == null) {
-                return false;
-            }
-
-            /*
-             * Prefer the exact physical Network when available.
-             * Otherwise use normal VpnService.protect().
-             */
-            Network network = activeNetwork;
-
-            if (network != null) {
-                try {
-                    java.io.FileDescriptor fdObject =
-                            new java.io.FileDescriptor();
-
-                    return service.protect(fd);
-                } catch (Throwable ignored) {
-                }
-            }
-
-            return service.protect(fd);
-
-        } catch (Throwable t) {
-            Log.e("SurfboardJni", "protect(" + fd + ") failed", t);
+            Log.e(TAG, "protect(" + fd + ") failed", t);
             return false;
         }
     }
 
-    private void updateActiveConnectionCount(int count) {
-        Log.d("SurfboardJni",
-                "active connections=" + count);
-    }
-
-    private void writePcapRecord(byte[] data) {
-        // PCAP export is optional in this build.
-    }
-
-    private void logTraffic(int uid, boolean upload, long bytes,
-                            boolean encrypted) {
-        Log.d(
-                "SurfboardJni",
-                "uid=" + uid
-                        + " upload=" + upload
-                        + " bytes=" + bytes
-                        + " encrypted=" + encrypted
-        );
-    }
-
-    private boolean shouldDecodeProxy(int uid) {
+    public boolean shouldDecodeProxy(int uid) {
         return false;
     }
 
-    private native void returnAsyncDnsResult(int id, byte[] data);
-
-    private static native void startVPN(
-            int tunFd,
-            int sdkInt,
-            int logEnabled,
-            boolean sshdump,
-            boolean ipv6,
-            boolean reserved
-    );
-
-    private static native void stopVPN();
-
-    public static native void resetAllTCPConnections();
-
-    public static native void printAllTCPConnectionsInfo();
-
-    public static void start(
-            VpnService service,
-            Network network,
-            int tunFd,
-            boolean logEnabled
-    ) {
-        attach(service, network);
-
-        startVPN(
-                tunFd,
-                Build.VERSION.SDK_INT,
-                logEnabled ? 1 : 0,
-                false,
-                false,
-                false
-        );
-    }
-
-    public static void stop() {
-        try {
-            stopVPN();
-        } catch (Throwable t) {
-            Log.w("SurfboardJni", "stopVPN failed", t);
-        } finally {
-            detach();
+    public void updateActiveConnectionCount(int count) {
+        GamingVpnService s = service();
+        if (s != null) {
+            s.onNativeConnectionCount(count);
         }
     }
 
-    static {
-        System.loadLibrary("surfboard");
+    public void writePcapRecord(byte[] data) {
+        /*
+         * SSHDump/PCAP is intentionally disabled for this build.
+         * Native engine still has the callback available.
+         */
+    }
+
+    public void logTraffic(int uid, boolean upload, long bytes, boolean metered) {
+        GamingVpnService s = service();
+        if (s != null) {
+            s.onNativeTraffic(uid, upload, bytes, metered);
+        }
+    }
+
+    public void onVpnStarted() {
+        GamingVpnService s = service();
+        if (s != null) {
+            s.onNativeVpnStarted();
+        }
+    }
+
+    public void onVpnStopped() {
+        GamingVpnService s = service();
+        if (s != null) {
+            s.onNativeVpnStopped();
+        }
+    }
+
+    public String getSystemDns(String ignored) {
+        GamingVpnService s = service();
+        if (s != null) {
+            String d = s.getConfiguredDns();
+            if (d != null && !d.trim().isEmpty()) {
+                return d.trim();
+            }
+        }
+        return "8.8.8.8";
+    }
+
+    public byte[] getProxyStrategy(byte[] data) {
+        /*
+         * Empty strategy means native engine uses its normal/direct path.
+         */
+        return new byte[0];
+    }
+
+    public byte[] onDnsQuery(byte[] query) {
+        GamingVpnService s = service();
+        if (s == null || query == null || query.length < 12) {
+            return new byte[0];
+        }
+
+        try {
+            return s.handleNativeDnsQuery(query);
+        } catch (Throwable t) {
+            Log.e(TAG, "onDnsQuery failed", t);
+            return new byte[0];
+        }
+    }
+
+    public byte[] onDnsResponse(byte[] response) {
+        return response == null ? new byte[0] : response;
     }
 }
