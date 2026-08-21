@@ -1,0 +1,23 @@
+package defpackage;
+
+/* JADX INFO: compiled from: r8-map-id-605be6ced3201ebf27d05845df89146b03500986a7a8ae40fc58e667db41f02f */
+/* JADX INFO: loaded from: classes3.dex */
+public abstract class c2 extends k70 implements to2 {
+    public final String X;
+
+    public c2(String str) {
+        this.X = n12.g(str, "No factory name provided");
+    }
+
+    @Override // defpackage.to2
+    public final String getName() {
+        return this.X;
+    }
+
+    @Override // defpackage.k70
+    public final String toString() {
+        StringBuilder sb = new StringBuilder(getClass().getSimpleName());
+        sb.append("[");
+        return fw.y(sb, this.X, "]");
+    }
+}

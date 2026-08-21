@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:window="http://schemas.android.com/apk/res-auto">
+    <SplitPairRule
+        window:clearTop="false"
+        window:finishPrimaryWithSecondary="never"
+        window:finishSecondaryWithPrimary="always"
+        window:splitLayoutDirection="locale"
+        window:splitMaxAspectRatioInPortrait="alwaysAllow"
+        window:splitMinWidthDp="840"
+        window:splitRatio="0.33">
+        <SplitPairFilter
+            window:primaryActivityName="com.getsurfboard.ui.activity.MainActivity"
+            window:secondaryActivityName="com.getsurfboard.ui.activity.ProfileEditorActivity"/>
+        <SplitPairFilter
+            window:primaryActivityName="com.getsurfboard.ui.activity.MainActivity"
+            window:secondaryActivityName="com.getsurfboard.ui.activity.TrafficListActivity"/>
+        <SplitPairFilter
+            window:primaryActivityName="com.getsurfboard.ui.activity.MainActivity"
+            window:secondaryActivityName="com.getsurfboard.ui.activity.BypassConfigActivity"/>
+        <SplitPairFilter
+            window:primaryActivityName="com.getsurfboard.ui.activity.MainActivity"
+            window:secondaryActivityName="com.getsurfboard.ui.activity.ExternalResourcesManagerActivity"/>
+        <SplitPairFilter
+            window:primaryActivityName="com.getsurfboard.ui.activity.MainActivity"
+            window:secondaryActivityName="com.getsurfboard.ui.activity.NATDetectActivity"/>
+        <SplitPairFilter
+            window:primaryActivityName="com.getsurfboard.ui.activity.MainActivity"
+            window:secondaryActivityName="com.getsurfboard.ui.activity.RecentRequestsActivity"/>
+        <SplitPairFilter
+            window:primaryActivityName="com.getsurfboard.ui.activity.MainActivity"
+            window:secondaryActivityName="com.getsurfboard.ui.activity.LogcatViewerActivity"/>
+    </SplitPairRule>
+    <ActivityRule window:alwaysExpand="true">
+        <ActivityFilter window:activityName="com.getsurfboard.ui.activity.SettingsActivity"/>
+    </ActivityRule>
+</resources>

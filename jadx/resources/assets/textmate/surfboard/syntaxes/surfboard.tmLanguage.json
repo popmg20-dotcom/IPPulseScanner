@@ -1,0 +1,54 @@
+{
+  "name": "Surfboard Profile",
+  "scopeName": "source.surfboard",
+  "patterns": [
+    {
+      "match": "^\\s*(#|;|//).*$",
+      "name": "comment.line.surfboard"
+    },
+    {
+      "captures": {
+        "1": { "name": "punctuation.definition.entity.surfboard" },
+        "2": { "name": "entity.name.section.group-title.surfboard" },
+        "3": { "name": "punctuation.definition.entity.surfboard" }
+      },
+      "match": "^\\s*(\\[)(.*?)(\\])\\s*$"
+    },
+    {
+      "match": "\\b(allowed-ips|always-real-ip|alpn|block-quic|content|dns-server|doh-server|download-bandwidth|encrypt-method|endpoint|enhanced-mode|evaluate-before-use|force-remote-dns|hidden|http-listen|icon-url|include-all-proxies|include-other-group|internet-test-url|interval|ipv6|keepalive|mtu|no-alert|obfs-host|obfs-uri|obfs|password|peer|persistent|policy-path|policy-regex-filter|port-hopping-interval|port-hopping|preshared-key|private-key|proxy-test-url|psk|public-key|reuse|salamander-password|section-name|self-ip-v6|self-ip|server-cert-fingerprint-sha256|skip-cert-verify|skip-proxy|sni|socks5-listen|strict|style|test-timeout|tfo|timeout|title|tls|tolerance|udp-policy-not-supported-behaviour|udp-relay|underlying-proxy|update-interval|url|username|uuid|version|vmess-aead|ws-headers|ws-path|ws)\\b",
+      "name": "variable.parameter.surfboard"
+    },
+    {
+      "match": "\\b(AND|OR|NOT|DOMAIN-WILDCARD|DOMAIN-SUFFIX|DOMAIN-KEYWORD|DOMAIN-SET|DOMAIN|IP-CIDR6|IP-CIDR|GEOIP|FINAL|PROCESS-NAME|RULE-SET|SUBNET|DEST-PORT|SRC-IP|IN-PORT|PROTOCOL|USER-AGENT|SSID|BSSID|ROUTER|TYPE|MCCMNC)\\b",
+      "name": "keyword.control.rule.surfboard"
+    },
+    {
+      "match": "\\b(subnet|ssid|load-balance|socks5-tls|shadowsocks|hysteria2|tuic-v5|wireguard|url-test|fallback|anytls|custom|trojan|select|vmess|socks5|https(?!://)|http(?!://)|ss(?!-)|snell|smart|direct|reject-tinygif|reject-drop|reject-no-drop|reject)\\b",
+      "name": "keyword.other.proxy.surfboard"
+    },
+    {
+      "match": "\\b(2022-blake3-aes-128-gcm|2022-blake3-aes-256-gcm|chacha20-ietf-poly1305|xchacha20-ietf-poly1305|camellia-128-cfb|camellia-192-cfb|camellia-256-cfb|aes-128-gcm|aes-192-gcm|aes-256-gcm|aes-128-cfb|aes-192-cfb|aes-256-cfb|aes-128-ctr|aes-192-ctr|aes-256-ctr|chacha20-ietf|REJECT-TINYGIF|REJECT-NO-DROP|REJECT-DROP|reject-tinygif|reject-no-drop|reject-drop|chacha20|bf-cfb|rc4-md5|salsa20|REJECT|DIRECT|reject|direct|rc4|tls|http(?!://)|TCP|UDP|QUIC|true|false|none|auto|on|off)\\b",
+      "name": "constant.language.surfboard"
+    },
+    {
+      "match": "(=|,)",
+      "name": "punctuation.separator.surfboard"
+    },
+    {
+      "begin": "'",
+      "end": "'",
+      "name": "string.quoted.single.surfboard",
+      "patterns": [
+        { "match": "\\\\.", "name": "constant.character.escape.surfboard" }
+      ]
+    },
+    {
+      "begin": "\"",
+      "end": "\"",
+      "name": "string.quoted.double.surfboard",
+      "patterns": [
+        { "match": "\\\\.", "name": "constant.character.escape.surfboard" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="setting_override_ipv6_entries">
+        <item>دنباله پروفایل</item>
+        <item>فعال کردن</item>
+        <item>غیرفعال کردن</item>
+    </array>
+    <array name="setting_override_lan_share_listen_entries">
+        <item>شبکه محلی (LAN)</item>
+        <item>فقط داخلی</item>
+    </array>
+    <array name="setting_tls_fingerprint_entries">
+        <item>Legacy</item>
+        <item>UTLS</item>
+    </array>
+    <array name="setting_traffic_statistics_entries">
+        <item>همه موارد</item>
+        <item>فقط پروکسی</item>
+    </array>
+</resources>

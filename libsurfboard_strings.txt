@@ -1,0 +1,153 @@
+on_tun_written
+tun_alloc_buffer
+__emutls_v.tun_buffer
+on_tun_recv
+__emutls_v.stopping
+uv_stop
+Java_com_getsurfboard_vpn_Jni_stopVPN
+Java_com_getsurfboard_vpn_JniKt_getTunAddress
+tun_ip_addr
+Java_com_getsurfboard_vpn_JniKt_getXRayAddress
+xray_addr
+Java_com_getsurfboard_vpn_JniKt_getTun6Address
+tun_ip6_addr
+Java_com_getsurfboard_vpn_JniKt_getDnsPlaceholder0
+dns_placeholder_0
+Java_com_getsurfboard_vpn_JniKt_getDnsPlaceholder1
+dns_placeholder_1
+Java_com_getsurfboard_vpn_JniKt_getFakeIpMapperStart
+fake_ip_mapper_start
+Java_com_getsurfboard_vpn_JniKt_getFakeIpMapperEnd
+Java_com_getsurfboard_vpn_JniKt_dnsStrategyDirect
+Java_com_getsurfboard_vpn_JniKt_dnsStrategyIP
+Java_com_getsurfboard_vpn_JniKt_dnsStrategyAlias
+Java_com_getsurfboard_vpn_JniKt_dnsStrategyServer
+Java_com_getsurfboard_vpn_JniKt_dnsStrategyAsyncDns
+Java_com_getsurfboard_vpn_JniKt_proxyDirect
+Java_com_getsurfboard_vpn_JniKt_proxyReject
+Java_com_getsurfboard_vpn_JniKt_proxyRejectDrop
+Java_com_getsurfboard_vpn_JniKt_proxySocks5
+Java_com_getsurfboard_vpn_JniKt_getDNSTimeout
+Java_com_getsurfboard_vpn_Jni_returnAsyncDnsResult
+doh_dns_pipefds
+on_doh_dns_result_trigger
+Java_com_getsurfboard_vpn_Jni_startVPN
+__emutls_v.jni_env
+__emutls_v.jni_object
+__emutls_v.tun_pipe
+uv_read_start
+on_stop_vpn_finished
+on_start_vpn_finished
+write_tun
+Java_com_getsurfboard_vpn_Jni_resetAllTCPConnections
+Java_com_getsurfboard_vpn_Jni_printAllTCPConnectionsInfo
+Java_com_getsurfboard_vpn_JniKt_nativeCrash
+__emutls_t.tun_buffer
+__emutls_t.jni_env
+__emutls_t.jni_object
+uv_timer_start
+uv_poll_start
+on_dns_response
+unpack_socks5_packet
+uv_udp_recv_start
+on_dns_query
+send_socks5_udp_data
+redirect_to_system_dns
+uv_read_stop
+send_socks5_connect
+mid_start_vpn_finished
+mid_stop_vpn_finished
+mid_get_system_dns
+mid_on_dns_query
+mid_on_dns_response
+Java_com_getsurfboard_vpn_Jni_analyzeProtocol
+dns_query_info__get_packed_size
+dns_query_info__pack
+dns_query_strategy__unpack
+dns_query_strategy__free_unpacked
+dns_query_info__descriptor
+dns_query_info__init
+dns_query_info__pack_to_buffer
+dns_query_info__unpack
+dns_query_info__free_unpacked
+dns_query_strategy__init
+dns_query_strategy__get_packed_size
+dns_query_strategy__pack
+dns_query_strategy__pack_to_buffer
+dns_query_strategy__descriptor
+Java_com_getsurfboard_vpn_JniKt_getPcapHeaderBytes
+uv__udp_recv_start
+uv_udp_recv_stop
+uv__udp_recv_stop
+uv__read_start
+uv_timer_stop
+uv_fs_poll_start
+uv_fs_poll_stop
+uv__io_stop
+uv__io_start
+uv_poll_stop
+uv__async_stop
+uv_fs_event_start
+uv_fs_event_stop
+uv_prepare_start
+uv_prepare_stop
+uv_check_start
+uv_check_stop
+uv_idle_start
+uv_idle_stop
+uv_signal_start
+uv_signal_start_oneshot
+uv_signal_stop
+STUN
+Jni.resetAllTCPConnections()
+uv_udp_recv_start failed %d %s
+send_socks5_udp_data: SOCKS_ATYP_IPV6 offset != data_len
+send_socks5_udp_data: SOCKS_ATYP_DOMAIN offset != data_len
+com/getsurfboard/vpn/Jni
+ENETUNREACH
+on_tun_recv: skip because of stopping
+icmp_input: uv_poll_start failed %d %s
+unpack_socks5_packet: socks_header size not match %zd
+Write async dns result pipe failed %d %s
+onDnsResponse
+DnsQueryInfo
+create doh dns result pipe failed %d: %s
+unpack_socks5_packet: host_len size not match %zd
+on_tcp_read: skip because of stopping
+onDnsQuery
+dns_response
+on_tun_recv error %zd %s
+onVpnStopped
+getSystemDns
+Jni.stopVpn()
+on_doh_dns_result_trigger error: %d, %s
+on_doh_dns_result_trigger read size not match: %d, %d
+on_doh_dns_result_trigger: unknown nread length %zd
+set doh dns result pipe non blocking failed %d: %s
+on_tcp_head_read: skip because of stopping
+on_doh_dns_result_trigger read fail: %d, %s
+Start looping.
+unpack_socks5_packet: socks_header rsv not match %d
+unpack_socks5_packet: ipv4 header_len not match %zd
+send_socks5_connect write_tcp_data failed
+DnsQueryStrategy
+Jni.printAllTCPConnectionsInfo()
+EHOSTUNREACH
+Write async dns result failed: response size exceeded limit %d
+start tcp server on port %d
+unpack_socks5_packet: socks_header fragment not supported %d
+send_socks5_udp_data: SOCKS_ATYP_IPV4 offset != data_len
+on_tun_recv: unknown ip version %d
+unpack_socks5_packet: domain header_len not match %zu %zd
+unpack_socks5_packet: ipv6 header_len not match %zd
+on_doh_dns_result_trigger: dns session not found %d
+Jni.startVPN() quit.
+send_socks5_udp_data: send_udp_data failed %d %s
+Jni.nativeCrash()
+Jni.startVPN() tun_fd %d, sdk_int %d, log_enabled %d, sshdump %d, ipv6 %d
+write_tun uv_write failed %d: %s
+start tcp server ipv6 on port %d
+unpack_socks5_packet: socks_header atype not match %d
+on_tcp_remote_connect write_socks_hello failed
+onVpnStarted
+dns_query

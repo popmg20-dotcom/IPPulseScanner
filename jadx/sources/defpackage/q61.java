@@ -1,0 +1,15 @@
+package defpackage;
+
+import java.io.IOException;
+
+/* JADX INFO: compiled from: r8-map-id-605be6ced3201ebf27d05845df89146b03500986a7a8ae40fc58e667db41f02f */
+/* JADX INFO: loaded from: classes3.dex */
+public interface q61 {
+    void cancel();
+
+    void d();
+
+    void e(le3 le3Var, IOException iOException);
+
+    em3 g();
+}

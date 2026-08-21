@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="abc_action_bar_embed_tabs">true</bool>
+    <bool name="app_widget_enabled">true</bool>
+    <bool name="bottom_bar_displayed">true</bool>
+    <bool name="config_materialPreferenceIconSpaceReserved">false</bool>
+    <bool name="enable_system_foreground_service_default">true</bool>
+    <bool name="enable_system_job_service_default">true</bool>
+    <bool name="is_not_tv">true</bool>
+    <bool name="light_system_bars">true</bool>
+    <bool name="predictive_back_gesture_enabled">false</bool>
+    <bool name="workmanager_test_configuration">false</bool>
+</resources>

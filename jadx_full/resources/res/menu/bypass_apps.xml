@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/search"
+        android:visible="@bool/is_not_tv"
+        android:title="@string/search"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:icon="@drawable/ic_round_select_all_24"
+        android:id="@+id/select_toggle"
+        android:visible="false"
+        android:title="@string/select_all"
+        app:iconTint="?attr/colorControlNormal"
+        app:showAsAction="ifRoom"/>
+    <group android:id="@+id/diable_group">
+        <item
+            android:id="@+id/disable"
+            android:title="@string/disable"/>
+    </group>
+    <group android:id="@+id/deep_group">
+        <item android:title="@string/bypass_mode">
+            <menu>
+                <group android:checkableBehavior="single">
+                    <item
+                        android:id="@+id/black_list_mode"
+                        android:title="@string/black_list_mode"/>
+                    <item
+                        android:id="@+id/white_list_mode"
+                        android:title="@string/white_list_mode"/>
+                </group>
+            </menu>
+        </item>
+        <item android:title="@string/sort_mode">
+            <menu>
+                <group
+                    android:id="@+id/sort_group"
+                    android:checkableBehavior="single">
+                    <item
+                        android:id="@+id/sort_by_name"
+                        android:title="@string/sort_by_name"/>
+                    <item
+                        android:id="@+id/sort_by_package_name"
+                        android:title="@string/sort_by_package_name"/>
+                    <item
+                        android:id="@+id/sort_by_install_time"
+                        android:title="@string/sort_by_install_time"/>
+                    <item
+                        android:id="@+id/sort_by_update_time"
+                        android:title="@string/sort_by_update_time"/>
+                </group>
+                <group android:id="@+id/reverse_group">
+                    <item
+                        android:id="@+id/reverse"
+                        android:checked="false"
+                        android:title="@string/reverse_sorting"
+                        android:checkable="true"/>
+                </group>
+            </menu>
+        </item>
+        <item android:title="@string/options">
+            <menu>
+                <group android:checkableBehavior="all">
+                    <item
+                        android:id="@+id/hide_system_apps"
+                        android:title="@string/hide_system_apps"/>
+                    <item
+                        android:id="@+id/hide_offline_apps"
+                        android:title="@string/hide_offline_apps"/>
+                    <item
+                        android:id="@+id/hide_disabled_apps"
+                        android:title="@string/hide_disabled_apps"/>
+                    <item
+                        android:id="@+id/compatible_mode"
+                        android:title="@string/compatible_mode"/>
+                </group>
+            </menu>
+        </item>
+    </group>
+    <group android:id="@+id/light_group">
+        <item
+            android:id="@+id/export_to_clipboard"
+            android:title="@string/export_to_clipboard"/>
+        <item
+            android:id="@+id/import_from_clipboard"
+            android:title="@string/import_from_clipboard"/>
+    </group>
+</menu>

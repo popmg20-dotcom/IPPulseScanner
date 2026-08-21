@@ -1,0 +1,10 @@
+{
+  "languages": [
+    {
+      "grammar": "textmate/surfboard/syntaxes/surfboard.tmLanguage.json",
+      "name": "surfboard",
+      "scopeName": "source.surfboard",
+      "languageConfiguration": "textmate/surfboard/language-configuration.json"
+    }
+  ]
+}

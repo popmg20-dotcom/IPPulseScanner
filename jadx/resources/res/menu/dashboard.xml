@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:icon="@drawable/ic_round_checklist_24"
+        android:id="@+id/toggle_cards"
+        android:title="@string/toggle_cards"/>
+    <item
+        android:icon="@drawable/ic_round_widgets_24"
+        android:id="@+id/add_widgets"
+        android:title="@string/add_widgets"/>
+    <item
+        android:icon="@drawable/ic_round_tune_24"
+        android:id="@+id/settings"
+        android:title="@string/title_settings"/>
+</menu>

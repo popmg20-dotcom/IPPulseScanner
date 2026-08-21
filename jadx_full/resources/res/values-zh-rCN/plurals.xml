@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="domain_set_deleted">
+        <item quantity="other">%d 条域名集已删除</item>
+    </plurals>
+    <plurals name="item_selected">
+        <item quantity="other">已选择 %d 项</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d 条新通知</item>
+        <item quantity="other">%d 条新通知</item>
+    </plurals>
+    <plurals name="override_doh_summary_multiple">
+        <item quantity="other">%1$s (共 %2$d 个服务器)</item>
+    </plurals>
+    <plurals name="policy_path_deleted">
+        <item quantity="other">%d 条策略路径已删除</item>
+    </plurals>
+    <plurals name="reference_count">
+        <item quantity="other">被 %d 个配置使用</item>
+    </plurals>
+    <plurals name="requests_items">
+        <item quantity="other">%d 个项目</item>
+    </plurals>
+    <plurals name="rule_set_deleted">
+        <item quantity="other">%d 条规则集已删除</item>
+    </plurals>
+</resources>

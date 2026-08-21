@@ -1,0 +1,35 @@
+jadx/sources/defpackage/yw1.java:173:            builder.addAddress(JniKt.getTunAddress(), 32);
+jadx/sources/defpackage/yw1.java:174:            builder.addAddress(JniKt.getXRayAddress(), 32);
+jadx/sources/defpackage/yw1.java:176:                builder.addAddress(JniKt.getTun6Address(), 32);
+jadx/sources/defpackage/yw1.java:730:                        String xRayAddress = JniKt.getXRayAddress();
+jadx/sources/defpackage/yw1.java:836:                ez4.X("Jni.startVPN", new uw1(this, intent));
+jadx/sources/defpackage/lk.java:23:        this.b.promptRestartVPN();
+jadx/sources/defpackage/nk.java:26:    private boolean restartVpn;
+jadx/sources/defpackage/nk.java:35:        if (bool.booleanValue() || !nkVar.restartVpn) {
+jadx/sources/defpackage/nk.java:38:        nkVar.restartVpn = false;
+jadx/sources/defpackage/nk.java:110:        nkVar.restartVpn = true;
+jadx/sources/defpackage/nk.java:120:    public abstract Set getRestartVPNPreferenceKeys();
+jadx/sources/defpackage/nk.java:136:        Iterator it = getRestartVPNPreferenceKeys().iterator();
+jadx/sources/defpackage/nk.java:146:    public final void promptRestartVPN() {
+jadx/sources/defpackage/h94.java:24:        channel.pipeline().addLast(new Socks5ProxyHandler(new InetSocketAddress(JniKt.getXRayAddress(), this.b)));
+jadx/sources/com/getsurfboard/ui/service/SurfboardTile.java:306:            xb5.c("SurfboardTile: stopVpnService");
+jadx/sources/com/getsurfboard/ui/fragment/settings/NotificationSettingsFragment.java:36:    public Set<Integer> getRestartVPNPreferenceKeys() {
+jadx/sources/com/getsurfboard/ui/fragment/settings/OverrideSettingsFragment.java:127:    public Set<Integer> getRestartVPNPreferenceKeys() {
+jadx/sources/com/getsurfboard/ui/fragment/settings/OthersSettingsFragment.java:140:    public Set<Integer> getRestartVPNPreferenceKeys() {
+jadx/sources/com/getsurfboard/ui/fragment/settings/VpnSettingsFragment.java:159:        vpnSettingsFragment.promptRestartVPN();
+jadx/sources/com/getsurfboard/ui/fragment/settings/VpnSettingsFragment.java:183:    public Set<Integer> getRestartVPNPreferenceKeys() {
+jadx/sources/com/getsurfboard/ui/fragment/settings/AppSettingsFragment.java:223:    public Set<Integer> getRestartVPNPreferenceKeys() {
+jadx/sources/com/getsurfboard/vpn/JniKt.java:31:    public static final native int dnsStrategyAlias();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:33:    public static final native int dnsStrategyAsyncDns();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:35:    public static final native int dnsStrategyDirect();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:37:    public static final native int dnsStrategyIP();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:39:    public static final native int dnsStrategyServer();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:53:    public static final native String getTun6Address();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:55:    public static final native String getTunAddress();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:57:    public static final native String getXRayAddress();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:65:    public static final native int proxySocks5();
+jadx/sources/com/getsurfboard/vpn/Jni.java:699:    private final native void startVPN(int i, int i2, int i3, boolean z, boolean z2, boolean z3);
+jadx/sources/com/getsurfboard/vpn/Jni.java:701:    private final native void stopVPN();
+jadx/sources/com/getsurfboard/vpn/Jni.java:1051:        String xRayAddress = JniKt.getXRayAddress();
+jadx/sources/com/getsurfboard/vpn/Jni.java:1180:        startVPN(i, rs4Var2.I0, i2, z, rs4Var2.F0, z2);
+jadx/sources/com/getsurfboard/vpn/Jni.java:1257:        stopVPN();

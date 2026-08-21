@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="domain_set_deleted">
+        <item quantity="other">%d개의 도메인 세트가 삭제되었습니다</item>
+    </plurals>
+    <plurals name="item_selected">
+        <item quantity="other">%d개 선택됨</item>
+    </plurals>
+    <plurals name="override_doh_summary_multiple">
+        <item quantity="other">%1$s (총 %2$d개의 서버)</item>
+    </plurals>
+    <plurals name="policy_path_deleted">
+        <item quantity="other">%d개의 정책 경로가 삭제되었습니다</item>
+    </plurals>
+    <plurals name="reference_count">
+        <item quantity="other">%d개의 프로파일에서 사용 중</item>
+    </plurals>
+    <plurals name="requests_items">
+        <item quantity="other">%d개 항목</item>
+    </plurals>
+    <plurals name="rule_set_deleted">
+        <item quantity="other">%d개의 규칙 세트가 삭제되었습니다</item>
+    </plurals>
+</resources>

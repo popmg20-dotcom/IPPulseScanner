@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="domain_set_deleted">
+        <item quantity="other">Đã xóa %d bộ tên miền</item>
+    </plurals>
+    <plurals name="item_selected">
+        <item quantity="other">Đã chọn %d mục</item>
+    </plurals>
+    <plurals name="override_doh_summary_multiple">
+        <item quantity="other">%1$s (Tổng cộng %2$d máy chủ)</item>
+    </plurals>
+    <plurals name="policy_path_deleted">
+        <item quantity="other">Đã xóa %d đường dẫn chính sách</item>
+    </plurals>
+    <plurals name="reference_count">
+        <item quantity="other">Được dùng bởi %d hồ sơ</item>
+    </plurals>
+    <plurals name="requests_items">
+        <item quantity="other">%d mục</item>
+    </plurals>
+    <plurals name="rule_set_deleted">
+        <item quantity="other">Đã xóa %d bộ quy tắc</item>
+    </plurals>
+</resources>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="domain_set_deleted">
+        <item quantity="one">Удален %d набор доменов</item>
+        <item quantity="few">Удалено %d набора доменов</item>
+        <item quantity="many">Удалено %d наборов доменов</item>
+        <item quantity="other">Удалено %d наборов доменов</item>
+    </plurals>
+    <plurals name="item_selected">
+        <item quantity="one">Выбран %d элемент</item>
+        <item quantity="few">Выбрано %d элемента</item>
+        <item quantity="many">Выбрано %d элементов</item>
+        <item quantity="other">Выбрано %d элементов</item>
+    </plurals>
+    <plurals name="override_doh_summary_multiple">
+        <item quantity="one">%1$s (всего %2$d сервер)</item>
+        <item quantity="few">%1$s (всего %2$d сервера)</item>
+        <item quantity="many">%1$s (всего %2$d серверов)</item>
+        <item quantity="other">%1$s (всего %2$d сервера)</item>
+    </plurals>
+    <plurals name="policy_path_deleted">
+        <item quantity="one">Удален %d путь политики</item>
+        <item quantity="few">Удалено %d пути политики</item>
+        <item quantity="many">Удалено %d путей политики</item>
+        <item quantity="other">Удалено %d путей политики</item>
+    </plurals>
+    <plurals name="reference_count">
+        <item quantity="one">Используется в %d профиле</item>
+        <item quantity="few">Используется в %d профилях</item>
+        <item quantity="many">Используется в %d профилях</item>
+        <item quantity="other">Используется в %d профилях</item>
+    </plurals>
+    <plurals name="requests_items">
+        <item quantity="one">%d элемент</item>
+        <item quantity="few">%d элемента</item>
+        <item quantity="many">%d элементов</item>
+        <item quantity="other">%d элементов</item>
+    </plurals>
+    <plurals name="rule_set_deleted">
+        <item quantity="one">Удален %d набор правил</item>
+        <item quantity="few">Удалено %d набора правил</item>
+        <item quantity="many">Удалено %d наборов правил</item>
+        <item quantity="other">Удалено %d наборов правил</item>
+    </plurals>
+</resources>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <Preference
+        android:icon="@drawable/ic_round_data_array_24"
+        android:title="@string/setting_override_category_title"
+        android:key="override"
+        android:summary="@string/setting_override_category_summary"
+        android:fragment="com.getsurfboard.ui.fragment.settings.OverrideSettingsFragment"/>
+    <Preference
+        android:icon="@drawable/ic_round_vpn_key_24"
+        android:title="@string/vpn"
+        android:key="vpn"
+        android:summary="@string/setting_vpn_category_summary"
+        android:fragment="com.getsurfboard.ui.fragment.settings.VpnSettingsFragment"/>
+    <Preference
+        android:icon="@drawable/ic_round_notifications_24"
+        android:title="@string/notification"
+        android:key="notification"
+        android:summary="@string/setting_dns_category_notification"
+        android:fragment="com.getsurfboard.ui.fragment.settings.NotificationSettingsFragment"/>
+    <Preference
+        android:icon="@drawable/ic_round_double_arrow_24"
+        android:title="@string/setting_application_title"
+        android:key="app"
+        android:fragment="com.getsurfboard.ui.fragment.settings.AppSettingsFragment"/>
+    <Preference
+        android:icon="@drawable/ic_round_more_horiz_24"
+        android:title="@string/setting_others_category_title"
+        android:key="others"
+        android:summary="@string/setting_others_category_summary"
+        android:fragment="com.getsurfboard.ui.fragment.settings.OthersSettingsFragment"/>
+</PreferenceScreen>

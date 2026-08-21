@@ -1,0 +1,15 @@
+package defpackage;
+
+import android.view.ViewGroup;
+
+/* JADX INFO: compiled from: r8-map-id-605be6ced3201ebf27d05845df89146b03500986a7a8ae40fc58e667db41f02f */
+/* JADX INFO: loaded from: classes.dex */
+public abstract class dq4 {
+    public static int a(ViewGroup viewGroup, int i) {
+        return viewGroup.getChildDrawingOrder(i);
+    }
+
+    public static void b(ViewGroup viewGroup, boolean z) {
+        viewGroup.suppressLayout(z);
+    }
+}

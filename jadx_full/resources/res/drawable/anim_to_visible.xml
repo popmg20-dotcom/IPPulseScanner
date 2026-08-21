@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt" android:drawable="@drawable/_anim_to_visible__0_res_0x7f080004">
+    <target
+        android:name="strike_thru_path"
+        android:animation="@drawable/_anim_to_visible__1_res_0x7f080005"/>
+    <target
+        android:name="strike_thru_mask"
+        android:animation="@drawable/_anim_to_visible__2_res_0x7f080006"/>
+    <target
+        android:name="visibilitystrike"
+        android:animation="@drawable/_anim_to_visible__3_res_0x7f080007"/>
+</animated-vector>

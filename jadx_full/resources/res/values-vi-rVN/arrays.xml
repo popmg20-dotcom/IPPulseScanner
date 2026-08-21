@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="setting_override_ipv6_entries">
+        <item>Theo cấu hình</item>
+        <item>Bật</item>
+        <item>Tắt</item>
+    </array>
+    <array name="setting_override_lan_share_listen_entries">
+        <item>LAN</item>
+        <item>Chỉ cục bộ</item>
+    </array>
+    <array name="setting_tls_fingerprint_entries">
+        <item>Legacy</item>
+        <item>UTLS</item>
+    </array>
+    <array name="setting_traffic_statistics_entries">
+        <item>Tính tất cả</item>
+        <item>Chỉ proxy</item>
+    </array>
+</resources>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory app:title="@string/notification">
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/ic_round_multiline_chart_24"
+            app:key="@string/setting_display_network_speed_in_status_bar_key"
+            app:summary="@string/setting_display_network_speed_in_status_bar_summary"
+            app:title="@string/setting_display_network_speed_in_status_bar_title"
+            app:widgetLayout="@layout/layout_switch_preference"/>
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:icon="@drawable/ic_round_circle_notifications_24"
+            app:key="@string/setting_disable_check_notification_key"
+            app:summary="@string/setting_disable_check_notification_summary"
+            app:title="@string/setting_disable_check_notification_title"
+            app:widgetLayout="@layout/layout_switch_preference"/>
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/ic_round_upgrade_24"
+            app:key="@string/setting_auto_collapse_notification_bar_key"
+            app:summary="@string/setting_auto_collapse_notification_bar_summary"
+            app:title="@string/setting_auto_collapse_notification_bar_title"
+            app:widgetLayout="@layout/layout_switch_preference"/>
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:icon="@drawable/ic_round_double_arrow_24"
+            app:key="@string/setting_hide_status_bar_icon_and_notification_key"
+            app:summary="@string/setting_hide_status_bar_icon_and_notification_summary"
+            app:title="@string/setting_hide_status_bar_icon_and_notification_title"
+            app:widgetLayout="@layout/layout_switch_preference"/>
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/ic_round_timer_24"
+            app:key="@string/setting_notification_chronometer"
+            app:summary="@string/setting_notification_chronometer_summary"
+            app:title="@string/setting_notification_chronometer_title"
+            app:widgetLayout="@layout/layout_switch_preference"/>
+    </PreferenceCategory>
+</PreferenceScreen>

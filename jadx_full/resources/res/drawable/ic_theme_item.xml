@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:right="32dp"
+        android:bottom="32dp">
+        <shape>
+            <corners android:topLeftRadius="32dp"/>
+            <solid android:color="?attr/colorPrimary"/>
+            <size
+                android:height="32dp"
+                android:width="32dp"/>
+        </shape>
+    </item>
+    <item
+        android:left="32dp"
+        android:bottom="32dp">
+        <shape>
+            <corners android:topRightRadius="32dp"/>
+            <solid android:color="?attr/colorSecondary"/>
+            <size
+                android:height="32dp"
+                android:width="32dp"/>
+        </shape>
+    </item>
+    <item
+        android:top="32dp"
+        android:right="32dp">
+        <shape>
+            <corners android:bottomLeftRadius="32dp"/>
+            <solid android:color="?attr/colorTertiary"/>
+            <size
+                android:height="32dp"
+                android:width="32dp"/>
+        </shape>
+    </item>
+    <item
+        android:left="32dp"
+        android:top="32dp">
+        <shape>
+            <corners android:bottomRightRadius="32dp"/>
+            <solid android:color="?attr/colorOutline"/>
+            <size
+                android:height="32dp"
+                android:width="32dp"/>
+        </shape>
+    </item>
+</layer-list>

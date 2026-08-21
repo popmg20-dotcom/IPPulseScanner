@@ -1,0 +1,11 @@
+/data/data/com.termux/files/home/surfboard_engine_export/apk/lib/arm64-v8a/libconscrypt_jni.so
+/data/data/com.termux/files/home/surfboard_engine_export/apk/lib/arm64-v8a/libdatastore_shared_counter.so
+/data/data/com.termux/files/home/surfboard_engine_export/apk/lib/arm64-v8a/libimage_processing_util_jni.so
+/data/data/com.termux/files/home/surfboard_engine_export/apk/lib/arm64-v8a/libsentry-android.so
+/data/data/com.termux/files/home/surfboard_engine_export/apk/lib/arm64-v8a/libsentry.so
+/data/data/com.termux/files/home/surfboard_engine_export/apk/lib/arm64-v8a/libsuffixtree.so
+/data/data/com.termux/files/home/surfboard_engine_export/apk/lib/arm64-v8a/libsurface_util_jni.so
+/data/data/com.termux/files/home/surfboard_engine_export/apk/lib/arm64-v8a/libsurfboard.so
+/data/data/com.termux/files/home/surfboard_engine_export/apk/lib/arm64-v8a/libtailor.so
+/data/data/com.termux/files/home/surfboard_engine_export/apk/lib/arm64-v8a/libxlog.so
+/data/data/com.termux/files/home/surfboard_engine_export/apk/lib/arm64-v8a/libxray.so

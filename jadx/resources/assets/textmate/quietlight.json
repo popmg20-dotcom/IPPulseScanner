@@ -1,0 +1,144 @@
+{
+  "name": "Quiet Light",
+  "tokenColors": [
+    {
+      "settings": {
+        "foreground": "#333333"
+      }
+    },
+    {
+      "name": "Comments",
+      "scope": [
+        "comment",
+        "punctuation.definition.comment"
+      ],
+      "settings": {
+        "fontStyle": "italic",
+        "foreground": "#AAAAAA"
+      }
+    },
+    {
+      "name": "Keywords",
+      "scope": [
+        "keyword",
+        "storage"
+      ],
+      "settings": {
+        "foreground": "#4B69C6"
+      }
+    },
+    {
+      "name": "Language Constants",
+      "scope": [
+        "constant.language",
+        "support.constant",
+        "variable.language"
+      ],
+      "settings": {
+        "foreground": "#9C5D27"
+      }
+    },
+    {
+      "name": "Strings",
+      "scope": "string",
+      "settings": {
+        "foreground": "#448C27"
+      }
+    },
+    {
+      "name": "Surfboard Section Header",
+      "scope": "entity.name.section.group-title.surfboard",
+      "settings": {
+        "foreground": "#AA3731",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "name": "Surfboard Rule Type",
+      "scope": "keyword.control.rule.surfboard",
+      "settings": {
+        "foreground": "#4B69C6"
+      }
+    },
+    {
+      "name": "Surfboard Proxy Type",
+      "scope": "keyword.other.proxy.surfboard",
+      "settings": {
+        "foreground": "#7A3E9D"
+      }
+    },
+    {
+      "name": "Surfboard Parameter",
+      "scope": "variable.parameter.surfboard",
+      "settings": {
+        "foreground": "#7A3E9D"
+      }
+    },
+    {
+      "name": "Surfboard Punctuation",
+      "scope": "punctuation.separator.surfboard",
+      "settings": {
+        "foreground": "#AAAAAA"
+      }
+    }
+  ],
+  "colors": {
+    "focusBorder": "#A6B39B",
+    "pickerGroup.foreground": "#A6B39B",
+    "pickerGroup.border": "#749351",
+    "list.activeSelectionForeground": "#6c6c6c",
+    "quickInputList.focusBackground": "#CADEB9",
+    "list.hoverBackground": "#e0e0e0",
+    "list.activeSelectionBackground": "#c4d9b1",
+    "list.inactiveSelectionBackground": "#d3dbcd",
+    "list.highlightForeground": "#9769dc",
+    "selection.background": "#C9D0D9",
+    "editor.background": "#F5F5F5",
+    "editorWhitespace.foreground": "#AAAAAA",
+    "editor.lineHighlightBackground": "#E4F6D4",
+    "editorLineNumber.activeForeground": "#9769dc",
+    "editor.selectionBackground": "#C9D0D9",
+    "minimap.selectionHighlight": "#C9D0D9",
+    "panel.background": "#F5F5F5",
+    "sideBar.background": "#F2F2F2",
+    "sideBarSectionHeader.background": "#ede8ef",
+    "editorLineNumber.foreground": "#6D705B",
+    "editorCursor.foreground": "#54494B",
+    "inputOption.activeBorder": "#adafb7",
+    "dropdown.background": "#F5F5F5",
+    "editor.findMatchBackground": "#BF9CAC",
+    "editor.findMatchHighlightBackground": "#edc9d8",
+    "peekViewEditor.matchHighlightBackground": "#C2DFE3",
+    "peekViewTitle.background": "#F2F8FC",
+    "peekViewEditor.background": "#F2F8FC",
+    "peekViewResult.background": "#F2F8FC",
+    "peekView.border": "#705697",
+    "peekViewResult.matchHighlightBackground": "#93C6D6",
+    "tab.lastPinnedBorder": "#c9d0d9",
+    "statusBar.background": "#705697",
+    "welcomePage.tileBackground": "#f0f0f7",
+    "statusBar.noFolderBackground": "#705697",
+    "statusBar.debuggingBackground": "#705697",
+    "statusBarItem.remoteBackground": "#4e3c69",
+    "ports.iconRunningProcessForeground": "#749351",
+    "activityBar.background": "#EDEDF5",
+    "activityBar.foreground": "#705697",
+    "activityBarBadge.background": "#705697",
+    "titleBar.activeBackground": "#c4b7d7",
+    "button.background": "#705697",
+    "editorGroup.dropBackground": "#C9D0D988",
+    "inputValidation.infoBorder": "#4ec1e5",
+    "inputValidation.infoBackground": "#f2fcff",
+    "inputValidation.warningBackground": "#fffee2",
+    "inputValidation.warningBorder": "#ffe055",
+    "inputValidation.errorBackground": "#ffeaea",
+    "inputValidation.errorBorder": "#f1897f",
+    "errorForeground": "#f1897f",
+    "badge.background": "#705697AA",
+    "progressBar.background": "#705697",
+    "walkThrough.embeddedEditorBackground": "#00000014",
+    "editorIndentGuide.background": "#aaaaaa60",
+    "editorIndentGuide.activeBackground": "#777777b0"
+  },
+  "semanticHighlighting": true
+}

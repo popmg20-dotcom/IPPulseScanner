@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Base.Theme.SplashScreen.DayNight" parent="@style/Base.Theme.SplashScreen">
+    </style>
+    <style name="Theme.Material3.DayNight.Dialog" parent="@style/Theme.Material3.Dark.Dialog">
+    </style>
+    <style name="Theme.Material3Expressive.DayNight" parent="@style/Theme.Material3Expressive.Dark">
+    </style>
+    <style name="Theme.Material3Expressive.DynamicColors.DayNight" parent="@style/Theme.Material3Expressive.DynamicColors.Dark">
+    </style>
+</resources>

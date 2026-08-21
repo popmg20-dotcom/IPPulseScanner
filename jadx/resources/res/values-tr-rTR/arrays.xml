@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="setting_override_ipv6_entries">
+        <item>Profili takip et</item>
+        <item>Etkinleştir</item>
+        <item>Devre Dışı Bırak</item>
+    </array>
+    <array name="setting_override_lan_share_listen_entries">
+        <item>LAN</item>
+        <item>Yalnızca yerel</item>
+    </array>
+    <array name="setting_tls_fingerprint_entries">
+        <item>Legacy</item>
+        <item>UTLS</item>
+    </array>
+    <array name="setting_traffic_statistics_entries">
+        <item>Tümü sayılır</item>
+        <item>Yalnızca proxy</item>
+    </array>
+</resources>

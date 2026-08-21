@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="setting_override_ipv6_entries">
+        <item>Ikuti profil</item>
+        <item>Aktifkan</item>
+        <item>Nonaktifkan</item>
+    </array>
+    <array name="setting_override_lan_share_listen_entries">
+        <item>LAN</item>
+        <item>Lokal saja</item>
+    </array>
+    <array name="setting_tls_fingerprint_entries">
+        <item>Legacy</item>
+        <item>UTLS</item>
+    </array>
+    <array name="setting_traffic_statistics_entries">
+        <item>Semua dihitung</item>
+        <item>Hanya proxy</item>
+    </array>
+</resources>

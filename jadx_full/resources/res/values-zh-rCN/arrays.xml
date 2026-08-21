@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="setting_override_ipv6_entries">
+        <item>跟随配置</item>
+        <item>开启</item>
+        <item>关闭</item>
+    </array>
+    <array name="setting_override_lan_share_listen_entries">
+        <item>局域网</item>
+        <item>仅限本地</item>
+    </array>
+    <array name="setting_tls_fingerprint_entries">
+        <item>传统</item>
+        <item>UTLS</item>
+    </array>
+    <array name="setting_traffic_statistics_entries">
+        <item>全部算入</item>
+        <item>仅代理</item>
+    </array>
+</resources>

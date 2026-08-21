@@ -1,0 +1,78 @@
+{
+  "name": "darcula",
+  "settings": [
+    {
+      "settings": {
+        "background": "#242424",
+        "foreground": "#cccccc",
+        "lineHighlight": "#2B2B2B",
+        "selection": "#214283",
+        "highlightedDelimetersForeground": "#57f6c0"
+      }
+    },
+    {
+      "name": "Comment",
+      "scope": "comment",
+      "settings": {
+        "foreground": "#707070"
+      }
+    },
+    {
+      "name": "Strings",
+      "scope": "string",
+      "settings": {
+        "foreground": "#6A8759"
+      }
+    },
+    {
+      "name": "Built-in constant",
+      "scope": "constant.language",
+      "settings": {
+        "foreground": "#CC8242"
+      }
+    },
+    {
+      "name": "Keyword",
+      "scope": "keyword",
+      "settings": {
+        "foreground": "#CC8242"
+      }
+    },
+    {
+      "name": "Surfboard Section Header",
+      "scope": "entity.name.section.group-title.surfboard",
+      "settings": {
+        "foreground": "#FFC66D",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "name": "Surfboard Rule Type",
+      "scope": "keyword.control.rule.surfboard",
+      "settings": {
+        "foreground": "#CC8242"
+      }
+    },
+    {
+      "name": "Surfboard Proxy Type",
+      "scope": "keyword.other.proxy.surfboard",
+      "settings": {
+        "foreground": "#9E7BB0"
+      }
+    },
+    {
+      "name": "Surfboard Parameter",
+      "scope": "variable.parameter.surfboard",
+      "settings": {
+        "foreground": "#9E7BB0"
+      }
+    },
+    {
+      "name": "Surfboard Punctuation",
+      "scope": "punctuation.separator.surfboard",
+      "settings": {
+        "foreground": "#707070"
+      }
+    }
+  ]
+}

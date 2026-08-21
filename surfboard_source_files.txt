@@ -1,0 +1,14 @@
+jadx/resources/assets/explorer/surfboard-logo.png
+jadx/resources/assets/textmate/surfboard/syntaxes/surfboard.tmLanguage.json
+jadx/resources/lib/arm64-v8a/libconscrypt_jni.so
+jadx/resources/lib/arm64-v8a/libimage_processing_util_jni.so
+jadx/resources/lib/arm64-v8a/libsurface_util_jni.so
+jadx/resources/lib/arm64-v8a/libsurfboard.so
+jadx/sources/com/getsurfboard/ui/SurfboardApp.java
+jadx/sources/com/getsurfboard/ui/service/SurfboardTile.java
+jadx/sources/com/getsurfboard/ui/service/SurfboardVpn.java
+jadx/sources/com/getsurfboard/vpn/Jni.java
+jadx/sources/com/getsurfboard/vpn/JniKt.java
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java
+jadx/sources/io/netty/channel/unix/LimitsStaticallyReferencedJniMethods.java
+jadx/sources/org/conscrypt/NativeCryptoJni.java

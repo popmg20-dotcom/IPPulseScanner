@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/search_view"
+        android:title="@string/search"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        app:showAsAction="collapseActionView|always"/>
+    <item
+        android:icon="@drawable/ic_round_arrow_upward_24"
+        android:enabled="false"
+        android:id="@+id/search_previous"
+        android:title="@string/previous"
+        app:showAsAction="always"/>
+    <item
+        android:icon="@drawable/ic_round_arrow_downward_24"
+        android:enabled="false"
+        android:id="@+id/search_next"
+        android:title="@string/next"
+        app:showAsAction="always"/>
+</menu>

@@ -1,0 +1,162 @@
+package io.netty.handler.codec.dns;
+
+import defpackage.zo2;
+import io.netty.channel.AddressedEnvelope;
+import java.net.InetSocketAddress;
+
+/* JADX INFO: compiled from: r8-map-id-605be6ced3201ebf27d05845df89146b03500986a7a8ae40fc58e667db41f02f */
+/* JADX INFO: loaded from: classes.dex */
+public class DatagramDnsResponse extends DefaultDnsResponse implements AddressedEnvelope<DatagramDnsResponse, InetSocketAddress> {
+    private final InetSocketAddress recipient;
+    private final InetSocketAddress sender;
+
+    public DatagramDnsResponse(InetSocketAddress inetSocketAddress, InetSocketAddress inetSocketAddress2, int i, DnsOpCode dnsOpCode, DnsResponseCode dnsResponseCode) {
+        super(i, dnsOpCode, dnsResponseCode);
+        if (inetSocketAddress2 == null && inetSocketAddress == null) {
+            zo2.n("recipient and sender");
+            throw null;
+        }
+        this.sender = inetSocketAddress;
+        this.recipient = inetSocketAddress2;
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.handler.codec.dns.DnsMessage
+    public DatagramDnsResponse addRecord(DnsSection dnsSection, DnsRecord dnsRecord) {
+        return (DatagramDnsResponse) super.addRecord(dnsSection, dnsRecord);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.handler.codec.dns.DnsMessage
+    public DatagramDnsResponse clear(DnsSection dnsSection) {
+        return (DatagramDnsResponse) super.clear(dnsSection);
+    }
+
+    @Override // io.netty.handler.codec.dns.AbstractDnsMessage
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!super.equals(obj) || !(obj instanceof AddressedEnvelope)) {
+            return false;
+        }
+        AddressedEnvelope addressedEnvelope = (AddressedEnvelope) obj;
+        if (sender() == null) {
+            if (addressedEnvelope.sender() != null) {
+                return false;
+            }
+        } else if (!sender().equals(addressedEnvelope.sender())) {
+            return false;
+        }
+        return recipient() == null ? addressedEnvelope.recipient() == null : recipient().equals(addressedEnvelope.recipient());
+    }
+
+    @Override // io.netty.handler.codec.dns.AbstractDnsMessage
+    public int hashCode() {
+        int iHashCode = super.hashCode();
+        if (sender() != null) {
+            iHashCode = (iHashCode * 31) + sender().hashCode();
+        }
+        if (recipient() == null) {
+            return iHashCode;
+        }
+        return recipient().hashCode() + (iHashCode * 31);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.util.AbstractReferenceCounted, io.netty.util.ReferenceCounted
+    public DatagramDnsResponse retain() {
+        return (DatagramDnsResponse) super.retain();
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.DnsResponse
+    public DatagramDnsResponse setAuthoritativeAnswer(boolean z) {
+        return (DatagramDnsResponse) super.setAuthoritativeAnswer(z);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.DnsResponse
+    public DatagramDnsResponse setCode(DnsResponseCode dnsResponseCode) {
+        return (DatagramDnsResponse) super.setCode(dnsResponseCode);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.handler.codec.dns.DnsMessage
+    public DatagramDnsResponse setId(int i) {
+        return (DatagramDnsResponse) super.setId(i);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.handler.codec.dns.DnsMessage
+    public DatagramDnsResponse setOpCode(DnsOpCode dnsOpCode) {
+        return (DatagramDnsResponse) super.setOpCode(dnsOpCode);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.handler.codec.dns.DnsMessage
+    public DatagramDnsResponse setRecord(DnsSection dnsSection, DnsRecord dnsRecord) {
+        return (DatagramDnsResponse) super.setRecord(dnsSection, dnsRecord);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.DnsResponse
+    public DatagramDnsResponse setRecursionAvailable(boolean z) {
+        return (DatagramDnsResponse) super.setRecursionAvailable(z);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.handler.codec.dns.DnsMessage
+    public DatagramDnsResponse setRecursionDesired(boolean z) {
+        return (DatagramDnsResponse) super.setRecursionDesired(z);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.DnsResponse
+    public DatagramDnsResponse setTruncated(boolean z) {
+        return (DatagramDnsResponse) super.setTruncated(z);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.handler.codec.dns.DnsMessage
+    public DatagramDnsResponse setZ(int i) {
+        return (DatagramDnsResponse) super.setZ(i);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.util.AbstractReferenceCounted, io.netty.util.ReferenceCounted
+    public DatagramDnsResponse touch() {
+        return (DatagramDnsResponse) super.touch();
+    }
+
+    /* JADX WARN: Can't rename method to resolve collision */
+    @Override // io.netty.channel.AddressedEnvelope
+    public DatagramDnsResponse content() {
+        return this;
+    }
+
+    @Override // io.netty.channel.AddressedEnvelope
+    public InetSocketAddress recipient() {
+        return this.recipient;
+    }
+
+    @Override // io.netty.channel.AddressedEnvelope
+    public InetSocketAddress sender() {
+        return this.sender;
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.handler.codec.dns.DnsMessage
+    public DatagramDnsResponse addRecord(DnsSection dnsSection, int i, DnsRecord dnsRecord) {
+        return (DatagramDnsResponse) super.addRecord(dnsSection, i, dnsRecord);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.handler.codec.dns.DnsMessage
+    public DatagramDnsResponse clear() {
+        return (DatagramDnsResponse) super.clear();
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.util.AbstractReferenceCounted, io.netty.util.ReferenceCounted
+    public DatagramDnsResponse retain(int i) {
+        return (DatagramDnsResponse) super.retain(i);
+    }
+
+    @Override // io.netty.handler.codec.dns.DefaultDnsResponse, io.netty.handler.codec.dns.AbstractDnsMessage, io.netty.util.ReferenceCounted
+    public DatagramDnsResponse touch(Object obj) {
+        return (DatagramDnsResponse) super.touch(obj);
+    }
+
+    public DatagramDnsResponse(InetSocketAddress inetSocketAddress, InetSocketAddress inetSocketAddress2, int i, DnsOpCode dnsOpCode) {
+        this(inetSocketAddress, inetSocketAddress2, i, dnsOpCode, DnsResponseCode.NOERROR);
+    }
+
+    public DatagramDnsResponse(InetSocketAddress inetSocketAddress, InetSocketAddress inetSocketAddress2, int i) {
+        this(inetSocketAddress, inetSocketAddress2, i, DnsOpCode.QUERY, DnsResponseCode.NOERROR);
+    }
+}

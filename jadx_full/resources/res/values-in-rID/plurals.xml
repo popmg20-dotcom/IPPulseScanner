@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="domain_set_deleted">
+        <item quantity="other">%d kumpulan domain dihapus</item>
+    </plurals>
+    <plurals name="item_selected">
+        <item quantity="other">%d item dipilih</item>
+    </plurals>
+    <plurals name="override_doh_summary_multiple">
+        <item quantity="other">%1$s (total %2$d server)</item>
+    </plurals>
+    <plurals name="policy_path_deleted">
+        <item quantity="other">%d jalur kebijakan dihapus</item>
+    </plurals>
+    <plurals name="reference_count">
+        <item quantity="other">Digunakan oleh %d profil</item>
+    </plurals>
+    <plurals name="requests_items">
+        <item quantity="other">%d item</item>
+    </plurals>
+    <plurals name="rule_set_deleted">
+        <item quantity="other">%d kumpulan aturan dihapus</item>
+    </plurals>
+</resources>

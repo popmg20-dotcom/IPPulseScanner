@@ -1,0 +1,189 @@
+package defpackage;
+
+import android.content.Context;
+import android.net.Uri;
+import io.sentry.android.core.a1;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+/* JADX INFO: compiled from: r8-map-id-605be6ced3201ebf27d05845df89146b03500986a7a8ae40fc58e667db41f02f */
+/* JADX INFO: loaded from: classes.dex */
+public final class oa5 {
+    public static final Object g = new Object();
+    public static volatile v95 h;
+    public static final AtomicInteger i;
+    public final sn a;
+    public final String b;
+    public final Object c;
+    public volatile int d = -1;
+    public volatile Object e;
+    public final /* synthetic */ int f;
+
+    static {
+        new AtomicReference();
+        i = new AtomicInteger();
+    }
+
+    public /* synthetic */ oa5(sn snVar, String str, Object obj, int i2) {
+        this.f = i2;
+        if (((Uri) snVar.f) == null) {
+            xe.k("Must pass a valid SharedPreferences file name or ContentProvider URI");
+            throw null;
+        }
+        this.a = snVar;
+        this.b = str;
+        this.c = obj;
+    }
+
+    public final Object a(Object obj) {
+        int i2 = this.f;
+        String str = this.b;
+        switch (i2) {
+            case 0:
+                if (obj instanceof Long) {
+                    return (Long) obj;
+                }
+                if (obj instanceof String) {
+                    try {
+                        return Long.valueOf(Long.parseLong((String) obj));
+                    } catch (NumberFormatException unused) {
+                    }
+                }
+                String string = obj.toString();
+                StringBuilder sb = new StringBuilder(str.length() + 25 + string.length());
+                sb.append("Invalid long value for ");
+                sb.append(str);
+                sb.append(": ");
+                sb.append(string);
+                a1.d("PhenotypeFlag", sb.toString());
+                return null;
+            case 1:
+                if (obj instanceof Boolean) {
+                    return (Boolean) obj;
+                }
+                if (obj instanceof String) {
+                    String str2 = (String) obj;
+                    if (n95.b.matcher(str2).matches()) {
+                        return Boolean.TRUE;
+                    }
+                    if (n95.c.matcher(str2).matches()) {
+                        return Boolean.FALSE;
+                    }
+                }
+                String string2 = obj.toString();
+                StringBuilder sb2 = new StringBuilder(str.length() + 28 + string2.length());
+                sb2.append("Invalid boolean value for ");
+                sb2.append(str);
+                sb2.append(": ");
+                sb2.append(string2);
+                a1.d("PhenotypeFlag", sb2.toString());
+                return null;
+            case 2:
+                if (obj instanceof Double) {
+                    return (Double) obj;
+                }
+                if (obj instanceof Float) {
+                    return Double.valueOf(((Float) obj).doubleValue());
+                }
+                if (obj instanceof String) {
+                    try {
+                        return Double.valueOf(Double.parseDouble((String) obj));
+                    } catch (NumberFormatException unused2) {
+                    }
+                }
+                String string3 = obj.toString();
+                StringBuilder sb3 = new StringBuilder(str.length() + 27 + string3.length());
+                sb3.append("Invalid double value for ");
+                sb3.append(str);
+                sb3.append(": ");
+                sb3.append(string3);
+                a1.d("PhenotypeFlag", sb3.toString());
+                return null;
+            default:
+                if (obj instanceof String) {
+                    return (String) obj;
+                }
+                return null;
+        }
+    }
+
+    /* JADX WARN: Removed duplicated region for block: B:20:0x0058 A[PHI: r2
+      0x0058: PHI (r2v1 mw2) = (r2v0 mw2), (r2v5 mw2), (r2v5 mw2) binds: [B:8:0x0014, B:10:0x0022, B:16:0x0047] A[DONT_GENERATE, DONT_INLINE]] */
+    /* JADX WARN: Removed duplicated region for block: B:22:0x005b  */
+    /* JADX WARN: Removed duplicated region for block: B:23:0x005d  */
+    /* JADX WARN: Removed duplicated region for block: B:26:0x0062 A[Catch: all -> 0x0055, TryCatch #0 {all -> 0x0055, blocks: (B:5:0x000b, B:7:0x000f, B:9:0x0016, B:11:0x0024, B:13:0x0034, B:17:0x0048, B:26:0x0062, B:28:0x006a, B:30:0x0072, B:33:0x0082, B:35:0x0090, B:47:0x00b5, B:50:0x00bd, B:51:0x00c0, B:52:0x00c4, B:39:0x0099, B:41:0x009d, B:43:0x00ab, B:45:0x00b1, B:53:0x00c9, B:54:0x00cb, B:55:0x00cc, B:56:0x00d1, B:14:0x0041, B:57:0x00d2), top: B:63:0x000b }] */
+    /* JADX WARN: Removed duplicated region for block: B:36:0x0095  */
+    /* JADX WARN: Removed duplicated region for block: B:55:0x00cc A[Catch: all -> 0x0055, TryCatch #0 {all -> 0x0055, blocks: (B:5:0x000b, B:7:0x000f, B:9:0x0016, B:11:0x0024, B:13:0x0034, B:17:0x0048, B:26:0x0062, B:28:0x006a, B:30:0x0072, B:33:0x0082, B:35:0x0090, B:47:0x00b5, B:50:0x00bd, B:51:0x00c0, B:52:0x00c4, B:39:0x0099, B:41:0x009d, B:43:0x00ab, B:45:0x00b1, B:53:0x00c9, B:54:0x00cb, B:55:0x00cc, B:56:0x00d1, B:14:0x0041, B:57:0x00d2), top: B:63:0x000b }] */
+    /*
+        Code decompiled incorrectly, please refer to instructions dump.
+    */
+    public final Object b() {
+        String str;
+        String strX;
+        xw3 xw3Var;
+        int i2 = i.get();
+        if (this.d < i2) {
+            synchronized (this) {
+                try {
+                    if (this.d < i2) {
+                        v95 v95Var = h;
+                        mw2 mw2Var = z.b;
+                        Object objA = null;
+                        if (v95Var != null) {
+                            mw2Var = (mw2) v95Var.b.get();
+                            if (mw2Var.b()) {
+                                aa5 aa5Var = (aa5) mw2Var.a();
+                                Uri uri = (Uri) this.a.f;
+                                String str2 = this.b;
+                                if (uri != null) {
+                                    xw3Var = (xw3) aa5Var.a.get(uri.toString());
+                                } else {
+                                    aa5Var.getClass();
+                                    xw3Var = null;
+                                }
+                                if (xw3Var == null) {
+                                    str = null;
+                                    if (!(v95Var != null)) {
+                                        throw new IllegalStateException("Must call PhenotypeFlagInitializer.maybeInit() first");
+                                    }
+                                    sn snVar = this.a;
+                                    Uri uri2 = (Uri) snVar.f;
+                                    if (uri2 == null) {
+                                        Context context = v95Var.a;
+                                        throw null;
+                                    }
+                                    x95 x95VarA = la5.a(v95Var.a, uri2) ? x95.a(v95Var.a.getContentResolver(), uri2, pp1.A) : null;
+                                    if (x95VarA != null) {
+                                        String str3 = (String) x95VarA.b().get(this.b);
+                                        Object objA2 = str3 != null ? a(str3) : null;
+                                        if (objA2 == null) {
+                                            if (!snVar.b && (strX = fa5.v(v95Var.a).x(this.b)) != null) {
+                                                objA = a(strX);
+                                            }
+                                            objA2 = objA == null ? this.c : objA;
+                                        }
+                                        if (mw2Var.b()) {
+                                            objA2 = str == null ? this.c : a(str);
+                                        }
+                                        this.e = objA2;
+                                        this.d = i2;
+                                    }
+                                } else {
+                                    str = (String) xw3Var.get("".concat(str2));
+                                    if (!(v95Var != null)) {
+                                    }
+                                }
+                            } else {
+                                str = null;
+                                if (!(v95Var != null)) {
+                                }
+                            }
+                        }
+                    }
+                } finally {
+                }
+            }
+        }
+        return this.e;
+    }
+}

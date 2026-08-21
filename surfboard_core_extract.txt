@@ -1,0 +1,336 @@
+### SOURCE FILES ###
+jadx/resources/assets/explorer/surfboard-logo.png
+jadx/resources/assets/textmate/surfboard/syntaxes/surfboard.tmLanguage.json
+jadx/resources/lib/arm64-v8a/libconscrypt_jni.so
+jadx/resources/lib/arm64-v8a/libimage_processing_util_jni.so
+jadx/resources/lib/arm64-v8a/libsurface_util_jni.so
+jadx/resources/lib/arm64-v8a/libsurfboard.so
+jadx/sources/com/getsurfboard/ui/SurfboardApp.java
+jadx/sources/com/getsurfboard/ui/service/SurfboardTile.java
+jadx/sources/com/getsurfboard/ui/service/SurfboardVpn.java
+jadx/sources/com/getsurfboard/vpn/Jni.java
+jadx/sources/com/getsurfboard/vpn/JniKt.java
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java
+jadx/sources/io/netty/channel/unix/LimitsStaticallyReferencedJniMethods.java
+jadx/sources/org/conscrypt/NativeCryptoJni.java
+
+### JNI DECLARATIONS ###
+jadx/sources/defpackage/ha1.java:13281:            System.loadLibrary("surfboard");
+jadx/sources/androidx/camera/core/impl/utils/SurfaceUtil.java:10:        System.loadLibrary("surface_util_jni");
+jadx/sources/androidx/camera/core/ImageProcessingUtil.java:21:        System.loadLibrary("image_processing_util_jni");
+jadx/sources/com/getsurfboard/ui/SurfboardApp.java:241:                        System.loadLibrary("xlog");
+jadx/sources/com/getsurfboard/vpn/JniKt.java:31:    public static final native int dnsStrategyAlias();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:33:    public static final native int dnsStrategyAsyncDns();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:35:    public static final native int dnsStrategyDirect();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:37:    public static final native int dnsStrategyIP();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:39:    public static final native int dnsStrategyServer();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:41:    public static final native int getDNSTimeout();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:43:    public static final native String getDnsPlaceholder0();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:45:    public static final native String getDnsPlaceholder1();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:47:    public static final native String getFakeIpMapperEnd();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:49:    public static final native String getFakeIpMapperStart();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:51:    public static final native byte[] getPcapHeaderBytes();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:53:    public static final native String getTun6Address();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:55:    public static final native String getTunAddress();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:57:    public static final native String getXRayAddress();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:59:    public static final native int proxyDirect();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:61:    public static final native int proxyReject();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:63:    public static final native int proxyRejectDrop();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:65:    public static final native int proxySocks5();
+jadx/sources/com/getsurfboard/vpn/Jni.java:693:    private final native void returnAsyncDnsResult(int i, byte[] bArr);
+jadx/sources/com/getsurfboard/vpn/Jni.java:699:    private final native void startVPN(int i, int i2, int i3, boolean z, boolean z2, boolean z3);
+jadx/sources/com/getsurfboard/vpn/Jni.java:701:    private final native void stopVPN();
+jadx/sources/com/getsurfboard/vpn/Jni.java:784:    public final native String analyzeProtocol(int i, int i2);
+jadx/sources/com/getsurfboard/vpn/Jni.java:1260:    public final native void printAllTCPConnectionsInfo();
+jadx/sources/com/getsurfboard/vpn/Jni.java:1275:    public final native void resetAllTCPConnections();
+jadx/sources/com/getsurfboard/profile/SuffixTreeNative.java:10:public final class SuffixTreeNative implements AutoCloseable {
+jadx/sources/com/getsurfboard/profile/SuffixTreeNative.java:22:    public static final native boolean nativeBuild(String[] strArr, String str);
+jadx/sources/com/getsurfboard/profile/SuffixTreeNative.java:24:    private final native void nativeClose(long j);
+jadx/sources/com/getsurfboard/profile/SuffixTreeNative.java:27:    public static final native long nativeLoad(String str);
+jadx/sources/com/getsurfboard/profile/SuffixTreeNative.java:29:    private final native boolean nativeSearch(long j, String str);
+jadx/sources/com/getsurfboard/profile/SuffixTreeNative.java:31:    private final native boolean nativeSearchBuffer(long j, ByteBuffer byteBuffer, int i);
+jadx/sources/com/getsurfboard/xray/XRay.java:36:        System.loadLibrary("xlog");
+jadx/sources/com/getsurfboard/xray/XRay.java:37:        System.loadLibrary("xray");
+jadx/sources/com/getsurfboard/xray/XRay.java:48:    private static final native void nativeInit(String str);
+jadx/sources/com/getsurfboard/xray/XRay.java:50:    private static final native String nativeStart(String str, String str2, boolean z);
+jadx/sources/com/getsurfboard/xray/XRay.java:52:    private static final native void nativeStop();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:9:    public static native int errnoEAGAIN();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:11:    public static native int errnoEBADF();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:13:    public static native int errnoECONNRESET();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:15:    public static native int errnoEINPROGRESS();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:17:    public static native int errnoENOENT();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:19:    public static native int errnoENOTCONN();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:21:    public static native int errnoEPIPE();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:23:    public static native int errnoEWOULDBLOCK();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:25:    public static native int errorEALREADY();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:27:    public static native int errorECONNREFUSED();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:29:    public static native int errorEISCONN();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:31:    public static native int errorENETUNREACH();
+jadx/sources/io/netty/channel/unix/ErrorsStaticallyReferencedJniMethods.java:33:    public static native String strError(int i);
+jadx/sources/io/netty/channel/unix/LimitsStaticallyReferencedJniMethods.java:9:    public static native int iovMax();
+jadx/sources/io/netty/channel/unix/LimitsStaticallyReferencedJniMethods.java:11:    public static native int sizeOfjlong();
+jadx/sources/io/netty/channel/unix/LimitsStaticallyReferencedJniMethods.java:13:    public static native long ssizeMax();
+jadx/sources/io/netty/channel/unix/LimitsStaticallyReferencedJniMethods.java:15:    public static native int udsSunPathSize();
+jadx/sources/io/netty/channel/unix/LimitsStaticallyReferencedJniMethods.java:17:    public static native int uioMaxIov();
+jadx/sources/org/conscrypt/NativeCryptoJni.java:11:            System.loadLibrary("conscrypt_gmscore_jni");
+jadx/sources/org/conscrypt/NativeCryptoJni.java:13:            System.loadLibrary("conscrypt_jni");
+
+### EXACT API ###
+jadx/sources/defpackage/yw1.java:173:            builder.addAddress(JniKt.getTunAddress(), 32);
+jadx/sources/defpackage/yw1.java:174:            builder.addAddress(JniKt.getXRayAddress(), 32);
+jadx/sources/defpackage/yw1.java:176:                builder.addAddress(JniKt.getTun6Address(), 32);
+jadx/sources/defpackage/yw1.java:730:                        String xRayAddress = JniKt.getXRayAddress();
+jadx/sources/defpackage/yw1.java:836:                ez4.X("Jni.startVPN", new uw1(this, intent));
+jadx/sources/defpackage/lk.java:23:        this.b.promptRestartVPN();
+jadx/sources/defpackage/nk.java:26:    private boolean restartVpn;
+jadx/sources/defpackage/nk.java:35:        if (bool.booleanValue() || !nkVar.restartVpn) {
+jadx/sources/defpackage/nk.java:38:        nkVar.restartVpn = false;
+jadx/sources/defpackage/nk.java:110:        nkVar.restartVpn = true;
+jadx/sources/defpackage/nk.java:120:    public abstract Set getRestartVPNPreferenceKeys();
+jadx/sources/defpackage/nk.java:136:        Iterator it = getRestartVPNPreferenceKeys().iterator();
+jadx/sources/defpackage/nk.java:146:    public final void promptRestartVPN() {
+jadx/sources/defpackage/h94.java:24:        channel.pipeline().addLast(new Socks5ProxyHandler(new InetSocketAddress(JniKt.getXRayAddress(), this.b)));
+jadx/sources/com/getsurfboard/ui/service/SurfboardTile.java:306:            xb5.c("SurfboardTile: stopVpnService");
+jadx/sources/com/getsurfboard/ui/fragment/settings/NotificationSettingsFragment.java:36:    public Set<Integer> getRestartVPNPreferenceKeys() {
+jadx/sources/com/getsurfboard/ui/fragment/settings/OverrideSettingsFragment.java:127:    public Set<Integer> getRestartVPNPreferenceKeys() {
+jadx/sources/com/getsurfboard/ui/fragment/settings/OthersSettingsFragment.java:140:    public Set<Integer> getRestartVPNPreferenceKeys() {
+jadx/sources/com/getsurfboard/ui/fragment/settings/VpnSettingsFragment.java:159:        vpnSettingsFragment.promptRestartVPN();
+jadx/sources/com/getsurfboard/ui/fragment/settings/VpnSettingsFragment.java:183:    public Set<Integer> getRestartVPNPreferenceKeys() {
+jadx/sources/com/getsurfboard/ui/fragment/settings/AppSettingsFragment.java:223:    public Set<Integer> getRestartVPNPreferenceKeys() {
+jadx/sources/com/getsurfboard/vpn/JniKt.java:31:    public static final native int dnsStrategyAlias();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:33:    public static final native int dnsStrategyAsyncDns();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:35:    public static final native int dnsStrategyDirect();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:37:    public static final native int dnsStrategyIP();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:39:    public static final native int dnsStrategyServer();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:53:    public static final native String getTun6Address();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:55:    public static final native String getTunAddress();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:57:    public static final native String getXRayAddress();
+jadx/sources/com/getsurfboard/vpn/JniKt.java:65:    public static final native int proxySocks5();
+jadx/sources/com/getsurfboard/vpn/Jni.java:699:    private final native void startVPN(int i, int i2, int i3, boolean z, boolean z2, boolean z3);
+jadx/sources/com/getsurfboard/vpn/Jni.java:701:    private final native void stopVPN();
+jadx/sources/com/getsurfboard/vpn/Jni.java:1051:        String xRayAddress = JniKt.getXRayAddress();
+jadx/sources/com/getsurfboard/vpn/Jni.java:1180:        startVPN(i, rs4Var2.I0, i2, z, rs4Var2.F0, z2);
+jadx/sources/com/getsurfboard/vpn/Jni.java:1257:        stopVPN();
+
+### LIBRARY SYMBOLS ###
+   228: 0000000000079290     8 OBJECT  GLOBAL DEFAULT    23 mid_get_system_dns
+   235: 0000000000054fd8    32 OBJECT  GLOBAL DEFAULT    22 __emutls_v.jni_env
+   251: 000000000001e250   112 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_getFakeIpMapperEnd
+   262: 000000000002a0fc     4 FUNC    GLOBAL DEFAULT    13 dns_query_info__get_packed_size
+   268: 00000000000792a0     8 OBJECT  GLOBAL DEFAULT    23 mid_on_dns_response
+   287: 000000000002a100     4 FUNC    GLOBAL DEFAULT    13 dns_query_info__pack
+   326: 0000000000029d7c   404 FUNC    GLOBAL DEFAULT    13 on_dns_response
+   344: 000000000001e018   112 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_getXRayAddress
+   345: 000000000002a17c    12 FUNC    GLOBAL DEFAULT    13 dns_query_strategy__free_unpacked
+   346: 000000000002a154     4 FUNC    GLOBAL DEFAULT    13 dns_query_strategy__get_packed_size
+   348: 000000000001dc90   348 FUNC    GLOBAL DEFAULT    13 on_tun_recv
+   363: 000000000002ac70   180 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_getPcapHeaderBytes
+   377: 000000000001dfa8   112 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_getTunAddress
+   380: 000000000002a124    12 FUNC    GLOBAL DEFAULT    13 dns_query_info__free_unpacked
+   391: 000000000002a104     4 FUNC    GLOBAL DEFAULT    13 dns_query_info__pack_to_buffer
+   397: 000000000001e6fc  2272 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_Jni_startVPN
+   398: 0000000000054ff8    32 OBJECT  GLOBAL DEFAULT    22 __emutls_v.jni_object
+   435: 000000000001f164   156 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_Jni_printAllTCPConnectionsInfo
+   436: 0000000000029a50   812 FUNC    GLOBAL DEFAULT    13 on_dns_query
+   437: 000000000004eb28   120 OBJECT  GLOBAL DEFAULT    15 dns_query_strategy__descriptor
+   449: 000000000001dc28   104 FUNC    GLOBAL DEFAULT    13 tun_alloc_buffer
+   471: 0000000000054f58    32 OBJECT  GLOBAL DEFAULT    22 __emutls_v.tun_buffer
+   475: 0000000000055238     8 OBJECT  GLOBAL DEFAULT    23 doh_dns_pipefds
+   476: 000000000001e4c4   568 FUNC    GLOBAL DEFAULT    13 on_doh_dns_result_trigger
+   481: 000000000000f200    20 OBJECT  GLOBAL DEFAULT    10 xray_addr
+   482: 0000000000055098    32 OBJECT  GLOBAL DEFAULT    22 __emutls_v.tun_pipe
+   487: 000000000001e2d0     8 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_dnsStrategyAlias
+   488: 000000000001e310   384 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_Jni_returnAsyncDnsResult
+   489: 0000000000012300     8 OBJECT  GLOBAL DEFAULT    10 __emutls_t.jni_object
+   510: 000000000000f214    20 OBJECT  GLOBAL DEFAULT    10 dns_placeholder_0
+   511: 000000000001f0c8   156 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_Jni_resetAllTCPConnections
+   513: 0000000000022eb4   544 FUNC    GLOBAL DEFAULT    13 unpack_socks5_packet
+   514: 000000000002a130    36 FUNC    GLOBAL DEFAULT    13 dns_query_strategy__init
+   520: 000000000000f228    20 OBJECT  GLOBAL DEFAULT    10 dns_placeholder_1
+   523: 0000000000029120   544 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_Jni_analyzeProtocol
+   530: 0000000000023950   712 FUNC    GLOBAL DEFAULT    13 send_socks5_udp_data
+   546: 000000000000f1d8    20 OBJECT  GLOBAL DEFAULT    10 tun_ip6_addr
+   561: 00000000000122e8     8 OBJECT  GLOBAL DEFAULT    10 __emutls_t.tun_buffer
+   572: 000000000001dc24     4 FUNC    GLOBAL DEFAULT    13 on_tun_written
+   573: 000000000001df0c   156 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_Jni_stopVPN
+   583: 000000000001e100   112 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_getDnsPlaceholder0
+   588: 000000000001e170   112 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_getDnsPlaceholder1
+   593: 000000000001efdc   232 FUNC    GLOBAL DEFAULT    13 write_tun
+   620: 000000000001e088   120 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_getTun6Address
+   627: 000000000001e2c0     8 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_dnsStrategyDirect
+   632: 000000000004ea60   120 OBJECT  GLOBAL DEFAULT    15 dns_query_info__descriptor
+   633: 000000000002a158     4 FUNC    GLOBAL DEFAULT    13 dns_query_strategy__pack
+   644: 000000000002a108    28 FUNC    GLOBAL DEFAULT    13 dns_query_info__unpack
+   702: 000000000001e2f8     8 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_proxyRejectDrop
+   727: 00000000000122f8     8 OBJECT  GLOBAL DEFAULT    10 __emutls_t.jni_env
+   730: 000000000001e2c8     8 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_dnsStrategyIP
+   734: 000000000001e2d8     8 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_dnsStrategyServer
+   737: 000000000001e300     8 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_proxySocks5
+   739: 0000000000029f10   444 FUNC    GLOBAL DEFAULT    13 redirect_to_system_dns
+   745: 0000000000079298     8 OBJECT  GLOBAL DEFAULT    23 mid_on_dns_query
+   756: 000000000001f200    56 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_nativeCrash
+   764: 000000000001e1e0   112 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_getFakeIpMapperStart
+   767: 0000000000025cc8   392 FUNC    GLOBAL DEFAULT    13 send_socks5_connect
+   774: 000000000001e2f0     8 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_proxyReject
+   778: 000000000000f1b0    20 OBJECT  GLOBAL DEFAULT    10 tun_ip_addr
+   785: 000000000001e308     8 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_getDNSTimeout
+   793: 000000000001e2e8     8 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_proxyDirect
+   810: 000000000002a160    28 FUNC    GLOBAL DEFAULT    13 dns_query_strategy__unpack
+   814: 000000000001e2e0     8 FUNC    GLOBAL DEFAULT    13 Java_com_getsurfboard_vpn_JniKt_dnsStrategyAsyncDns
+   823: 000000000002a0cc    48 FUNC    GLOBAL DEFAULT    13 dns_query_info__init
+   867: 000000000002a15c     4 FUNC    GLOBAL DEFAULT    13 dns_query_strategy__pack_to_buffer
+
+### LIBRARY STRINGS ###
+on_tun_written
+tun_alloc_buffer
+__emutls_v.tun_buffer
+on_tun_recv
+__emutls_v.stopping
+uv_stop
+Java_com_getsurfboard_vpn_Jni_stopVPN
+Java_com_getsurfboard_vpn_JniKt_getTunAddress
+tun_ip_addr
+Java_com_getsurfboard_vpn_JniKt_getXRayAddress
+xray_addr
+Java_com_getsurfboard_vpn_JniKt_getTun6Address
+tun_ip6_addr
+Java_com_getsurfboard_vpn_JniKt_getDnsPlaceholder0
+dns_placeholder_0
+Java_com_getsurfboard_vpn_JniKt_getDnsPlaceholder1
+dns_placeholder_1
+Java_com_getsurfboard_vpn_JniKt_getFakeIpMapperStart
+fake_ip_mapper_start
+Java_com_getsurfboard_vpn_JniKt_getFakeIpMapperEnd
+Java_com_getsurfboard_vpn_JniKt_dnsStrategyDirect
+Java_com_getsurfboard_vpn_JniKt_dnsStrategyIP
+Java_com_getsurfboard_vpn_JniKt_dnsStrategyAlias
+Java_com_getsurfboard_vpn_JniKt_dnsStrategyServer
+Java_com_getsurfboard_vpn_JniKt_dnsStrategyAsyncDns
+Java_com_getsurfboard_vpn_JniKt_proxyDirect
+Java_com_getsurfboard_vpn_JniKt_proxyReject
+Java_com_getsurfboard_vpn_JniKt_proxyRejectDrop
+Java_com_getsurfboard_vpn_JniKt_proxySocks5
+Java_com_getsurfboard_vpn_JniKt_getDNSTimeout
+Java_com_getsurfboard_vpn_Jni_returnAsyncDnsResult
+doh_dns_pipefds
+on_doh_dns_result_trigger
+Java_com_getsurfboard_vpn_Jni_startVPN
+__emutls_v.jni_env
+__emutls_v.jni_object
+__emutls_v.tun_pipe
+uv_read_start
+on_stop_vpn_finished
+on_start_vpn_finished
+write_tun
+Java_com_getsurfboard_vpn_Jni_resetAllTCPConnections
+Java_com_getsurfboard_vpn_Jni_printAllTCPConnectionsInfo
+Java_com_getsurfboard_vpn_JniKt_nativeCrash
+__emutls_t.tun_buffer
+__emutls_t.jni_env
+__emutls_t.jni_object
+uv_timer_start
+uv_poll_start
+on_dns_response
+unpack_socks5_packet
+uv_udp_recv_start
+on_dns_query
+send_socks5_udp_data
+redirect_to_system_dns
+uv_read_stop
+send_socks5_connect
+mid_start_vpn_finished
+mid_stop_vpn_finished
+mid_get_system_dns
+mid_on_dns_query
+mid_on_dns_response
+Java_com_getsurfboard_vpn_Jni_analyzeProtocol
+dns_query_info__get_packed_size
+dns_query_info__pack
+dns_query_strategy__unpack
+dns_query_strategy__free_unpacked
+dns_query_info__descriptor
+dns_query_info__init
+dns_query_info__pack_to_buffer
+dns_query_info__unpack
+dns_query_info__free_unpacked
+dns_query_strategy__init
+dns_query_strategy__get_packed_size
+dns_query_strategy__pack
+dns_query_strategy__pack_to_buffer
+dns_query_strategy__descriptor
+Java_com_getsurfboard_vpn_JniKt_getPcapHeaderBytes
+uv__udp_recv_start
+uv_udp_recv_stop
+uv__udp_recv_stop
+uv__read_start
+uv_timer_stop
+uv_fs_poll_start
+uv_fs_poll_stop
+uv__io_stop
+uv__io_start
+uv_poll_stop
+uv__async_stop
+uv_fs_event_start
+uv_fs_event_stop
+uv_prepare_start
+uv_prepare_stop
+uv_check_start
+uv_check_stop
+uv_idle_start
+uv_idle_stop
+uv_signal_start
+uv_signal_start_oneshot
+uv_signal_stop
+STUN
+Jni.resetAllTCPConnections()
+uv_udp_recv_start failed %d %s
+send_socks5_udp_data: SOCKS_ATYP_IPV6 offset != data_len
+send_socks5_udp_data: SOCKS_ATYP_DOMAIN offset != data_len
+com/getsurfboard/vpn/Jni
+ENETUNREACH
+on_tun_recv: skip because of stopping
+icmp_input: uv_poll_start failed %d %s
+unpack_socks5_packet: socks_header size not match %zd
+Write async dns result pipe failed %d %s
+onDnsResponse
+DnsQueryInfo
+create doh dns result pipe failed %d: %s
+unpack_socks5_packet: host_len size not match %zd
+on_tcp_read: skip because of stopping
+onDnsQuery
+dns_response
+on_tun_recv error %zd %s
+onVpnStopped
+getSystemDns
+Jni.stopVpn()
+on_doh_dns_result_trigger error: %d, %s
+on_doh_dns_result_trigger read size not match: %d, %d
+on_doh_dns_result_trigger: unknown nread length %zd
+set doh dns result pipe non blocking failed %d: %s
+on_tcp_head_read: skip because of stopping
+on_doh_dns_result_trigger read fail: %d, %s
+Start looping.
+unpack_socks5_packet: socks_header rsv not match %d
+unpack_socks5_packet: ipv4 header_len not match %zd
+send_socks5_connect write_tcp_data failed
+DnsQueryStrategy
+Jni.printAllTCPConnectionsInfo()
+EHOSTUNREACH
+Write async dns result failed: response size exceeded limit %d
+start tcp server on port %d
+unpack_socks5_packet: socks_header fragment not supported %d
+send_socks5_udp_data: SOCKS_ATYP_IPV4 offset != data_len
+on_tun_recv: unknown ip version %d
+unpack_socks5_packet: domain header_len not match %zu %zd
+unpack_socks5_packet: ipv6 header_len not match %zd
+on_doh_dns_result_trigger: dns session not found %d
+Jni.startVPN() quit.
+send_socks5_udp_data: send_udp_data failed %d %s
+Jni.nativeCrash()
+Jni.startVPN() tun_fd %d, sdk_int %d, log_enabled %d, sshdump %d, ipv6 %d
+write_tun uv_write failed %d: %s
+start tcp server ipv6 on port %d
+unpack_socks5_packet: socks_header atype not match %d
+on_tcp_remote_connect write_socks_hello failed
+onVpnStarted
+dns_query

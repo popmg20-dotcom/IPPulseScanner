@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:focusable="true"
+    android:clickable="true"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/fragment_one_time_height"
+    android:stateListAnimator="@xml/animate_scale_1dot05"
+    app:cardElevation="0dp"
+    app:contentPadding="16dp"
+    app:strokeColor="@color/stroke_color"
+    app:strokeWidth="1dp">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/title"
+            android:scrollbars="none"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/traffic_usage"
+            app:drawableStartCompat="@drawable/ic_round_data_usage_24"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            style="@style/DashboardSmallCardTitleStyle"/>
+        <com.google.android.material.textview.MaterialTextView
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textStyle="bold"
+            android:id="@+id/upload_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="↑ 0"
+            android:maxLines="1"
+            android:lines="1"
+            android:layout_marginEnd="8dp"
+            app:autoSizeTextType="uniform"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/title"/>
+        <com.google.android.material.textview.MaterialTextView
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textStyle="bold"
+            android:id="@+id/download_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="↓ 0"
+            android:maxLines="1"
+            android:lines="1"
+            android:layout_marginEnd="8dp"
+            app:autoSizeTextType="uniform"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/upload_value"/>
+        <com.google.android.material.textview.MaterialTextView
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:id="@+id/upload_unit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text=" B"
+            app:fontFamily="monospace"
+            app:layout_constraintBottom_toBottomOf="@+id/upload_value"
+            app:layout_constraintEnd_toEndOf="parent"/>
+        <com.google.android.material.textview.MaterialTextView
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:id="@+id/download_unit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" B"
+            app:fontFamily="monospace"
+            app:layout_constraintBottom_toBottomOf="@+id/download_value"
+            app:layout_constraintEnd_toEndOf="@+id/upload_unit"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

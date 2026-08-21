@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="domain_set_deleted">
+        <item quantity="one">%d alan seti silindi</item>
+        <item quantity="other">%d alan seti silindi</item>
+    </plurals>
+    <plurals name="item_selected">
+        <item quantity="one">%d öğe seçildi</item>
+        <item quantity="other">%d öğe seçildi</item>
+    </plurals>
+    <plurals name="override_doh_summary_multiple">
+        <item quantity="one">%1$s (toplam %2$d sunucu)</item>
+        <item quantity="other">%1$s (toplam %2$d sunucu)</item>
+    </plurals>
+    <plurals name="policy_path_deleted">
+        <item quantity="one">%d politika yolu silindi</item>
+        <item quantity="other">%d politika yolu silindi</item>
+    </plurals>
+    <plurals name="reference_count">
+        <item quantity="one">%d profil tarafından kullanılıyor</item>
+        <item quantity="other">%d profil tarafından kullanılıyor</item>
+    </plurals>
+    <plurals name="requests_items">
+        <item quantity="one">%d öğe</item>
+        <item quantity="other">%d öğe</item>
+    </plurals>
+    <plurals name="rule_set_deleted">
+        <item quantity="one">%d kural seti silindi</item>
+        <item quantity="other">%d kural seti silindi</item>
+    </plurals>
+</resources>

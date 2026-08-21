@@ -1,0 +1,543 @@
+===== on_tun_recv =====
+
+apk/lib/arm64-v8a/libsurfboard.so:	file format elf64-littleaarch64
+
+Disassembly of section .text:
+
+000000000001dc90 <on_tun_recv>:
+   1dc90: a9bd7bfd     	stp	x29, x30, [sp, #-0x30]!
+   1dc94: a90157fc     	stp	x28, x21, [sp, #0x10]
+   1dc98: a9024ff4     	stp	x20, x19, [sp, #0x20]
+   1dc9c: 910003fd     	mov	x29, sp
+   1dca0: d14007ff     	sub	sp, sp, #0x1, lsl #12   // =0x1000
+   1dca4: d10043ff     	sub	sp, sp, #0x10
+   1dca8: d53bd055     	mrs	x21, TPIDR_EL0
+   1dcac: d0000180     	adrp	x0, 0x4f000 <proxy_strategy__descriptor+0x340>
+   1dcb0: aa0203f3     	mov	x19, x2
+   1dcb4: f94016a8     	ldr	x8, [x21, #0x28]
+   1dcb8: aa0103f4     	mov	x20, x1
+   1dcbc: f81f83a8     	stur	x8, [x29, #-0x8]
+   1dcc0: f9464000     	ldr	x0, [x0, #0xc80]
+   1dcc4: 9400ab5f     	bl	0x48a40 <__emutls_get_address@plt>
+   1dcc8: 39400008     	ldrb	w8, [x0]
+   1dccc: 34000148     	cbz	w8, 0x1dcf4 <on_tun_recv+0x64>
+   1dcd0: d0ffff83     	adrp	x3, 0xf000
+   1dcd4: 9125e463     	add	x3, x3, #0x979
+   1dcd8: 910023e0     	add	x0, sp, #0x8
+   1dcdc: 97ffffac     	bl	0x1db8c <on_handle_walk_callback+0x10c>
+   1dce0: 90ffffa1     	adrp	x1, 0x11000 <fake_ip_mapper_end+0x1db0>
+   1dce4: 91278c21     	add	x1, x1, #0x9e3
+   1dce8: 910023e2     	add	x2, sp, #0x8
+   1dcec: 52800060     	mov	w0, #0x3                // =3
+   1dcf0: 14000028     	b	0x1dd90 <on_tun_recv+0x100>
+   1dcf4: b7f802d4     	tbnz	x20, #0x3f, 0x1dd4c <on_tun_recv+0xbc>
+   1dcf8: b40004f4     	cbz	x20, 0x1dd94 <on_tun_recv+0x104>
+   1dcfc: f9400268     	ldr	x8, [x19]
+   1dd00: 52801a09     	mov	w9, #0xd0               // =208
+   1dd04: 39400108     	ldrb	w8, [x8]
+   1dd08: 0a090109     	and	w9, w8, w9
+   1dd0c: 53047d04     	lsr	w4, w8, #4
+   1dd10: 7101013f     	cmp	w9, #0x40
+   1dd14: 540002e1     	b.ne	0x1dd70 <on_tun_recv+0xe0>
+   1dd18: 7100109f     	cmp	w4, #0x4
+   1dd1c: 54000501     	b.ne	0x1ddbc <on_tun_recv+0x12c>
+   1dd20: f94016a8     	ldr	x8, [x21, #0x28]
+   1dd24: f85f83a9     	ldur	x9, [x29, #-0x8]
+   1dd28: eb09011f     	cmp	x8, x9
+   1dd2c: 540005e1     	b.ne	0x1dde8 <on_tun_recv+0x158>
+   1dd30: aa1303e0     	mov	x0, x19
+   1dd34: 914007ff     	add	sp, sp, #0x1, lsl #12   // =0x1000
+   1dd38: 910043ff     	add	sp, sp, #0x10
+   1dd3c: a9424ff4     	ldp	x20, x19, [sp, #0x20]
+   1dd40: a94157fc     	ldp	x28, x21, [sp, #0x10]
+   1dd44: a8c37bfd     	ldp	x29, x30, [sp], #0x30
+   1dd48: 1400ab72     	b	0x48b10 <ip4_input@plt>
+   1dd4c: 2a1403e0     	mov	w0, w20
+   1dd50: 9400ab74     	bl	0x48b20 <uv_strerror@plt>
+   1dd54: aa0003e5     	mov	x5, x0
+   1dd58: f0ffff83     	adrp	x3, 0x10000 <fake_ip_mapper_end+0xdb0>
+   1dd5c: 91260c63     	add	x3, x3, #0x983
+   1dd60: 910023e0     	add	x0, sp, #0x8
+   1dd64: aa1403e4     	mov	x4, x20
+   1dd68: 97ffff89     	bl	0x1db8c <on_handle_walk_callback+0x10c>
+   1dd6c: 14000005     	b	0x1dd80 <on_tun_recv+0xf0>
+   1dd70: 90ffffa3     	adrp	x3, 0x11000 <fake_ip_mapper_end+0x1db0>
+   1dd74: 91148463     	add	x3, x3, #0x521
+   1dd78: 910023e0     	add	x0, sp, #0x8
+   1dd7c: 97ffff84     	bl	0x1db8c <on_handle_walk_callback+0x10c>
+   1dd80: 90ffffa1     	adrp	x1, 0x11000 <fake_ip_mapper_end+0x1db0>
+   1dd84: 91278c21     	add	x1, x1, #0x9e3
+   1dd88: 910023e2     	add	x2, sp, #0x8
+   1dd8c: 528000c0     	mov	w0, #0x6                // =6
+   1dd90: 9400ab3c     	bl	0x48a80 <surfboard_xlog_write@plt>
+   1dd94: f94016a8     	ldr	x8, [x21, #0x28]
+   1dd98: f85f83a9     	ldur	x9, [x29, #-0x8]
+   1dd9c: eb09011f     	cmp	x8, x9
+   1dda0: 54000241     	b.ne	0x1dde8 <on_tun_recv+0x158>
+   1dda4: 914007ff     	add	sp, sp, #0x1, lsl #12   // =0x1000
+   1dda8: 910043ff     	add	sp, sp, #0x10
+   1ddac: a9424ff4     	ldp	x20, x19, [sp, #0x20]
+   1ddb0: a94157fc     	ldp	x28, x21, [sp, #0x10]
+   1ddb4: a8c37bfd     	ldp	x29, x30, [sp], #0x30
+   1ddb8: d65f03c0     	ret
+   1ddbc: f94016a8     	ldr	x8, [x21, #0x28]
+   1ddc0: f85f83a9     	ldur	x9, [x29, #-0x8]
+   1ddc4: eb09011f     	cmp	x8, x9
+   1ddc8: 54000101     	b.ne	0x1dde8 <on_tun_recv+0x158>
+   1ddcc: aa1303e0     	mov	x0, x19
+   1ddd0: 914007ff     	add	sp, sp, #0x1, lsl #12   // =0x1000
+   1ddd4: 910043ff     	add	sp, sp, #0x10
+   1ddd8: a9424ff4     	ldp	x20, x19, [sp, #0x20]
+   1dddc: a94157fc     	ldp	x28, x21, [sp, #0x10]
+   1dde0: a8c37bfd     	ldp	x29, x30, [sp], #0x30
+   1dde4: 1400ab53     	b	0x48b30 <ip6_input@plt>
+
+===== write_tun =====
+
+apk/lib/arm64-v8a/libsurfboard.so:	file format elf64-littleaarch64
+
+Disassembly of section .text:
+
+000000000001efdc <write_tun>:
+   1efdc: a9bd7bfd     	stp	x29, x30, [sp, #-0x30]!
+   1efe0: a90157fc     	stp	x28, x21, [sp, #0x10]
+   1efe4: a9024ff4     	stp	x20, x19, [sp, #0x20]
+   1efe8: 910003fd     	mov	x29, sp
+   1efec: d14007ff     	sub	sp, sp, #0x1, lsl #12   // =0x1000
+   1eff0: d10083ff     	sub	sp, sp, #0x20
+   1eff4: d53bd055     	mrs	x21, TPIDR_EL0
+   1eff8: aa0103f4     	mov	x20, x1
+   1effc: aa0003f3     	mov	x19, x0
+   1f000: f94016a8     	ldr	x8, [x21, #0x28]
+   1f004: 52800020     	mov	w0, #0x1                // =1
+   1f008: 52801801     	mov	w1, #0xc0               // =192
+   1f00c: f81f83a8     	stur	x8, [x29, #-0x8]
+   1f010: 9400a720     	bl	0x48c90 <calloc@plt>
+   1f014: f9400268     	ldr	x8, [x19]
+   1f018: aa0003f3     	mov	x19, x0
+   1f01c: 2a1403e1     	mov	w1, w20
+   1f020: aa0803e0     	mov	x0, x8
+   1f024: 9400a6b7     	bl	0x48b00 <uv_buf_init@plt>
+   1f028: a90087e0     	stp	x0, x1, [sp, #0x8]
+   1f02c: 90000180     	adrp	x0, 0x4f000 <proxy_strategy__descriptor+0x340>
+   1f030: f946ac00     	ldr	x0, [x0, #0xd58]
+   1f034: 9400a683     	bl	0x48a40 <__emutls_get_address@plt>
+   1f038: 90000184     	adrp	x4, 0x4f000 <proxy_strategy__descriptor+0x340>
+   1f03c: aa0003e1     	mov	x1, x0
+   1f040: 910023e2     	add	x2, sp, #0x8
+   1f044: f9462c84     	ldr	x4, [x4, #0xc58]
+   1f048: aa1303e0     	mov	x0, x19
+   1f04c: 52800023     	mov	w3, #0x1                // =1
+   1f050: 9400a76c     	bl	0x48e00 <uv_write@plt>
+   1f054: 34000220     	cbz	w0, 0x1f098 <write_tun+0xbc>
+   1f058: 2a0003f4     	mov	w20, w0
+   1f05c: aa1303e0     	mov	x0, x19
+   1f060: 9400a6a0     	bl	0x48ae0 <free@plt>
+   1f064: 2a1403e0     	mov	w0, w20
+   1f068: 9400a6ae     	bl	0x48b20 <uv_strerror@plt>
+   1f06c: aa0003e5     	mov	x5, x0
+   1f070: d0ffff83     	adrp	x3, 0x11000 <fake_ip_mapper_end+0x1db0>
+   1f074: 9139a463     	add	x3, x3, #0xe69
+   1f078: 910063e0     	add	x0, sp, #0x18
+   1f07c: 2a1403e4     	mov	w4, w20
+   1f080: 97fffac3     	bl	0x1db8c <on_handle_walk_callback+0x10c>
+   1f084: d0ffff81     	adrp	x1, 0x11000 <fake_ip_mapper_end+0x1db0>
+   1f088: 91278c21     	add	x1, x1, #0x9e3
+   1f08c: 910063e2     	add	x2, sp, #0x18
+   1f090: 528000c0     	mov	w0, #0x6                // =6
+   1f094: 9400a67b     	bl	0x48a80 <surfboard_xlog_write@plt>
+   1f098: f94016a8     	ldr	x8, [x21, #0x28]
+   1f09c: f85f83a9     	ldur	x9, [x29, #-0x8]
+   1f0a0: eb09011f     	cmp	x8, x9
+   1f0a4: 540000e1     	b.ne	0x1f0c0 <write_tun+0xe4>
+   1f0a8: 914007ff     	add	sp, sp, #0x1, lsl #12   // =0x1000
+   1f0ac: 910083ff     	add	sp, sp, #0x20
+   1f0b0: a9424ff4     	ldp	x20, x19, [sp, #0x20]
+   1f0b4: a94157fc     	ldp	x28, x21, [sp, #0x10]
+   1f0b8: a8c37bfd     	ldp	x29, x30, [sp], #0x30
+   1f0bc: d65f03c0     	ret
+   1f0c0: 9400a680     	bl	0x48ac0 <__stack_chk_fail@plt>
+
+000000000001f0c4 <on_timer_close>:
+   1f0c4: 1400a687     	b	0x48ae0 <free@plt>
+
+000000000001f0c8 <Java_com_getsurfboard_vpn_Jni_resetAllTCPConnections>:
+   1f0c8: a9bd7bfd     	stp	x29, x30, [sp, #-0x30]!
+
+===== connect_remote =====
+
+apk/lib/arm64-v8a/libsurfboard.so:	file format elf64-littleaarch64
+
+Disassembly of section .text:
+
+0000000000024c2c <connect_remote>:
+   24c2c: a9bc7bfd     	stp	x29, x30, [sp, #-0x40]!
+   24c30: a9015ffc     	stp	x28, x23, [sp, #0x10]
+   24c34: a90257f6     	stp	x22, x21, [sp, #0x20]
+   24c38: a9034ff4     	stp	x20, x19, [sp, #0x30]
+   24c3c: 910003fd     	mov	x29, sp
+   24c40: d14007ff     	sub	sp, sp, #0x1, lsl #12   // =0x1000
+   24c44: d10043ff     	sub	sp, sp, #0x10
+   24c48: d53bd057     	mrs	x23, TPIDR_EL0
+   24c4c: aa0103f5     	mov	x21, x1
+   24c50: aa0003f3     	mov	x19, x0
+   24c54: f94016e8     	ldr	x8, [x23, #0x28]
+   24c58: 52800020     	mov	w0, #0x1                // =1
+   24c5c: 52801f01     	mov	w1, #0xf8               // =248
+   24c60: 2a0203f6     	mov	w22, w2
+   24c64: f81f83a8     	stur	x8, [x29, #-0x8]
+   24c68: 9400900a     	bl	0x48c90 <calloc@plt>
+   24c6c: b4000380     	cbz	x0, 0x24cdc <connect_remote+0xb0>
+   24c70: aa0003f4     	mov	x20, x0
+   24c74: f0000140     	adrp	x0, 0x4f000 <proxy_strategy__descriptor+0x340>
+   24c78: f9462400     	ldr	x0, [x0, #0xc48]
+   24c7c: 94008f71     	bl	0x48a40 <__emutls_get_address@plt>
+   24c80: 794002a2     	ldrh	w2, [x21]
+   24c84: f9400000     	ldr	x0, [x0]
+   24c88: aa1403e1     	mov	x1, x20
+   24c8c: 94009165     	bl	0x49220 <uv_tcp_init_ex@plt>
+   24c90: 34000300     	cbz	w0, 0x24cf0 <connect_remote+0xc4>
+   24c94: 2a0003f5     	mov	w21, w0
+   24c98: 94008fa2     	bl	0x48b20 <uv_strerror@plt>
+   24c9c: aa0003e5     	mov	x5, x0
+   24ca0: d0ffff63     	adrp	x3, 0x12000 <fake_ip_mapper_end+0x2db0>
+   24ca4: 9105f463     	add	x3, x3, #0x17d
+   24ca8: 910023e0     	add	x0, sp, #0x8
+   24cac: 2a1503e4     	mov	w4, w21
+   24cb0: 97fffcb7     	bl	0x23f8c <on_tcp_connection_replace_close+0x10c>
+   24cb4: b0ffff61     	adrp	x1, 0x11000 <fake_ip_mapper_end+0x1db0>
+   24cb8: 91278c21     	add	x1, x1, #0x9e3
+   24cbc: 910023e2     	add	x2, sp, #0x8
+   24cc0: 528000c0     	mov	w0, #0x6                // =6
+   24cc4: 94008f6f     	bl	0x48a80 <surfboard_xlog_write@plt>
+   24cc8: aa1403e0     	mov	x0, x20
+   24ccc: 94008f85     	bl	0x48ae0 <free@plt>
+   24cd0: f9401260     	ldr	x0, [x19, #0x20]
+   24cd4: b5000ae0     	cbnz	x0, 0x24e30 <connect_remote+0x204>
+   24cd8: 1400005c     	b	0x24e48 <connect_remote+0x21c>
+   24cdc: f0ffff43     	adrp	x3, 0xf000
+   24ce0: 910cd063     	add	x3, x3, #0x334
+   24ce4: 910023e0     	add	x0, sp, #0x8
+   24ce8: 97fffca9     	bl	0x23f8c <on_tcp_connection_replace_close+0x10c>
+   24cec: 1400004a     	b	0x24e14 <connect_remote+0x1e8>
+   24cf0: 12800008     	mov	w8, #-0x1               // =-1
+   24cf4: 910013e1     	add	x1, sp, #0x4
+   24cf8: aa1403e0     	mov	x0, x20
+   24cfc: f9001674     	str	x20, [x19, #0x28]
+   24d00: f9000293     	str	x19, [x20]
+   24d04: b90007e8     	str	w8, [sp, #0x4]
+   24d08: 9400905e     	bl	0x48e80 <uv_fileno@plt>
+   24d0c: 34000140     	cbz	w0, 0x24d34 <connect_remote+0x108>
+   24d10: 2a0003f4     	mov	w20, w0
+   24d14: 94008f83     	bl	0x48b20 <uv_strerror@plt>
+   24d18: aa0003e5     	mov	x5, x0
+   24d1c: f0ffff43     	adrp	x3, 0xf000
+   24d20: 912f1c63     	add	x3, x3, #0xbc7
+   24d24: 910023e0     	add	x0, sp, #0x8
+   24d28: 2a1403e4     	mov	w4, w20
+   24d2c: 97fffc98     	bl	0x23f8c <on_tcp_connection_replace_close+0x10c>
+   24d30: 14000039     	b	0x24e14 <connect_remote+0x1e8>
+   24d34: b94007e0     	ldr	w0, [sp, #0x4]
+   24d38: 940090a6     	bl	0x48fd0 <protect@plt>
+   24d3c: 36000620     	tbz	w0, #0x0, 0x24e00 <connect_remote+0x1d4>
+   24d40: 120002c1     	and	w1, w22, #0x1
+   24d44: aa1403e0     	mov	x0, x20
+   24d48: 9400913a     	bl	0x49230 <uv_tcp_nodelay@plt>
+   24d4c: 340001c0     	cbz	w0, 0x24d84 <connect_remote+0x158>
+   24d50: 2a0003f6     	mov	w22, w0
+   24d54: 94008f73     	bl	0x48b20 <uv_strerror@plt>
+   24d58: aa0003e5     	mov	x5, x0
+   24d5c: b0ffff63     	adrp	x3, 0x11000 <fake_ip_mapper_end+0x1db0>
+   24d60: 91246c63     	add	x3, x3, #0x91b
+   24d64: 910023e0     	add	x0, sp, #0x8
+   24d68: 2a1603e4     	mov	w4, w22
+   24d6c: 97fffc88     	bl	0x23f8c <on_tcp_connection_replace_close+0x10c>
+   24d70: b0ffff61     	adrp	x1, 0x11000 <fake_ip_mapper_end+0x1db0>
+   24d74: 91278c21     	add	x1, x1, #0x9e3
+   24d78: 910023e2     	add	x2, sp, #0x8
+   24d7c: 528000c0     	mov	w0, #0x6                // =6
+   24d80: 94008f40     	bl	0x48a80 <surfboard_xlog_write@plt>
+   24d84: 52800020     	mov	w0, #0x1                // =1
+   24d88: 52800c01     	mov	w1, #0x60               // =96
+   24d8c: 94008fc1     	bl	0x48c90 <calloc@plt>
+   24d90: f9000013     	str	x19, [x0]
+   24d94: f0000143     	adrp	x3, 0x4f000 <proxy_strategy__descriptor+0x340>
+   24d98: aa1403e1     	mov	x1, x20
+   24d9c: f9473063     	ldr	x3, [x3, #0xe60]
+   24da0: aa1503e2     	mov	x2, x21
+   24da4: aa0003f6     	mov	x22, x0
+   24da8: 94009126     	bl	0x49240 <uv_tcp_connect@plt>
+   24dac: 34000780     	cbz	w0, 0x24e9c <connect_remote+0x270>
+   24db0: b9400274     	ldr	w20, [x19]
+   24db4: 2a0003f5     	mov	w21, w0
+   24db8: 94008f5a     	bl	0x48b20 <uv_strerror@plt>
+   24dbc: aa0003e6     	mov	x6, x0
+   24dc0: b0ffff63     	adrp	x3, 0x11000 <fake_ip_mapper_end+0x1db0>
+   24dc4: 910c0863     	add	x3, x3, #0x302
+   24dc8: 910023e0     	add	x0, sp, #0x8
+   24dcc: 2a1403e4     	mov	w4, w20
+   24dd0: 2a1503e5     	mov	w5, w21
+   24dd4: 97fffc6e     	bl	0x23f8c <on_tcp_connection_replace_close+0x10c>
+   24dd8: b0ffff61     	adrp	x1, 0x11000 <fake_ip_mapper_end+0x1db0>
+   24ddc: 91278c21     	add	x1, x1, #0x9e3
+   24de0: 910023e2     	add	x2, sp, #0x8
+   24de4: 528000c0     	mov	w0, #0x6                // =6
+   24de8: 94008f26     	bl	0x48a80 <surfboard_xlog_write@plt>
+   24dec: aa1603e0     	mov	x0, x22
+   24df0: 94008f3c     	bl	0x48ae0 <free@plt>
+   24df4: f9401260     	ldr	x0, [x19, #0x20]
+   24df8: b50001c0     	cbnz	x0, 0x24e30 <connect_remote+0x204>
+   24dfc: 14000013     	b	0x24e48 <connect_remote+0x21c>
+   24e00: b9400264     	ldr	w4, [x19]
+   24e04: b0ffff63     	adrp	x3, 0x11000 <fake_ip_mapper_end+0x1db0>
+   24e08: 9136c063     	add	x3, x3, #0xdb0
+   24e0c: 910023e0     	add	x0, sp, #0x8
+   24e10: 97fffc5f     	bl	0x23f8c <on_tcp_connection_replace_close+0x10c>
+   24e14: b0ffff61     	adrp	x1, 0x11000 <fake_ip_mapper_end+0x1db0>
+   24e18: 91278c21     	add	x1, x1, #0x9e3
+   24e1c: 910023e2     	add	x2, sp, #0x8
+   24e20: 528000c0     	mov	w0, #0x6                // =6
+   24e24: 94008f17     	bl	0x48a80 <surfboard_xlog_write@plt>
+   24e28: f9401260     	ldr	x0, [x19, #0x20]
+   24e2c: b40000e0     	cbz	x0, 0x24e48 <connect_remote+0x21c>
+   24e30: 94008f0c     	bl	0x48a60 <uv_is_closing@plt>
+   24e34: 350000a0     	cbnz	w0, 0x24e48 <connect_remote+0x21c>
+   24e38: f0000141     	adrp	x1, 0x4f000 <proxy_strategy__descriptor+0x340>
+   24e3c: f9401260     	ldr	x0, [x19, #0x20]
+   24e40: f9472821     	ldr	x1, [x1, #0xe50]
+   24e44: 94008f1b     	bl	0x48ab0 <uv_close@plt>
+   24e48: f9401660     	ldr	x0, [x19, #0x28]
+   24e4c: b4000060     	cbz	x0, 0x24e58 <connect_remote+0x22c>
+   24e50: 94008f04     	bl	0x48a60 <uv_is_closing@plt>
+   24e54: 34000140     	cbz	w0, 0x24e7c <connect_remote+0x250>
+   24e58: f9401268     	ldr	x8, [x19, #0x20]
+   24e5c: 528000e9     	mov	w9, #0x7                // =7
+   24e60: b9001a69     	str	w9, [x19, #0x18]
+   24e64: b50001c8     	cbnz	x8, 0x24e9c <connect_remote+0x270>
+   24e68: f9401668     	ldr	x8, [x19, #0x28]
+   24e6c: b5000188     	cbnz	x8, 0x24e9c <connect_remote+0x270>
+   24e70: aa1303e0     	mov	x0, x19
+   24e74: 940090b7     	bl	0x49150 <free_tcp_connection_after_close@plt>
+   24e78: 14000009     	b	0x24e9c <connect_remote+0x270>
+   24e7c: f0000141     	adrp	x1, 0x4f000 <proxy_strategy__descriptor+0x340>
+   24e80: f9401660     	ldr	x0, [x19, #0x28]
+   24e84: f9472821     	ldr	x1, [x1, #0xe50]
+   24e88: 94008f0a     	bl	0x48ab0 <uv_close@plt>
+   24e8c: f9401268     	ldr	x8, [x19, #0x20]
+   24e90: 528000e9     	mov	w9, #0x7                // =7
+   24e94: b9001a69     	str	w9, [x19, #0x18]
+   24e98: b4fffe88     	cbz	x8, 0x24e68 <connect_remote+0x23c>
+   24e9c: f94016e8     	ldr	x8, [x23, #0x28]
+   24ea0: f85f83a9     	ldur	x9, [x29, #-0x8]
+   24ea4: eb09011f     	cmp	x8, x9
+   24ea8: 54000101     	b.ne	0x24ec8 <connect_remote+0x29c>
+   24eac: 914007ff     	add	sp, sp, #0x1, lsl #12   // =0x1000
+   24eb0: 910043ff     	add	sp, sp, #0x10
+   24eb4: a9434ff4     	ldp	x20, x19, [sp, #0x30]
+   24eb8: a94257f6     	ldp	x22, x21, [sp, #0x20]
+   24ebc: a9415ffc     	ldp	x28, x23, [sp, #0x10]
+   24ec0: a8c47bfd     	ldp	x29, x30, [sp], #0x40
+   24ec4: d65f03c0     	ret
+   24ec8: 94008efe     	bl	0x48ac0 <__stack_chk_fail@plt>
+
+===== open_udp_socket =====
+
+apk/lib/arm64-v8a/libsurfboard.so:	file format elf64-littleaarch64
+
+Disassembly of section .text:
+
+0000000000023830 <open_udp_socket>:
+   23830: a9bc7bfd     	stp	x29, x30, [sp, #-0x40]!
+   23834: f9000bfc     	str	x28, [sp, #0x10]
+   23838: a90257f6     	stp	x22, x21, [sp, #0x20]
+   2383c: a9034ff4     	stp	x20, x19, [sp, #0x30]
+   23840: 910003fd     	mov	x29, sp
+   23844: d14007ff     	sub	sp, sp, #0x1, lsl #12   // =0x1000
+   23848: d10043ff     	sub	sp, sp, #0x10
+   2384c: d53bd056     	mrs	x22, TPIDR_EL0
+   23850: aa0103f4     	mov	x20, x1
+   23854: 2a0003f5     	mov	w21, w0
+   23858: f94016c8     	ldr	x8, [x22, #0x28]
+   2385c: 52800020     	mov	w0, #0x1                // =1
+   23860: 52801b01     	mov	w1, #0xd8               // =216
+   23864: f81f83a8     	stur	x8, [x29, #-0x8]
+   23868: 9400950a     	bl	0x48c90 <calloc@plt>
+   2386c: aa0003f3     	mov	x19, x0
+   23870: 90000160     	adrp	x0, 0x4f000 <proxy_strategy__descriptor+0x340>
+   23874: f9462400     	ldr	x0, [x0, #0xc48]
+   23878: 94009472     	bl	0x48a40 <__emutls_get_address@plt>
+   2387c: 710012bf     	cmp	w21, #0x4
+   23880: f9400000     	ldr	x0, [x0]
+   23884: 52800148     	mov	w8, #0xa                // =10
+   23888: 52800049     	mov	w9, #0x2                // =2
+   2388c: aa1303e1     	mov	x1, x19
+   23890: 1a880122     	csel	w2, w9, w8, eq
+   23894: 94009623     	bl	0x49120 <uv_udp_init_ex@plt>
+   23898: 34000140     	cbz	w0, 0x238c0 <open_udp_socket+0x90>
+   2389c: 2a0003f4     	mov	w20, w0
+   238a0: 940094a0     	bl	0x48b20 <uv_strerror@plt>
+   238a4: aa0003e5     	mov	x5, x0
+   238a8: d0ffff63     	adrp	x3, 0x11000 <fake_ip_mapper_end+0x1db0>
+   238ac: 91067863     	add	x3, x3, #0x19e
+   238b0: 910023e0     	add	x0, sp, #0x8
+   238b4: 2a1403e4     	mov	w4, w20
+   238b8: 97fffc7f     	bl	0x22ab4 <on_udp_sent+0x104>
+   238bc: 14000010     	b	0x238fc <open_udp_socket+0xcc>
+   238c0: aa1303e0     	mov	x0, x19
+   238c4: 9400956b     	bl	0x48e70 <get_fd_from_uv_handle@plt>
+   238c8: 3100041f     	cmn	w0, #0x1
+   238cc: 540000a0     	b.eq	0x238e0 <open_udp_socket+0xb0>
+   238d0: 940095c0     	bl	0x48fd0 <protect@plt>
+   238d4: 360000c0     	tbz	w0, #0x0, 0x238ec <open_udp_socket+0xbc>
+   238d8: f9000274     	str	x20, [x19]
+   238dc: 14000010     	b	0x2391c <open_udp_socket+0xec>
+   238e0: 90ffff63     	adrp	x3, 0xf000
+   238e4: 910b9c63     	add	x3, x3, #0x2e7
+   238e8: 14000003     	b	0x238f4 <open_udp_socket+0xc4>
+   238ec: d0ffff63     	adrp	x3, 0x11000 <fake_ip_mapper_end+0x1db0>
+   238f0: 913a2863     	add	x3, x3, #0xe8a
+   238f4: 910023e0     	add	x0, sp, #0x8
+   238f8: 97fffc6f     	bl	0x22ab4 <on_udp_sent+0x104>
+   238fc: d0ffff61     	adrp	x1, 0x11000 <fake_ip_mapper_end+0x1db0>
+   23900: 91278c21     	add	x1, x1, #0x9e3
+   23904: 910023e2     	add	x2, sp, #0x8
+   23908: 528000c0     	mov	w0, #0x6                // =6
+   2390c: 9400945d     	bl	0x48a80 <surfboard_xlog_write@plt>
+   23910: aa1303e0     	mov	x0, x19
+   23914: 94009473     	bl	0x48ae0 <free@plt>
+   23918: aa1f03f3     	mov	x19, xzr
+   2391c: f94016c8     	ldr	x8, [x22, #0x28]
+   23920: f85f83a9     	ldur	x9, [x29, #-0x8]
+   23924: eb09011f     	cmp	x8, x9
+   23928: 54000121     	b.ne	0x2394c <open_udp_socket+0x11c>
+   2392c: aa1303e0     	mov	x0, x19
+   23930: 914007ff     	add	sp, sp, #0x1, lsl #12   // =0x1000
+   23934: 910043ff     	add	sp, sp, #0x10
+   23938: a9434ff4     	ldp	x20, x19, [sp, #0x30]
+   2393c: f9400bfc     	ldr	x28, [sp, #0x10]
+   23940: a94257f6     	ldp	x22, x21, [sp, #0x20]
+   23944: a8c47bfd     	ldp	x29, x30, [sp], #0x40
+   23948: d65f03c0     	ret
+   2394c: 9400945d     	bl	0x48ac0 <__stack_chk_fail@plt>
+
+===== bridge_tcp_stream =====
+
+apk/lib/arm64-v8a/libsurfboard.so:	file format elf64-littleaarch64
+
+Disassembly of section .text:
+
+0000000000025274 <bridge_tcp_stream>:
+   25274: a9bd7bfd     	stp	x29, x30, [sp, #-0x30]!
+   25278: f9000bf5     	str	x21, [sp, #0x10]
+   2527c: a9024ff4     	stp	x20, x19, [sp, #0x20]
+   25280: 910003fd     	mov	x29, sp
+   25284: aa0003f4     	mov	x20, x0
+   25288: aa0003f3     	mov	x19, x0
+   2528c: 52800089     	mov	w9, #0x4                // =4
+   25290: f8440e88     	ldr	x8, [x20, #0x40]!
+   25294: b81d8289     	stur	w9, [x20, #-0x28]
+   25298: b40002a8     	cbz	x8, 0x252ec <bridge_tcp_stream+0x78>
+   2529c: f9402661     	ldr	x1, [x19, #0x48]
+   252a0: b4000261     	cbz	x1, 0x252ec <bridge_tcp_stream+0x78>
+   252a4: f9401260     	ldr	x0, [x19, #0x20]
+   252a8: aa1403e2     	mov	x2, x20
+   252ac: 94008ff5     	bl	0x49280 <on_tcp_read@plt>
+   252b0: f9402260     	ldr	x0, [x19, #0x40]
+   252b4: b4000060     	cbz	x0, 0x252c0 <bridge_tcp_stream+0x4c>
+   252b8: 94008e0a     	bl	0x48ae0 <free@plt>
+   252bc: a9007e9f     	stp	xzr, xzr, [x20]
+   252c0: d0000141     	adrp	x1, 0x4f000 <proxy_strategy__descriptor+0x340>
+   252c4: d0000142     	adrp	x2, 0x4f000 <proxy_strategy__descriptor+0x340>
+   252c8: f9401660     	ldr	x0, [x19, #0x28]
+   252cc: f9471c21     	ldr	x1, [x1, #0xe38]
+   252d0: f9473842     	ldr	x2, [x2, #0xe70]
+   252d4: 94008e93     	bl	0x48d20 <uv_read_start@plt>
+   252d8: a9007e9f     	stp	xzr, xzr, [x20]
+   252dc: a9424ff4     	ldp	x20, x19, [sp, #0x20]
+   252e0: f9400bf5     	ldr	x21, [sp, #0x10]
+   252e4: a8c37bfd     	ldp	x29, x30, [sp], #0x30
+   252e8: d65f03c0     	ret
+   252ec: d0000154     	adrp	x20, 0x4f000 <proxy_strategy__descriptor+0x340>
+   252f0: d0000155     	adrp	x21, 0x4f000 <proxy_strategy__descriptor+0x340>
+   252f4: f9401660     	ldr	x0, [x19, #0x28]
+   252f8: f9471e94     	ldr	x20, [x20, #0xe38]
+   252fc: f9473ab5     	ldr	x21, [x21, #0xe70]
+   25300: aa1403e1     	mov	x1, x20
+   25304: aa1503e2     	mov	x2, x21
+   25308: 94008e86     	bl	0x48d20 <uv_read_start@plt>
+   2530c: f9401260     	ldr	x0, [x19, #0x20]
+   25310: aa1403e1     	mov	x1, x20
+   25314: aa1503e2     	mov	x2, x21
+   25318: a9424ff4     	ldp	x20, x19, [sp, #0x20]
+   2531c: f9400bf5     	ldr	x21, [sp, #0x10]
+   25320: a8c37bfd     	ldp	x29, x30, [sp], #0x30
+   25324: 14008e7f     	b	0x48d20 <uv_read_start@plt>
+
+0000000000025328 <close_tcp_connection_when_needed>:
+   25328: a9be7bfd     	stp	x29, x30, [sp, #-0x20]!
+   2532c: f9000bf3     	str	x19, [sp, #0x10]
+   25330: 910003fd     	mov	x29, sp
+   25334: aa0003f3     	mov	x19, x0
+   25338: f9401000     	ldr	x0, [x0, #0x20]
+   2533c: b4000160     	cbz	x0, 0x25368 <close_tcp_connection_when_needed+0x40>
+   25340: b9405808     	ldr	w8, [x0, #0x58]
+   25344: 52814009     	mov	w9, #0xa00              // =2560
+   25348: 6a28013f     	bics	wzr, w9, w8
+   2534c: 540000e1     	b.ne	0x25368 <close_tcp_connection_when_needed+0x40>
+
+===== write_tcp_data =====
+
+apk/lib/arm64-v8a/libsurfboard.so:	file format elf64-littleaarch64
+
+Disassembly of section .text:
+
+00000000000251b0 <write_tcp_data>:
+   251b0: a9bc7bfd     	stp	x29, x30, [sp, #-0x40]!
+   251b4: a9015ff8     	stp	x24, x23, [sp, #0x10]
+   251b8: a90257f6     	stp	x22, x21, [sp, #0x20]
+   251bc: a9034ff4     	stp	x20, x19, [sp, #0x30]
+   251c0: 910003fd     	mov	x29, sp
+   251c4: aa0103f7     	mov	x23, x1
+   251c8: aa0003f8     	mov	x24, x0
+   251cc: 52800020     	mov	w0, #0x1                // =1
+   251d0: 52801801     	mov	w1, #0xc0               // =192
+   251d4: aa0303f5     	mov	x21, x3
+   251d8: aa0203f6     	mov	x22, x2
+   251dc: 94008ead     	bl	0x48c90 <calloc@plt>
+   251e0: aa0003f3     	mov	x19, x0
+   251e4: 52800020     	mov	w0, #0x1                // =1
+   251e8: 52800301     	mov	w1, #0x18               // =24
+   251ec: 94008ea9     	bl	0x48c90 <calloc@plt>
+   251f0: aa0003f4     	mov	x20, x0
+   251f4: f9000018     	str	x24, [x0]
+   251f8: aa1503e0     	mov	x0, x21
+   251fc: 94008e3d     	bl	0x48af0 <malloc@plt>
+   25200: aa1403f8     	mov	x24, x20
+   25204: aa1603e1     	mov	x1, x22
+   25208: aa1503e2     	mov	x2, x21
+   2520c: f8008f00     	str	x0, [x24, #0x8]!
+   25210: f9000a95     	str	x21, [x20, #0x10]
+   25214: 94008e5f     	bl	0x48b90 <memcpy@plt>
+   25218: f9000274     	str	x20, [x19]
+   2521c: d0000144     	adrp	x4, 0x4f000 <proxy_strategy__descriptor+0x340>
+   25220: aa1303e0     	mov	x0, x19
+   25224: f9473484     	ldr	x4, [x4, #0xe68]
+   25228: aa1703e1     	mov	x1, x23
+   2522c: aa1803e2     	mov	x2, x24
+   25230: 52800023     	mov	w3, #0x1                // =1
+   25234: 94008ef3     	bl	0x48e00 <uv_write@plt>
+   25238: 34000140     	cbz	w0, 0x25260 <write_tcp_data+0xb0>
+   2523c: f9400688     	ldr	x8, [x20, #0x8]
+   25240: 2a0003f5     	mov	w21, w0
+   25244: aa0803e0     	mov	x0, x8
+   25248: 94008e26     	bl	0x48ae0 <free@plt>
+   2524c: aa1403e0     	mov	x0, x20
+   25250: 94008e24     	bl	0x48ae0 <free@plt>
+   25254: aa1303e0     	mov	x0, x19
+   25258: 94008e22     	bl	0x48ae0 <free@plt>
+   2525c: 2a1503e0     	mov	w0, w21
+   25260: a9434ff4     	ldp	x20, x19, [sp, #0x30]
+   25264: a94257f6     	ldp	x22, x21, [sp, #0x20]
+   25268: a9415ff8     	ldp	x24, x23, [sp, #0x10]
+   2526c: a8c47bfd     	ldp	x29, x30, [sp], #0x40
+   25270: d65f03c0     	ret

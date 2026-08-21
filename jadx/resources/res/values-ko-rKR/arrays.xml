@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="setting_override_ipv6_entries">
+        <item>설정 따라</item>
+        <item>켜기</item>
+        <item>끄기</item>
+    </array>
+    <array name="setting_override_lan_share_listen_entries">
+        <item>LAN</item>
+        <item>로컬 전용</item>
+    </array>
+    <array name="setting_tls_fingerprint_entries">
+        <item>레거시</item>
+        <item>UTLS</item>
+    </array>
+    <array name="setting_traffic_statistics_entries">
+        <item>모두 포함</item>
+        <item>프록시만</item>
+    </array>
+</resources>

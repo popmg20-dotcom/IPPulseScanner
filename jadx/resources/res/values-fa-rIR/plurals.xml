@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="domain_set_deleted">
+        <item quantity="one">%d مجموعه دامنه حذف شد</item>
+        <item quantity="other">%d مجموعه دامنه حذف شد</item>
+    </plurals>
+    <plurals name="item_selected">
+        <item quantity="one">%d مورد انتخاب شد</item>
+        <item quantity="other">%d مورد انتخاب شد</item>
+    </plurals>
+    <plurals name="override_doh_summary_multiple">
+        <item quantity="one">%1$s (در مجموع %2$d سرور)</item>
+        <item quantity="other">%1$s (در مجموع %2$d سرور)</item>
+    </plurals>
+    <plurals name="policy_path_deleted">
+        <item quantity="one">%d مسیر خط‌مشی حذف شد</item>
+        <item quantity="other">%d مسیر خط‌مشی حذف شد</item>
+    </plurals>
+    <plurals name="reference_count">
+        <item quantity="one">مورد استفاده در %d پروفایل</item>
+        <item quantity="other">مورد استفاده در %d پروفایل</item>
+    </plurals>
+    <plurals name="requests_items">
+        <item quantity="one">%d مورد</item>
+        <item quantity="other">%d مورد</item>
+    </plurals>
+    <plurals name="rule_set_deleted">
+        <item quantity="one">%d مجموعه‌قوانین حذف شد</item>
+        <item quantity="other">%d مجموعه‌قوانین حذف شد</item>
+    </plurals>
+</resources>

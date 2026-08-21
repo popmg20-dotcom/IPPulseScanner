@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="domain_set_deleted">
+        <item quantity="one">%d domain set deleted</item>
+        <item quantity="other">%d domain sets deleted</item>
+    </plurals>
+    <plurals name="item_selected">
+        <item quantity="one">%d item selected</item>
+        <item quantity="other">%d items selected</item>
+    </plurals>
+    <plurals name="override_doh_summary_multiple">
+        <item quantity="one">%1$s (%2$d server in total)</item>
+        <item quantity="other">%1$s (%2$d servers in total)</item>
+    </plurals>
+    <plurals name="policy_path_deleted">
+        <item quantity="one">%d policy path deleted</item>
+        <item quantity="other">%d policy paths deleted</item>
+    </plurals>
+    <plurals name="reference_count">
+        <item quantity="one">Used by %d profile</item>
+        <item quantity="other">Used by %d profiles</item>
+    </plurals>
+    <plurals name="requests_items">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
+    <plurals name="rule_set_deleted">
+        <item quantity="one">%d rule set deleted</item>
+        <item quantity="other">%d rule sets deleted</item>
+    </plurals>
+</resources>

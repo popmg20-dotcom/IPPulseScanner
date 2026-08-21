@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="domain_set_deleted">
+        <item quantity="other">%d 個のドメインセットを削除しました</item>
+    </plurals>
+    <plurals name="item_selected">
+        <item quantity="other">%d 個を選択中</item>
+    </plurals>
+    <plurals name="override_doh_summary_multiple">
+        <item quantity="other">%1$s (合計 %2$d 個のサーバー)</item>
+    </plurals>
+    <plurals name="policy_path_deleted">
+        <item quantity="other">%d 個のポリシーパスを削除しました</item>
+    </plurals>
+    <plurals name="reference_count">
+        <item quantity="other">%d 個のプロファイルで使用中</item>
+    </plurals>
+    <plurals name="requests_items">
+        <item quantity="other">%d 個の項目</item>
+    </plurals>
+    <plurals name="rule_set_deleted">
+        <item quantity="other">%d 個のルールセットを削除しました</item>
+    </plurals>
+</resources>

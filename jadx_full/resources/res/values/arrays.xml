@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="dashboard_toggle_cards">
+        <item>@string/network_speed</item>
+        <item>@string/outbound_mode</item>
+        <item>@string/public_ip</item>
+        <item>@string/dns</item>
+        <item>@string/local_proxy</item>
+        <item>@string/active_connections</item>
+        <item>@string/traffic_usage</item>
+        <item>@string/private_ip</item>
+    </array>
+    <array name="logcat_viewer_logcat_spinner">
+        <item>Verbose</item>
+        <item>Debug</item>
+        <item>Info</item>
+        <item>Warning</item>
+        <item>Error</item>
+        <item>Fatal</item>
+    </array>
+    <array name="setting_override_ipv6_entries">
+        <item>Follow Profile</item>
+        <item>Enable</item>
+        <item>Disable</item>
+    </array>
+    <array name="setting_override_ipv6_entry_values">
+        <item>follow_profile</item>
+        <item>enable</item>
+        <item>disable</item>
+    </array>
+    <array name="setting_override_lan_share_listen_entries">
+        <item>LAN</item>
+        <item>Local only</item>
+    </array>
+    <array name="setting_override_lan_share_listen_entry_values">
+        <item>lan</item>
+        <item>local</item>
+    </array>
+    <array name="setting_tls_fingerprint_entries">
+        <item>Legacy</item>
+        <item>UTLS</item>
+    </array>
+    <array name="setting_tls_fingerprint_entry_values">
+        <item>legacy</item>
+        <item>utls</item>
+    </array>
+    <array name="setting_traffic_statistics_entries">
+        <item>All counted</item>
+        <item>Proxy only</item>
+    </array>
+    <array name="setting_traffic_statistics_entry_values">
+        <item>all_counted</item>
+        <item>proxy_only</item>
+    </array>
+</resources>
