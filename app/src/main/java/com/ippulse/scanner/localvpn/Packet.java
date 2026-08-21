@@ -119,6 +119,9 @@ public class Packet
         ip4Header.totalLength = ip4TotalLength;
 
         updateIP4Checksum();
+
+        backingBuffer.position(ip4TotalLength);
+        backingBuffer.limit(ip4TotalLength);
     }
 
     public void updateUDPBuffer(ByteBuffer buffer, int payloadSize)
@@ -140,6 +143,9 @@ public class Packet
         ip4Header.totalLength = ip4TotalLength;
 
         updateIP4Checksum();
+
+        backingBuffer.position(ip4TotalLength);
+        backingBuffer.limit(ip4TotalLength);
     }
 
     private void updateIP4Checksum()

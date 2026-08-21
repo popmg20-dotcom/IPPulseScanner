@@ -379,13 +379,13 @@ public class GamingVpnService extends VpnService {
 
             executorService = Executors.newFixedThreadPool(5);
             debug("WORKER EXECUTOR CREATED");
+            running = true;
+
             executorService.submit(new UDPInput(networkToDeviceQueue, udpSelector));
             executorService.submit(new UDPOutput(deviceToNetworkUDPQueue, udpSelector, this));
             executorService.submit(new TCPInput(networkToDeviceQueue, tcpSelector, currentMtu));
             executorService.submit(new TCPOutput(deviceToNetworkTCPQueue, networkToDeviceQueue, tcpSelector, this));
             executorService.submit(new TunRunnable());
-
-            running = true;
             debug("VPN RUNNING: MTU=" + currentMtu);
             Log.i(TAG, "VPN started with full tunnel, MTU=" + currentMtu);
         } catch (Exception e) {
