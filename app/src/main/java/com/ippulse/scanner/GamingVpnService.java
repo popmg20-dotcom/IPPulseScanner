@@ -295,18 +295,6 @@ public class GamingVpnService extends VpnService {
     public boolean protectOrBind(Socket socket) {
         if (socket == null) return false;
 
-        Network network = upstreamNetwork;
-
-        if (network != null) {
-            try {
-                network.bindSocket(socket);
-                debug("NETWORK.bindSocket(TCP) SUCCESS");
-                return true;
-            } catch (IOException e) {
-                Log.w(TAG, "bindSocket(TCP) failed; fallback to protect()", e);
-            }
-        }
-
         boolean result = protect(socket);
         debug("VpnService.protect(TCP)=" + result);
         return result;
@@ -315,18 +303,9 @@ public class GamingVpnService extends VpnService {
     public boolean protectOrBind(DatagramSocket socket) {
         if (socket == null) return false;
 
-        Network network = upstreamNetwork;
-
-        if (network != null) {
-            try {
-                network.bindSocket(socket);
-                return true;
-            } catch (IOException e) {
-                Log.w(TAG, "bindSocket(UDP) failed; fallback to protect()", e);
-            }
-        }
-
-        return protect(socket);
+        boolean result = protect(socket);
+        debug("VpnService.protect(UDP)=" + result);
+        return result;
     }
 
     private void stopUpstreamNetworkMonitor() {
