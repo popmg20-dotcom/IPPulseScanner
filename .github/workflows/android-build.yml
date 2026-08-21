@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - surfboard-native-clean
   workflow_dispatch:
 
 permissions:
