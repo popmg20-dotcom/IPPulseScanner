@@ -6,7 +6,6 @@ import android.net.VpnService;
 import android.os.IBinder;
 import com.wireguard.android.backend.GoBackend;
 import com.wireguard.android.backend.Tunnel;
-import com.wireguard.android.backend.TunnelCallback;
 import com.wireguard.config.Config;
 import com.wireguard.config.Interface;
 import com.wireguard.config.Peer;
@@ -74,13 +73,8 @@ public class WireGuardVpnService extends VpnService {
             Config config = configBuilder.build();
 
             // ایجاد تونل و شروع آن
-            currentTunnel = backend.createTunnel(config, new TunnelCallback() {
-                @Override
-                public void onStateChange(Tunnel.State newState) {
-                    // می‌توانیم در صورت نیاز لاگ بگیریم
-                }
-            });
-            backend.setState(currentTunnel, Tunnel.State.UP);
+            currentTunnel = backend.createTunnel(config);
+            backend.setState(currentTunnel, Tunnel.State.UP, config);
         } catch (Exception e) {
             e.printStackTrace();
             if (dnsServer != null) dnsServer.stop();
@@ -91,7 +85,7 @@ public class WireGuardVpnService extends VpnService {
     private void stopTunnel() {
         try {
             if (currentTunnel != null) {
-                backend.setState(currentTunnel, Tunnel.State.DOWN);
+                backend.setState(currentTunnel, Tunnel.State.DOWN, currentTunnel.getConfig());
                 backend.deleteTunnel(currentTunnel);
                 currentTunnel = null;
             }
