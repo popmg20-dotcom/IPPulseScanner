@@ -17,18 +17,21 @@ public class LocalDnsServer {
     private Thread thread;
     private volatile boolean running = false;
 
-    public LocalDnsServer(Map<String, String> hostMappings, String upstreamDns) {
+    private final String bindAddress;
+
+    public LocalDnsServer(Map<String, String> hostMappings, String upstreamDns, String bindAddress) {
         this.hostMappings = hostMappings;
         this.upstreamDns = upstreamDns;
+        this.bindAddress = bindAddress;
     }
 
     public void start() throws IOException {
         if (running) return;
-        socket = new DatagramSocket(new InetSocketAddress("127.0.0.1", 53));
+        socket = new DatagramSocket(new InetSocketAddress(bindAddress, 53));
         running = true;
         thread = new Thread(this::runLoop);
         thread.start();
-        Logger.d("Local DNS server started on 127.0.0.1:53");
+        Logger.d("Local DNS server started on " + bindAddress + ":53");
     }
 
     public void stop() {

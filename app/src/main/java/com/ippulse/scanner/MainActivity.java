@@ -92,6 +92,8 @@ public class MainActivity extends Activity {
     private Tunnel wgTunnel;
     private Config wgConfig;
     private ExecutorService wgExecutor;
+    private HashMap<String, String> pendingHostsMap;
+    private String pendingDns;
     private LocalDnsServer dnsServer;
 
     // SimpleTunnel برای GoBackend
@@ -212,7 +214,7 @@ public class MainActivity extends Activity {
         wgPeerKey.setText(prefs.getString("wg_peer_key", ""));
         wgEndpoint.setText(prefs.getString("wg_endpoint", ""));
         wgPrivateKey.setText(prefs.getString("wg_private_key", "8DctVK60Qaux3X9vMzVDfM+CVwbVJlT93KINrjTDQGs="));
-        wgAddress.setText(prefs.getString("wg_address", "193.239.118.200/32,172.16.140.5/32,172.16.2.209/32"));
+        wgAddress.setText(prefs.getString("wg_address", "193.239.118.200/32,172.16.140.5/32,172.16.2.209/32,10.255.255.1/32"));
         wgPeerKey.setText(prefs.getString("wg_peer_key", ""));
         wgEndpoint.setText(prefs.getString("wg_endpoint", ""));
         wgAllowedIPs.setText(prefs.getString("wg_allowed_ips", "0.0.0.0/0, ::/0"));
@@ -313,14 +315,7 @@ public class MainActivity extends Activity {
             Toast.makeText(this, "Private Key is invalid! Must be 44 chars base64.", Toast.LENGTH_LONG).show();
             return;
         }
-        // اجرای DNS محلی برای هاستینگ
-        try {
-            dnsServer = new LocalDnsServer(hostsMap, dns);
-            dnsServer.start();
-        } catch (Exception e) {
-            android.util.Log.e("IPPulseVPN", "DNS start failed", e);
-            dnsServer = null;
-        }
+        // DNS سرور محلی بعد از بالا آمدن تونل شروع می‌شود
 
         // ساخت کانفیگ
         try {
@@ -329,7 +324,7 @@ public class MainActivity extends Activity {
             Interface.Builder ifaceBuilder = new Interface.Builder();
             ifaceBuilder.parsePrivateKey(privateKey);
             ifaceBuilder.parseAddresses(address.replaceAll("[^0-9./:,]", "").trim());
-            ifaceBuilder.parseDnsServers("127.0.0.1");
+            ifaceBuilder.parseDnsServers("10.255.255.1");
             ifaceBuilder.parseMtu(String.valueOf(mtu));
             configBuilder.setInterface(ifaceBuilder.build());
 
@@ -359,6 +354,17 @@ public class MainActivity extends Activity {
                 wgBackend.setState(wgTunnel, Tunnel.State.UP, wgConfig);
                 FileLogger.d("setState UP success");
                 android.util.Log.d("IPPulseVPN", "Tunnel UP");
+                // شروع DNS محلی بعد از تونل
+                if (pendingHostsMap != null) {
+                    try {
+                        dnsServer = new LocalDnsServer(pendingHostsMap, pendingDns, "10.255.255.1");
+                        dnsServer.start();
+                        FileLogger.d("Local DNS server started on 10.255.255.1");
+                    } catch (Exception e) {
+                        FileLogger.e("DNS start failed", e);
+                        dnsServer = null;
+                    }
+                }
             } catch (Exception e) {
                 String fullError = "Error: " + e.toString() + "\n\n" + android.util.Log.getStackTraceString(e);
                 FileLogger.e("setState failed", e);
