@@ -51,6 +51,7 @@ import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class GamingVpnService extends VpnService {
 
@@ -1826,15 +1827,81 @@ public class GamingVpnService extends VpnService {
 
     private void stopVpn() {
 
+        if (!running
+                && executorService == null
+                && vpnInterface == null) {
+            return;
+        }
+
+        debug("VPN STOP BEGIN");
+
         running = false;
 
         stopUpstreamNetworkMonitor();
 
+        /*
+         * Wake both selectors before interrupting worker threads.
+         */
+        try {
+            if (udpSelector != null) {
+                udpSelector.wakeup();
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            if (tcpSelector != null) {
+                tcpSelector.wakeup();
+            }
+        } catch (Exception ignored) {
+        }
+
+        /*
+         * Stop worker tasks first.
+         *
+         * Do NOT close selectors before workers have had a chance
+         * to leave select()/register()/read().
+         */
         if (executorService != null) {
+
             executorService.shutdownNow();
+
+            try {
+                executorService.awaitTermination(
+                        1000,
+                        TimeUnit.MILLISECONDS
+                );
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (Exception ignored) {
+            }
+
             executorService = null;
         }
 
+        /*
+         * Close TUN streams after worker shutdown.
+         */
+        try {
+            if (tunIn != null) {
+                tunIn.close();
+            }
+        } catch (IOException ignored) {
+        }
+
+        try {
+            if (tunOut != null) {
+                tunOut.close();
+            }
+        } catch (IOException ignored) {
+        }
+
+        tunIn = null;
+        tunOut = null;
+
+        /*
+         * Only now close selectors.
+         */
         try {
             if (udpSelector != null) {
                 udpSelector.close();
@@ -1849,25 +1916,29 @@ public class GamingVpnService extends VpnService {
         } catch (Exception ignored) {
         }
 
-        try {
-            if (tunIn != null) tunIn.close();
-        } catch (IOException ignored) {
-        }
+        udpSelector = null;
+        tcpSelector = null;
 
         try {
-            if (tunOut != null) tunOut.close();
-        } catch (IOException ignored) {
-        }
-
-        try {
-            if (vpnInterface != null) vpnInterface.close();
+            if (vpnInterface != null) {
+                vpnInterface.close();
+            }
         } catch (IOException ignored) {
         }
 
         vpnInterface = null;
 
-        stopForeground(true);
-        stopSelf();
+        try {
+            stopForeground(true);
+        } catch (Exception ignored) {
+        }
+
+        try {
+            stopSelf();
+        } catch (Exception ignored) {
+        }
+
+        debug("VPN STOP COMPLETE");
     }
 
     @Override

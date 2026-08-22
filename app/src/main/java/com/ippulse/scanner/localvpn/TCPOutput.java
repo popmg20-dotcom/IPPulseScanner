@@ -15,6 +15,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.ippulse.scanner.localvpn.Packet.TCPHeader;
 import com.ippulse.scanner.localvpn.TCB.TCBStatus;
@@ -29,6 +31,14 @@ public class TCPOutput implements Runnable {
     private final Selector selector;
 
     private final Random random = new Random();
+
+    /*
+     * Connection establishment is deliberately separated from the
+     * packet/selector worker. A slow physical TCP handshake must not
+     * block processing of the next packet.
+     */
+    private final ExecutorService connectExecutor =
+            Executors.newCachedThreadPool();
 
     public TCPOutput(
             ConcurrentLinkedQueue<Packet> inputQueue,
@@ -136,6 +146,11 @@ public class TCPOutput implements Runnable {
             Log.e(TAG, "TCPOutput fatal error", e);
 
         } finally {
+            try {
+                connectExecutor.shutdownNow();
+            } catch (Exception ignored) {
+            }
+
             TCB.closeAll();
         }
     }
@@ -151,168 +166,268 @@ public class TCPOutput implements Runnable {
 
         currentPacket.swapSourceAndDestination();
 
+        /*
+         * A non-SYN packet without a TCB cannot create a new stream.
+         */
         if (!tcpHeader.isSYN()) {
+
             currentPacket.updateTCPBuffer(
                     responseBuffer,
                     (byte) TCPHeader.RST,
                     0,
                     tcpHeader.sequenceNumber + 1,
-                    0);
+                    0
+            );
 
             outputQueue.offer(responseBuffer);
 
             vpnService.debug(
                     "TCP NON-SYN WITHOUT TCB -> RST "
-                            + ipAndPort);
+                            + ipAndPort
+            );
 
             return;
         }
 
-        SocketChannel outputChannel = SocketChannel.open();
+        /*
+         * Keep the physical socket alive while the real TCP handshake
+         * is performed in the dedicated connection worker.
+         */
+        SocketChannel outputChannel =
+                SocketChannel.open();
 
         /*
-         * LocalVPN model:
-         * non-blocking connect + OP_CONNECT
+         * Start in blocking mode for the outbound connect itself.
+         * The timeout prevents a dead route from hanging forever.
          */
-        outputChannel.configureBlocking(false);
+        outputChannel.configureBlocking(true);
 
         vpnService.debug(
                 "TCP SOCKET CREATED "
                         + destinationAddress.getHostAddress()
-                        + ":" + destinationPort);
+                        + ":"
+                        + destinationPort
+        );
 
-        boolean protectedOrBound =
-                vpnService.protectOrBind(outputChannel.socket());
+        boolean protectedOk =
+                vpnService.protectOrBind(
+                        outputChannel.socket()
+                );
 
-        if (!protectedOrBound) {
+        if (!protectedOk) {
 
             vpnService.debug(
-                    "TCP PROTECT/BIND FAILED "
-                            + ipAndPort);
+                    "TCP PROTECT FAILED "
+                            + ipAndPort
+            );
 
-            outputChannel.close();
+            try {
+                outputChannel.close();
+            } catch (Exception ignored) {
+            }
 
             currentPacket.updateTCPBuffer(
                     responseBuffer,
                     (byte) TCPHeader.RST,
                     0,
                     tcpHeader.sequenceNumber + 1,
-                    0);
+                    0
+            );
 
             outputQueue.offer(responseBuffer);
             return;
         }
 
         vpnService.debug(
-                "TCP PROTECT/BIND OK "
-                        + ipAndPort);
+                "TCP PROTECT OK "
+                        + ipAndPort
+        );
 
-        TCB tcb = new TCB(
-                ipAndPort,
-                random.nextInt(Short.MAX_VALUE + 1),
-                tcpHeader.sequenceNumber,
-                tcpHeader.sequenceNumber + 1,
-                tcpHeader.acknowledgementNumber,
-                outputChannel,
-                currentPacket);
+        TCB tcb =
+                new TCB(
+                        ipAndPort,
+                        random.nextInt(Short.MAX_VALUE + 1),
+                        tcpHeader.sequenceNumber,
+                        tcpHeader.sequenceNumber + 1,
+                        tcpHeader.acknowledgementNumber,
+                        outputChannel,
+                        currentPacket
+                );
 
-        /*
-         * The outbound physical connection is being attempted.
-         */
-        tcb.status = TCBStatus.SYN_SENT;
+        tcb.status =
+                TCBStatus.SYN_SENT;
 
         TCB.putTCB(
                 ipAndPort,
-                tcb);
+                tcb
+        );
 
         vpnService.debug(
-                "TCP CONNECT START "
-                        + destinationAddress.getHostAddress()
-                        + ":" + destinationPort);
+                "TCP CONNECT QUEUED "
+                        + ipAndPort
+        );
 
+        /*
+         * The original TCPOutput loop must remain free to process more
+         * packets. The actual physical connect happens here.
+         */
         try {
 
-            outputChannel.connect(
-                    new InetSocketAddress(
-                            destinationAddress,
-                            destinationPort));
+            connectExecutor.submit(
+                    new Runnable() {
+                        @Override
+                        public void run() {
 
-            /*
-             * Fast path: already connected.
-             */
-            if (outputChannel.finishConnect()) {
+                            try {
 
-                tcb.status =
-                        TCBStatus.SYN_RECEIVED;
+                                vpnService.debug(
+                                        "TCP PHYSICAL CONNECT START "
+                                                + ipAndPort
+                                );
 
-                currentPacket.updateTCPBuffer(
-                        responseBuffer,
-                        (byte) (TCPHeader.SYN | TCPHeader.ACK),
-                        tcb.mySequenceNum,
-                        tcb.myAcknowledgementNum,
-                        0);
+                                /*
+                                 * Use the Socket API timeout while the
+                                 * SocketChannel is in blocking mode.
+                                 */
+                                outputChannel.socket().connect(
+                                        new InetSocketAddress(
+                                                destinationAddress,
+                                                destinationPort
+                                        ),
+                                        8000
+                                );
 
-                tcb.mySequenceNum++;
+                                vpnService.debug(
+                                        "TCP PHYSICAL CONNECT SUCCESS "
+                                                + ipAndPort
+                                );
 
-                outputQueue.offer(responseBuffer);
+                                /*
+                                 * Selector can only work with a non-blocking
+                                 * SocketChannel.
+                                 */
+                                outputChannel.configureBlocking(
+                                        false
+                                );
 
-                selector.wakeup();
+                                /*
+                                 * IMPORTANT:
+                                 * register first, then wake the selector.
+                                 */
+                                selector.wakeup();
 
-                tcb.selectionKey =
-                        outputChannel.register(
-                                selector,
-                                SelectionKey.OP_READ,
-                                tcb);
+                                SelectionKey key =
+                                        outputChannel.register(
+                                                selector,
+                                                SelectionKey.OP_READ,
+                                                tcb
+                                        );
 
-                tcb.waitingForNetworkData = true;
+                                tcb.selectionKey = key;
+                                tcb.waitingForNetworkData = true;
+                                tcb.status =
+                                        TCBStatus.SYN_RECEIVED;
 
-                vpnService.debug(
-                        "TCP CONNECTED FAST "
-                                + ipAndPort);
+                                /*
+                                 * Build SYN-ACK only after the real
+                                 * physical connection succeeds.
+                                 */
+                                ByteBuffer synAck =
+                                        ByteBufferPool.acquire();
 
-                vpnService.debug(
-                        "TCP SYN-ACK QUEUED "
-                                + ipAndPort);
+                                tcb.referencePacket.updateTCPBuffer(
+                                        synAck,
+                                        (byte)
+                                                (TCPHeader.SYN
+                                                        | TCPHeader.ACK),
+                                        tcb.mySequenceNum,
+                                        tcb.myAcknowledgementNum,
+                                        0
+                                );
 
-            } else {
+                                tcb.mySequenceNum++;
 
-                /*
-                 * Normal non-blocking path.
-                 */
-                selector.wakeup();
+                                outputQueue.offer(
+                                        synAck
+                                );
 
-                tcb.selectionKey =
-                        outputChannel.register(
-                                selector,
-                                SelectionKey.OP_CONNECT,
-                                tcb);
+                                /*
+                                 * Wake again after all selector state has
+                                 * been installed and the response is queued.
+                                 */
+                                selector.wakeup();
 
-                vpnService.debug(
-                        "TCP CONNECT PENDING -> OP_CONNECT "
-                                + ipAndPort);
-            }
+                                vpnService.debug(
+                                        "TCP CONNECTED "
+                                                + ipAndPort
+                                );
+
+                                vpnService.debug(
+                                        "TCP SYN-ACK QUEUED "
+                                                + ipAndPort
+                                );
+
+                            } catch (Exception e) {
+
+                                vpnService.debug(
+                                        "TCP PHYSICAL CONNECT FAILED "
+                                                + ipAndPort
+                                                + " "
+                                                + e.getClass().getName()
+                                                + ": "
+                                                + String.valueOf(
+                                                        e.getMessage()
+                                                )
+                                );
+
+                                /*
+                                 * If the VPN is stopping, do not manufacture
+                                 * a noisy RST against a connection that is
+                                 * already being torn down.
+                                 */
+                                if (!outputChannel.isOpen()) {
+                                    TCB.closeTCB(tcb);
+                                    return;
+                                }
+
+                                try {
+
+                                    ByteBuffer rst =
+                                            ByteBufferPool.acquire();
+
+                                    tcb.referencePacket.updateTCPBuffer(
+                                            rst,
+                                            (byte) TCPHeader.RST,
+                                            0,
+                                            tcb.myAcknowledgementNum,
+                                            0
+                                    );
+
+                                    outputQueue.offer(
+                                            rst
+                                    );
+
+                                } catch (Exception ignored) {
+                                }
+
+                                TCB.closeTCB(
+                                        tcb
+                                );
+                            }
+                        }
+                    }
+            );
 
         } catch (Exception e) {
 
             vpnService.debug(
-                    "TCP CONNECT START FAILED "
+                    "TCP CONNECT QUEUE FAILED "
                             + ipAndPort
                             + " "
-                            + e);
+                            + e
+            );
 
-            try {
-                currentPacket.updateTCPBuffer(
-                        responseBuffer,
-                        (byte) TCPHeader.RST,
-                        0,
-                        tcb.myAcknowledgementNum,
-                        0);
-
-                outputQueue.offer(responseBuffer);
-
-            } finally {
-                TCB.closeTCB(tcb);
-            }
+            TCB.closeTCB(tcb);
         }
     }
 
