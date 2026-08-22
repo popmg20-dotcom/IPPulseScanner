@@ -1,3 +1,11 @@
+#!/data/data/com.termux/files/usr/bin/bash
+set -e
+
+cd "$HOME/IPPulseScanner"
+
+mkdir -p .github/workflows
+
+cat > .github/workflows/android-build.yml <<'YAML'
 name: Android Build
 
 on:
@@ -41,3 +49,31 @@ jobs:
           name: IPPulseScanner-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+YAML
+
+echo "[1] Git status"
+git status --short
+
+echo "[2] Commit"
+git add .
+
+if git diff --cached --quiet; then
+    echo "No new changes to commit."
+else
+    git commit -m "Network Lab build configuration"
+fi
+
+BRANCH="$(git branch --show-current)"
+
+if [ -z "$BRANCH" ]; then
+    echo "ERROR: current git branch is empty."
+    exit 1
+fi
+
+echo "[3] Push: origin/$BRANCH"
+git push origin "$BRANCH"
+
+echo
+echo "DONE"
+echo "GitHub Actions should now build the APK."
+echo "Open GitHub -> Actions -> Android Build."

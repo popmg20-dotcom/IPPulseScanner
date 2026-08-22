@@ -1,6 +1,7 @@
 package com.ippulse.scanner;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -74,18 +75,10 @@ public class MainActivity extends Activity {
         "gcloud.codm.activision.com"
     };
 
-
-    private GoBackend wgBackend;
-    private Tunnel wgTunnel;
-    private Config wgConfig;
-    private ExecutorService wgExecutor;
-    private LocalDnsServer dnsServer;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
 
         tab1Container = findViewById(R.id.tab1Container);
         btnTab1 = findViewById(R.id.btnTab1);
@@ -118,11 +111,6 @@ public class MainActivity extends Activity {
         vpnHosts = findViewById(R.id.vpnHosts);
         vpnMasterIp = findViewById(R.id.vpnMasterIp);
         vpnMtu = findViewById(R.id.vpnMtu);
-        wgPrivateKey = findViewById(R.id.wgPrivateKey);
-        wgAddress = findViewById(R.id.wgAddress);
-        wgPeerKey = findViewById(R.id.wgPeerKey);
-        wgEndpoint = findViewById(R.id.wgEndpoint);
-        wgAllowedIPs = findViewById(R.id.wgAllowedIPs);
         btnStartVpn = findViewById(R.id.btnStartVpn);
         btnStopVpn = findViewById(R.id.btnStopVpn);
         btnApplyIp = findViewById(R.id.btnApplyIp);
@@ -183,9 +171,7 @@ public class MainActivity extends Activity {
         vpnMtu.setText(prefs.getString("mtu", "1400"));
         vpnMasterIp.setText(prefs.getString("masterIp", "109.61.42.251"));
         vpnHosts.setText(prefs.getString("hosts", ""));
-                                        wgPrivateKey.setText(prefs.getString("wg_private_key", "8DctVK60Qaux3X9vMzVDfM+CVwbVJlT93KINrjTDQGs="));
-        wgAddress.setText(prefs.getString("wg_address", "193.239.118.200/32,172.16.140.5/32,172.16.2.209/32,10.255.255.1/32"));
-                                if (vpnHosts.getText().toString().trim().isEmpty()) {
+        if (vpnHosts.getText().toString().trim().isEmpty()) {
             String defaultIp = vpnMasterIp.getText().toString().trim();
             StringBuilder sb = new StringBuilder();
             for (String domain : defaultDomains) {
@@ -202,7 +188,7 @@ public class MainActivity extends Activity {
             .putString("hosts", vpnHosts.getText().toString().trim())
             .putString("mtu", vpnMtu.getText().toString().trim())
             .putString("masterIp", vpnMasterIp.getText().toString().trim())
-                                                                        .apply();
+            .apply();
     }
 
     private void applyMasterIp() {
@@ -218,31 +204,6 @@ public class MainActivity extends Activity {
         vpnHosts.setText(sb.toString().trim());
         saveVpnSettings();
         Toast.makeText(this, "IP به همه دامنه‌ها اعمال شد", Toast.LENGTH_SHORT).show();
-    }
-
-
-
-
-
-
-
-
-    private String hostsMapToString(HashMap<String, String> map) {
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            sb.append(entry.getValue()).append(" ").append(entry.getKey()).append("\n");
-        }
-        return sb.toString();
-    }
-
-
-
-
-
-    private void stopVpn() {
-        GamingVpnService.stop(this);
-        vpnStatus.setText("VPN: Stopped");
-        Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
     }
 
     private void startVpn() {
@@ -262,10 +223,16 @@ public class MainActivity extends Activity {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
-            GamingVpnService.start(this, dns, mtu, hostsMap, ((android.widget.EditText)findViewById(R.id.wgAddress)).getText().toString());
+        GamingVpnService.start(this, dns, mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void stopVpn() {
+        GamingVpnService.stop(this);
+        vpnStatus.setText("VPN: Stopped");
+        Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -286,13 +253,8 @@ public class MainActivity extends Activity {
         if (requestCode == REQUEST_VPN && resultCode == RESULT_OK) {
             String dns = vpnDns.getText().toString().trim();
             HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-            String wgPrivateKeyStr = wgPrivateKey.getText().toString().trim();
-            String wgAddressStr = wgAddress.getText().toString().trim();
-            String wgPeerKeyStr = wgPeerKey.getText().toString().trim();
-            String wgEndpointStr = wgEndpoint.getText().toString().trim();
-            String wgAllowedIPsStr = wgAllowedIPs.getText().toString().trim();
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
-            startWireGuardVpn(wgPrivateKeyStr, wgAddressStr, wgPeerKeyStr, wgEndpointStr, wgAllowedIPsStr, dns, mtu, hostsMap);
+        GamingVpnService.start(this, dns, mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         } else if (requestCode == REQUEST_VPN) {
@@ -940,4 +902,4 @@ public class MainActivity extends Activity {
         }
         startDeepTestOn(ip);
     }
-}// debug trigger
+}

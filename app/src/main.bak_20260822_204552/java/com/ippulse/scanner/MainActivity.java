@@ -262,7 +262,7 @@ public class MainActivity extends Activity {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
-            GamingVpnService.start(this, dns, mtu, hostsMap, ((android.widget.EditText)findViewById(R.id.wgAddress)).getText().toString());
+            GamingVpnService.start(this, dns, mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         }

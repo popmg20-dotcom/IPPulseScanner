@@ -1,3 +1,50 @@
+#!/data/data/com.termux/files/usr/bin/bash
+set -e
+
+ROOT="$HOME/IPPulseScanner"
+cd "$ROOT"
+
+echo "=============================================="
+echo " IPPulseScanner - Network Lab final patch"
+echo " MTU + DNS + IP BLOCK + HOSTING + INTERNET"
+echo "=============================================="
+
+STAMP="$(date +%Y%m%d_%H%M%S)"
+BACKUP="backup_network_lab_${STAMP}"
+
+mkdir -p "$BACKUP"
+
+echo "[1/8] Backup..."
+cp -a app/src/main app/src/main.bak_${STAMP} 2>/dev/null || true
+cp -f app/src/main/AndroidManifest.xml "$BACKUP/AndroidManifest.xml" 2>/dev/null || true
+cp -f app/build.gradle "$BACKUP/app-build.gradle" 2>/dev/null || true
+cp -f app/src/main/java/com/ippulse/scanner/MainActivity.java \
+   "$BACKUP/MainActivity.java" 2>/dev/null || true
+cp -f app/src/main/java/com/ippulse/scanner/GamingVpnService.java \
+   "$BACKUP/GamingVpnService.java" 2>/dev/null || true
+
+JAVA_DIR="app/src/main/java/com/ippulse/scanner"
+mkdir -p "$JAVA_DIR"
+
+echo "[2/8] Check LocalVPN core..."
+for f in \
+  ByteBufferPool.java \
+  Packet.java \
+  TCPInput.java \
+  TCPOutput.java \
+  UDPInput.java \
+  UDPOutput.java
+do
+  if [ ! -f "$JAVA_DIR/localvpn/$f" ]; then
+    echo "ERROR: missing localvpn/$f"
+    echo "The old TCP/UDP engine is required for full internet."
+    exit 1
+  fi
+done
+
+echo "[3/8] Write GamingVpnService.java..."
+
+cat > "$JAVA_DIR/GamingVpnService.java" <<'JAVA'
 package com.ippulse.scanner;
 
 import android.app.Notification;
@@ -1756,3 +1803,177 @@ public class GamingVpnService extends VpnService {
         }
     }
 }
+JAVA
+
+echo "[4/8] Patch Network Lab launcher if possible..."
+
+python3 - <<'PY'
+from pathlib import Path
+import re
+
+p = Path("app/src/main/java/com/ippulse/scanner/MainActivity.java")
+
+if not p.exists():
+    print("WARNING: MainActivity.java not found; service was still installed.")
+    raise SystemExit(0)
+
+s = p.read_text(encoding="utf-8", errors="ignore")
+
+# Case 1: existing 4-argument GamingVpnService.start(...)
+pattern = re.compile(
+    r'GamingVpnService\.start\s*\(\s*'
+    r'([^;]*?)'
+    r'\s*\)\s*;',
+    re.S
+)
+
+changed = False
+
+def repl(m):
+    global changed
+    body = m.group(1)
+
+    # Don't touch calls already containing the explicit block argument.
+    if "wgAddress" in body and body.count(",") >= 4:
+        return m.group(0)
+
+    parts = [x.strip() for x in body.split(",")]
+
+    # We only transform a simple 4-argument call.
+    if len(parts) == 4:
+        changed = True
+        return (
+            "GamingVpnService.start("
+            + body
+            + ", "
+              "((android.widget.EditText)findViewById(R.id.wgAddress))"
+              ".getText().toString()"
+              ");"
+        )
+
+    return m.group(0)
+
+new_s = pattern.sub(repl, s)
+
+if changed:
+    p.write_text(new_s, encoding="utf-8")
+    print("MainActivity: GamingVpnService.start(...) patched with wgAddress block list.")
+else:
+    print("MainActivity: no safe 4-argument GamingVpnService.start(...) call found.")
+    print("The service has a fallback reader for a saved wgAddress preference.")
+
+PY
+
+echo "[5/8] Ensure VPN service declaration exists..."
+
+python3 - <<'PY'
+from pathlib import Path
+import re
+
+p = Path("app/src/main/AndroidManifest.xml")
+
+if not p.exists():
+    print("ERROR: AndroidManifest.xml not found.")
+    raise SystemExit(1)
+
+s = p.read_text(encoding="utf-8", errors="ignore")
+
+# Remove the official GoBackend service declaration if present.
+s = re.sub(
+    r'\s*<service\b[^>]*GoBackend\$VpnService[^>]*/>',
+    '',
+    s
+)
+
+# Also remove expanded GoBackend service blocks if present.
+s = re.sub(
+    r'\s*<service\b[^>]*GoBackend\$VpnService[^>]*>.*?</service>',
+    '',
+    s,
+    flags=re.S
+)
+
+service = '''
+        <service
+            android:name=".GamingVpnService"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <intent-filter>
+                <action android:name="android.net.VpnService"/>
+            </intent-filter>
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="network_vpn"/>
+        </service>
+'''
+
+if "android:name=\".GamingVpnService\"" not in s:
+    idx = s.rfind("</application>")
+    if idx < 0:
+        print("ERROR: </application> not found.")
+        raise SystemExit(1)
+    s = s[:idx] + service + "\n" + s[idx:]
+
+p.write_text(s, encoding="utf-8")
+print("Manifest: GamingVpnService declared.")
+PY
+
+echo "[6/8] Keep WireGuard dependency harmless..."
+echo "The library is not used by the new VPN service."
+echo "We intentionally leave the dependency in place so MainActivity/build does not break if old imports remain."
+
+echo "[7/8] Build..."
+chmod +x ./gradlew
+
+./gradlew clean assembleDebug --no-daemon
+
+APK="app/build/outputs/apk/debug/app-debug.apk"
+
+if [ ! -f "$APK" ]; then
+    echo "ERROR: APK was not produced."
+    exit 1
+fi
+
+echo ""
+echo "BUILD OK:"
+ls -lh "$APK"
+
+echo "[8/8] Commit + push..."
+
+git add \
+    app/src/main/java/com/ippulse/scanner/GamingVpnService.java \
+    app/src/main/java/com/ippulse/scanner/MainActivity.java \
+    app/src/main/AndroidManifest.xml
+
+git status --short
+
+git commit -m "Network Lab: MTU DNS IP blocking and local hosting"
+
+CURRENT_BRANCH="$(git branch --show-current)"
+
+if [ -z "$CURRENT_BRANCH" ]; then
+    CURRENT_BRANCH="main"
+fi
+
+git push origin "$CURRENT_BRANCH"
+
+echo ""
+echo "=============================================="
+echo " DONE"
+echo "=============================================="
+echo "APK:"
+echo "$ROOT/$APK"
+echo ""
+echo "Features:"
+echo "  MTU          = VPN interface MTU"
+echo "  DNS          = local intercepted DNS"
+echo "  Hosting      = domain -> custom IPv4"
+echo "  IP blocking  = wgAddress entries"
+echo "  Internet     = existing LocalVPN TCP/UDP NAT"
+echo ""
+echo "Example wgAddress:"
+echo "193.239.118.200/32,172.16.140.5/32,172.16.2.209/32"
+echo ""
+echo "The old WireGuard GoBackend service is no longer the active VPN."
+echo "=============================================="

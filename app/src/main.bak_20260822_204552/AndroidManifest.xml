@@ -29,5 +29,15 @@
                 <action android:name="android.net.VpnService" />
             </intent-filter>
         </service>
+            
+        
+        
+        
+        
+
+        <service
+        android:name="com.wireguard.android.backend.GoBackend$VpnService"
+        android:exported="false"
+        />
 </application>
 </manifest>
