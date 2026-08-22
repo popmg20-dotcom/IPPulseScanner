@@ -98,6 +98,16 @@ public class GamingVpnService extends VpnService {
     private final Object debugLock = new Object();
     private File debugFile;
 
+    /*
+     * 247 PROFESSIONAL EVIDENCE LOGGER
+     *
+     * Does not alter VPN/TUN/TCP/UDP behavior.
+     * It only controls what debug() records.
+     */
+    private final HashMap<String, Long> evidenceLastSeen = new HashMap<>();
+    private static final long EVIDENCE_REPEAT_MS = 1500L;
+    private static final String EVIDENCE_TAG = "VPN247";
+
     private ConnectivityManager connectivityManager;
     private ConnectivityManager.NetworkCallback networkCallback;
     private volatile Network upstreamNetwork;
@@ -120,32 +130,171 @@ public class GamingVpnService extends VpnService {
         }
     }
 
+    private boolean evidenceImportant(String msg) {
+
+        if (msg == null || msg.trim().isEmpty()) {
+            return false;
+        }
+
+        String m = msg.toUpperCase(Locale.US);
+
+        return
+                m.contains("ERROR") ||
+                m.contains("FAILED") ||
+                m.contains("EXCEPTION") ||
+                m.contains("THROW") ||
+                m.contains("TIMEOUT") ||
+                m.contains("TIMED OUT") ||
+                m.contains("REFUSED") ||
+                m.contains("RESET") ||
+                m.contains("RST") ||
+                m.contains("SYN") ||
+                m.contains("SYN-ACK") ||
+                m.contains("ACK") ||
+                m.contains("CONNECT") ||
+                m.contains("CONNECTED") ||
+                m.contains("CLOSE") ||
+                m.contains("CLOSED") ||
+                m.contains("SOCKET") ||
+                m.contains("PROTECT") ||
+                m.contains("DNS") ||
+                m.contains("UDP") ||
+                m.contains("TCP") ||
+                m.contains("TUN") ||
+                m.contains("QUEUE") ||
+                m.contains("VPN") ||
+                m.contains("MTU") ||
+                m.contains("ROUTE") ||
+                m.contains("BLOCK") ||
+                m.contains("EOF") ||
+                m.contains("SELECTOR") ||
+                m.contains("TCB");
+    }
+
+    private String evidenceCategory(String msg) {
+
+        String m = msg.toUpperCase(Locale.US);
+
+        if (m.contains("EXCEPTION") ||
+                m.contains("ERROR") ||
+                m.contains("FAILED") ||
+                m.contains("TIMEOUT") ||
+                m.contains("REFUSED") ||
+                m.contains("RESET") ||
+                m.contains("RST")) {
+            return "ERROR";
+        }
+
+        if (m.contains("DNS")) return "DNS";
+        if (m.contains("UDP")) return "UDP";
+        if (m.contains("TCP") ||
+                m.contains("SYN") ||
+                m.contains("ACK") ||
+                m.contains("TCB")) return "TCP";
+        if (m.contains("TUN")) return "TUN";
+        if (m.contains("SOCKET") ||
+                m.contains("CONNECT") ||
+                m.contains("PROTECT")) return "NET";
+        if (m.contains("QUEUE")) return "QUEUE";
+        if (m.contains("VPN")) return "VPN";
+
+        return "OTHER";
+    }
+
+    private boolean evidenceRateAllowed(String msg) {
+
+        String key = evidenceCategory(msg) + "|" + msg.trim();
+        long now = System.currentTimeMillis();
+
+        synchronized (evidenceLastSeen) {
+
+            Long last = evidenceLastSeen.get(key);
+
+            if (last != null &&
+                    now - last < EVIDENCE_REPEAT_MS) {
+                return false;
+            }
+
+            evidenceLastSeen.put(key, now);
+
+            /*
+             * Prevent the map itself from growing forever.
+             */
+            if (evidenceLastSeen.size() > 500) {
+                evidenceLastSeen.clear();
+                evidenceLastSeen.put(key, now);
+            }
+
+            return true;
+        }
+    }
+
     public void debug(String msg) {
-        String line = System.currentTimeMillis()
+
+        if (!evidenceImportant(msg)) {
+            return;
+        }
+
+        if (!evidenceRateAllowed(msg)) {
+            return;
+        }
+
+        String category = evidenceCategory(msg);
+
+        String line =
+                System.currentTimeMillis()
                 + " | "
                 + Thread.currentThread().getName()
                 + " | "
-                + msg
-                + "\n";
+                + category
+                + " | "
+                + msg;
 
-        Log.i(TAG, line.trim());
+        /*
+         * Dedicated Logcat tag.
+         *
+         * This is the important part:
+         *
+         *   logcat -s VPN247:*
+         *
+         * gives ONLY evidence events.
+         */
+        Log.i(EVIDENCE_TAG, line);
 
         synchronized (debugLock) {
+
             try {
-                if (debugFile == null) initDebugLog();
+
+                if (debugFile == null) {
+                    initDebugLog();
+                }
 
                 if (debugFile != null) {
+
                     FileOutputStream fos =
-                            new FileOutputStream(debugFile, true);
-                    fos.write(line.getBytes("UTF-8"));
+                            new FileOutputStream(
+                                    debugFile,
+                                    true
+                            );
+
+                    fos.write(
+                            (line + "\n")
+                                    .getBytes("UTF-8")
+                    );
+
                     fos.flush();
                     fos.close();
                 }
-            } catch (Exception e) {
-                Log.e(TAG, "debug write failed", e);
+
+            } catch (Exception ignored) {
+
+                /*
+                 * Logging is never allowed to break VPN.
+                 */
             }
         }
     }
+
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
