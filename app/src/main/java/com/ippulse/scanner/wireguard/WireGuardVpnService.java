@@ -1,5 +1,7 @@
 package com.ippulse.scanner.wireguard;
 
+import com.ippulse.scanner.utils.Logger;
+
 import android.app.Service;
 import android.net.VpnService;
 import android.content.Intent;
