@@ -1,6 +1,7 @@
 package com.ippulse.scanner;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -75,7 +76,6 @@ public class MainActivity extends Activity {
     };
 
 
-    private LocalDnsServer dnsServer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,11 +114,6 @@ public class MainActivity extends Activity {
         vpnHosts = findViewById(R.id.vpnHosts);
         vpnMasterIp = findViewById(R.id.vpnMasterIp);
         vpnMtu = findViewById(R.id.vpnMtu);
-        wgPrivateKey = findViewById(R.id.wgPrivateKey);
-        wgAddress = findViewById(R.id.wgAddress);
-        wgPeerKey = findViewById(R.id.wgPeerKey);
-        wgEndpoint = findViewById(R.id.wgEndpoint);
-        wgAllowedIPs = findViewById(R.id.wgAllowedIPs);
         btnStartVpn = findViewById(R.id.btnStartVpn);
         btnStopVpn = findViewById(R.id.btnStopVpn);
         btnApplyIp = findViewById(R.id.btnApplyIp);
@@ -179,9 +174,7 @@ public class MainActivity extends Activity {
         vpnMtu.setText(prefs.getString("mtu", "1400"));
         vpnMasterIp.setText(prefs.getString("masterIp", "109.61.42.251"));
         vpnHosts.setText(prefs.getString("hosts", ""));
-                                        wgPrivateKey.setText(prefs.getString("wg_private_key", "8DctVK60Qaux3X9vMzVDfM+CVwbVJlT93KINrjTDQGs="));
-        wgAddress.setText(prefs.getString("wg_address", "193.239.118.200/32,172.16.140.5/32,172.16.2.209/32,10.255.255.1/32"));
-                                if (vpnHosts.getText().toString().trim().isEmpty()) {
+                                                                if (vpnHosts.getText().toString().trim().isEmpty()) {
             String defaultIp = vpnMasterIp.getText().toString().trim();
             StringBuilder sb = new StringBuilder();
             for (String domain : defaultDomains) {
