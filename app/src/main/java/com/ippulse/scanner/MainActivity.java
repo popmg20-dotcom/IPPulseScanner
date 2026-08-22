@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import android.util.Base64;
 import com.wireguard.android.backend.GoBackend;
 import com.wireguard.android.backend.Tunnel;
 import com.wireguard.config.Config;
@@ -268,7 +269,25 @@ public class MainActivity extends Activity {
     }
 
 
+
+    private boolean isValidWireGuardKey(String key) {
+        if (key == null) return false;
+        key = key.trim();
+        if (key.length() != 44) return false;
+        try {
+            byte[] decoded = Base64.decode(key, Base64.DEFAULT);
+            return decoded.length == 32;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private void startWireGuardVpn(String privateKey, String address, String peerKey, String endpoint, String allowedIPs, String dns, int mtu, HashMap<String, String> hostsMap) {
+        // بررسی کلید خصوصی
+        if (!isValidWireGuardKey(privateKey)) {
+            Toast.makeText(this, "Private Key is invalid! Must be 44 chars base64.", Toast.LENGTH_LONG).show();
+            return;
+        }
         // اجرای DNS محلی برای هاستینگ
         try {
             dnsServer = new LocalDnsServer(hostsMap, dns);
