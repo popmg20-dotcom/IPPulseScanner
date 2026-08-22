@@ -124,7 +124,7 @@ public class LocalDnsServer {
                 Logger.d("Forwarded DNS query for: " + domain);
                 return;
             } else {
-                String[] ipParts = mappedIp.split("\.");
+                String[] ipParts = mappedIp.split("\\.");
                 if (ipParts.length != 4) return;
                 for (int i = 0; i < 4; i++) {
                     response[answerPos++] = (byte) Integer.parseInt(ipParts[i]);
