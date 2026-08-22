@@ -75,10 +75,6 @@ public class MainActivity extends Activity {
     };
 
 
-    private GoBackend wgBackend;
-    private Tunnel wgTunnel;
-    private Config wgConfig;
-    private ExecutorService wgExecutor;
     private LocalDnsServer dnsServer;
 
     @Override
@@ -286,13 +282,9 @@ public class MainActivity extends Activity {
         if (requestCode == REQUEST_VPN && resultCode == RESULT_OK) {
             String dns = vpnDns.getText().toString().trim();
             HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-            String wgPrivateKeyStr = wgPrivateKey.getText().toString().trim();
-            String wgAddressStr = wgAddress.getText().toString().trim();
-            String wgPeerKeyStr = wgPeerKey.getText().toString().trim();
-            String wgEndpointStr = wgEndpoint.getText().toString().trim();
-            String wgAllowedIPsStr = wgAllowedIPs.getText().toString().trim();
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
-            startWireGuardVpn(wgPrivateKeyStr, wgAddressStr, wgPeerKeyStr, wgEndpointStr, wgAllowedIPsStr, dns, mtu, hostsMap);
+            String wgAddressStr = ((android.widget.EditText)findViewById(R.id.wgAddress)).getText().toString();
+            GamingVpnService.start(this, dns, mtu, hostsMap, wgAddressStr);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         } else if (requestCode == REQUEST_VPN) {
