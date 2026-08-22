@@ -6,8 +6,6 @@ import android.net.VpnService;
 import android.os.IBinder;
 import com.wireguard.android.backend.GoBackend;
 import com.wireguard.config.Config;
-import com.wireguard.config.Interface;
-import com.wireguard.config.Peer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,26 +46,24 @@ public class WireGuardVpnService extends VpnService {
             String allowedIPs = intent.getStringExtra("allowed_ips");
             String hostsStr = intent.getStringExtra("hosts");
 
+            // اجرای DNS محلی برای هاستینگ
             Map<String, String> hostMappings = parseHosts(hostsStr);
-
             dnsServer = new LocalDnsServer(hostMappings, dns);
             dnsServer.start();
 
-            Config.Builder configBuilder = new Config.Builder();
-            Interface.Builder ifaceBuilder = new Interface.Builder();
-            ifaceBuilder.parsePrivateKey(privateKey);
-            ifaceBuilder.parseAddresses(address);
-            ifaceBuilder.parseDnsServers("127.0.0.1");
-            ifaceBuilder.parseMtu(String.valueOf(mtu));
-            configBuilder.setInterface(ifaceBuilder.build());
+            // ساخت کانفیگ به صورت متن و parse کردن آن
+            String configText = "[Interface]\n"
+                    + "PrivateKey = " + privateKey + "\n"
+                    + "Address = " + address + "\n"
+                    + "DNS = 127.0.0.1\n"
+                    + "MTU = " + mtu + "\n\n"
+                    + "[Peer]\n"
+                    + "PublicKey = " + peerPublicKey + "\n"
+                    + "Endpoint = " + endpoint + "\n"
+                    + "AllowedIPs = " + allowedIPs + "\n";
 
-            Peer.Builder peerBuilder = new Peer.Builder();
-            peerBuilder.parsePublicKey(peerPublicKey);
-            peerBuilder.parseEndpoint(endpoint);
-            peerBuilder.parseAllowedIPs(allowedIPs);
-            configBuilder.addPeer(peerBuilder.build());
-
-            backend.startTunnel(configBuilder.build());
+            Config config = Config.parse(configText);
+            backend.startTunnel(config);
         } catch (Exception e) {
             e.printStackTrace();
             if (dnsServer != null) dnsServer.stop();
@@ -92,7 +88,6 @@ public class WireGuardVpnService extends VpnService {
             for (String line : lines) {
                 line = line.trim();
                 if (line.isEmpty() || line.startsWith("#")) continue;
-                // این خط را دقیقاً با دو بک‌اسلش بنویسید
                 String[] parts = line.split("\\s+");
                 if (parts.length >= 2) {
                     map.put(parts[1].toLowerCase(), parts[0]);
