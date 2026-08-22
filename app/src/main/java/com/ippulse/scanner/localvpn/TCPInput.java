@@ -190,7 +190,8 @@ public class TCPInput implements Runnable {
                     ByteBufferPool.release(receiveBuffer);
 
                     if (tcb.status != TCBStatus.CLOSE_WAIT) {
-                        TCB.closeTCB(tcb);
+                        android.util.Log.e("TCB_TRACE", "CLOSE key=" + tcb.ipAndPort + " status=" + tcb.status + " thread=" + Thread.currentThread().getName());
+                    TCB.closeTCB(tcb);
                         return;
                     }
 
@@ -276,7 +277,8 @@ public class TCPInput implements Runnable {
                 ByteBufferPool.release(receiveBuffer);
             }
 
-            TCB.closeTCB(tcb);
+            android.util.Log.e("TCB_TRACE", "CLOSE key=" + tcb.ipAndPort + " status=" + tcb.status + " thread=" + Thread.currentThread().getName());
+                    TCB.closeTCB(tcb);
         }
     }
 

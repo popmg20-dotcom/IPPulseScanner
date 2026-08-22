@@ -386,7 +386,8 @@ public class TCPOutput implements Runnable {
                                  * already being torn down.
                                  */
                                 if (!outputChannel.isOpen()) {
-                                    TCB.closeTCB(tcb);
+                                    android.util.Log.e("TCB_TRACE", "CLOSE key=" + tcb.ipAndPort + " status=" + tcb.status + " thread=" + Thread.currentThread().getName());
+                    TCB.closeTCB(tcb);
                                     return;
                                 }
 
@@ -427,7 +428,8 @@ public class TCPOutput implements Runnable {
                             + e
             );
 
-            TCB.closeTCB(tcb);
+            android.util.Log.e("TCB_TRACE", "CLOSE key=" + tcb.ipAndPort + " status=" + tcb.status + " thread=" + Thread.currentThread().getName());
+                    TCB.closeTCB(tcb);
         }
     }
 
@@ -681,7 +683,8 @@ public class TCPOutput implements Runnable {
 
         } finally {
 
-            TCB.closeTCB(tcb);
+            android.util.Log.e("TCB_TRACE", "CLOSE key=" + tcb.ipAndPort + " status=" + tcb.status + " thread=" + Thread.currentThread().getName());
+                    TCB.closeTCB(tcb);
         }
     }
 
@@ -692,6 +695,7 @@ public class TCPOutput implements Runnable {
         /*
          * run() owns responseBuffer and releases it exactly once.
          */
-        TCB.closeTCB(tcb);
+        android.util.Log.e("TCB_TRACE", "CLOSE key=" + tcb.ipAndPort + " status=" + tcb.status + " thread=" + Thread.currentThread().getName());
+                    TCB.closeTCB(tcb);
     }
 }
