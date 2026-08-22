@@ -302,7 +302,7 @@ public class MainActivity extends Activity {
             Config.Builder configBuilder = new Config.Builder();
             Interface.Builder ifaceBuilder = new Interface.Builder();
             ifaceBuilder.parsePrivateKey(privateKey);
-            ifaceBuilder.parseAddresses(address);
+            ifaceBuilder.parseAddresses(address.replaceAll("\\s+", ""));
             ifaceBuilder.parseDnsServers("127.0.0.1");
             ifaceBuilder.parseMtu(String.valueOf(mtu));
             configBuilder.setInterface(ifaceBuilder.build());
