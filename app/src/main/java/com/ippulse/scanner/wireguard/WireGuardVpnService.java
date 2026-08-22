@@ -5,12 +5,12 @@ import android.content.Intent;
 import android.net.VpnService;
 import android.os.IBinder;
 import com.wireguard.android.backend.GoBackend;
+import com.wireguard.android.backend.Tunnel;
+import com.wireguard.android.backend.TunnelCallback;
 import com.wireguard.config.Config;
 import com.wireguard.config.Interface;
 import com.wireguard.config.Peer;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,6 +20,7 @@ public class WireGuardVpnService extends VpnService {
 
     private GoBackend backend;
     private LocalDnsServer dnsServer;
+    private Tunnel currentTunnel;
 
     @Override
     public void onCreate() {
@@ -50,16 +51,18 @@ public class WireGuardVpnService extends VpnService {
             String allowedIPs = intent.getStringExtra("allowed_ips");
             String hostsStr = intent.getStringExtra("hosts");
 
+            // اجرای DNS محلی برای هاستینگ
             Map<String, String> hostMappings = parseHosts(hostsStr);
             dnsServer = new LocalDnsServer(hostMappings, dns);
             dnsServer.start();
 
+            // ساخت کانفیگ با Builder
             Config.Builder configBuilder = new Config.Builder();
             Interface.Builder ifaceBuilder = new Interface.Builder();
             ifaceBuilder.parsePrivateKey(privateKey);
             ifaceBuilder.parseAddresses(address);
             ifaceBuilder.parseDnsServers("127.0.0.1");
-            ifaceBuilder.parseMtu(String.valueOf(mtu));   // تبدیل int به String
+            ifaceBuilder.parseMtu(String.valueOf(mtu));
             configBuilder.setInterface(ifaceBuilder.build());
 
             Peer.Builder peerBuilder = new Peer.Builder();
@@ -68,7 +71,16 @@ public class WireGuardVpnService extends VpnService {
             peerBuilder.parseAllowedIPs(allowedIPs);
             configBuilder.addPeer(peerBuilder.build());
 
-            backend.startTunnel(configBuilder.build());
+            Config config = configBuilder.build();
+
+            // ایجاد تونل و شروع آن
+            currentTunnel = backend.createTunnel(config, new TunnelCallback() {
+                @Override
+                public void onStateChange(Tunnel.State newState) {
+                    // می‌توانیم در صورت نیاز لاگ بگیریم
+                }
+            });
+            backend.setState(currentTunnel, Tunnel.State.UP);
         } catch (Exception e) {
             e.printStackTrace();
             if (dnsServer != null) dnsServer.stop();
@@ -78,7 +90,11 @@ public class WireGuardVpnService extends VpnService {
 
     private void stopTunnel() {
         try {
-            if (backend != null) backend.stopTunnel();
+            if (currentTunnel != null) {
+                backend.setState(currentTunnel, Tunnel.State.DOWN);
+                backend.deleteTunnel(currentTunnel);
+                currentTunnel = null;
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

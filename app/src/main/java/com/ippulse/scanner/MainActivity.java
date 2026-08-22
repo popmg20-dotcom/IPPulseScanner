@@ -295,6 +295,7 @@ public class MainActivity extends Activity {
             String wgPeerKeyStr = wgPeerKey.getText().toString().trim();
             String wgEndpointStr = wgEndpoint.getText().toString().trim();
             String wgAllowedIPsStr = wgAllowedIPs.getText().toString().trim();
+            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
             startWireGuardVpn(wgPrivateKeyStr, wgAddressStr, wgPeerKeyStr, wgEndpointStr, wgAllowedIPsStr, dns, mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
