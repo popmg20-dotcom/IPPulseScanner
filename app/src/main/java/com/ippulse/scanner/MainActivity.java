@@ -288,11 +288,14 @@ public class MainActivity extends Activity {
             ifaceBuilder.parseMtu(String.valueOf(mtu));
             configBuilder.setInterface(ifaceBuilder.build());
 
-            Peer.Builder peerBuilder = new Peer.Builder();
-            peerBuilder.parsePublicKey(peerKey);
-            peerBuilder.parseEndpoint(endpoint);
-            peerBuilder.parseAllowedIPs(allowedIPs);
-            configBuilder.addPeer(peerBuilder.build());
+            // فقط در صورتی Peer اضافه کن که کلید و endpoint وارد شده باشند
+            if (peerKey != null && !peerKey.isEmpty() && endpoint != null && !endpoint.isEmpty()) {
+                Peer.Builder peerBuilder = new Peer.Builder();
+                peerBuilder.parsePublicKey(peerKey);
+                peerBuilder.parseEndpoint(endpoint);
+                peerBuilder.parseAllowedIPs(allowedIPs);
+                configBuilder.addPeer(peerBuilder.build());
+            }
 
             wgConfig = configBuilder.build();
             wgTunnel = new SimpleTunnel("wg0");
