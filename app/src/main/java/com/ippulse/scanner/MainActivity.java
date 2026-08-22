@@ -290,8 +290,12 @@ public class MainActivity extends Activity {
         if (requestCode == REQUEST_VPN && resultCode == RESULT_OK) {
             String dns = vpnDns.getText().toString().trim();
             HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
-        GamingVpnService.start(this, dns, mtu, hostsMap);
+            String wgPrivateKeyStr = wgPrivateKey.getText().toString().trim();
+            String wgAddressStr = wgAddress.getText().toString().trim();
+            String wgPeerKeyStr = wgPeerKey.getText().toString().trim();
+            String wgEndpointStr = wgEndpoint.getText().toString().trim();
+            String wgAllowedIPsStr = wgAllowedIPs.getText().toString().trim();
+            startWireGuardVpn(wgPrivateKeyStr, wgAddressStr, wgPeerKeyStr, wgEndpointStr, wgAllowedIPsStr, dns, mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         } else if (requestCode == REQUEST_VPN) {
