@@ -25,6 +25,14 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import com.wireguard.android.backend.GoBackend;
+import com.wireguard.android.backend.Tunnel;
+import com.wireguard.config.Config;
+import com.wireguard.config.Interface;
+import com.wireguard.config.Peer;
+import com.ippulse.scanner.wireguard.LocalDnsServer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.*;
 import java.io.IOException;
 import java.io.File;
@@ -77,10 +85,28 @@ public class MainActivity extends Activity {
         "gcloud.codm.activision.com"
     };
 
+
+    private GoBackend wgBackend;
+    private Tunnel wgTunnel;
+    private Config wgConfig;
+    private ExecutorService wgExecutor;
+    private LocalDnsServer dnsServer;
+
+    // SimpleTunnel برای GoBackend
+    private static class SimpleTunnel implements Tunnel {
+        private final String name;
+        SimpleTunnel(String name) { this.name = name; }
+        @Override public String getName() { return name; }
+        @Override public void onStateChange(Tunnel.State state) { }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        wgBackend = new GoBackend(this);
+        wgExecutor = Executors.newSingleThreadExecutor();
 
         tab1Container = findViewById(R.id.tab1Container);
         btnTab1 = findViewById(R.id.btnTab1);
@@ -243,18 +269,49 @@ public class MainActivity extends Activity {
 
 
     private void startWireGuardVpn(String privateKey, String address, String peerKey, String endpoint, String allowedIPs, String dns, int mtu, HashMap<String, String> hostsMap) {
-        Intent intent = new Intent(this, com.ippulse.scanner.wireguard.WireGuardVpnService.class);
-        intent.setAction(com.ippulse.scanner.wireguard.WireGuardVpnService.ACTION_START);
-        intent.putExtra("private_key", privateKey);
-        intent.putExtra("address", address);
-        intent.putExtra("dns", dns);
-        intent.putExtra("mtu", mtu);
-        intent.putExtra("peer_public_key", peerKey);
-        intent.putExtra("endpoint", endpoint);
-        intent.putExtra("allowed_ips", allowedIPs);
-        intent.putExtra("hosts", hostsMapToString(hostsMap));
-        startService(intent);
+        // اجرای DNS محلی برای هاستینگ
+        try {
+            dnsServer = new LocalDnsServer(hostsMap, dns);
+            dnsServer.start();
+        } catch (Exception e) {
+            android.util.Log.e("IPPulseVPN", "DNS start failed", e);
+            dnsServer = null;
+        }
+
+        // ساخت کانفیگ
+        Config.Builder configBuilder = new Config.Builder();
+        Interface.Builder ifaceBuilder = new Interface.Builder();
+        ifaceBuilder.parsePrivateKey(privateKey);
+        ifaceBuilder.parseAddresses(address);
+        ifaceBuilder.parseDnsServers("127.0.0.1");
+        ifaceBuilder.parseMtu(String.valueOf(mtu));
+        configBuilder.setInterface(ifaceBuilder.build());
+
+        Peer.Builder peerBuilder = new Peer.Builder();
+        peerBuilder.parsePublicKey(peerKey);
+        peerBuilder.parseEndpoint(endpoint);
+        peerBuilder.parseAllowedIPs(allowedIPs);
+        configBuilder.addPeer(peerBuilder.build());
+
+        wgConfig = configBuilder.build();
+        wgTunnel = new SimpleTunnel("wg0");
+
+        wgExecutor.execute(() -> {
+            try {
+                wgBackend.setState(wgTunnel, Tunnel.State.UP, wgConfig);
+                android.util.Log.d("IPPulseVPN", "Tunnel UP");
+            } catch (Exception e) {
+                android.util.Log.e("IPPulseVPN", "setState failed", e);
+                if (dnsServer != null) dnsServer.stop();
+                runOnUiThread(() -> {
+                    vpnStatus.setText("VPN: Error");
+                    Toast.makeText(MainActivity.this, "VPN failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        });
     }
+
+
 
     private String hostsMapToString(HashMap<String, String> map) {
         StringBuilder sb = new StringBuilder();
@@ -265,12 +322,24 @@ public class MainActivity extends Activity {
     }
 
     private void stopVpn() {
-        Intent intent = new Intent(this, com.ippulse.scanner.wireguard.WireGuardVpnService.class);
-        intent.setAction(com.ippulse.scanner.wireguard.WireGuardVpnService.ACTION_STOP);
-        startService(intent);
+        if (wgTunnel != null && wgConfig != null) {
+            wgExecutor.execute(() -> {
+                try {
+                    wgBackend.setState(wgTunnel, Tunnel.State.DOWN, wgConfig);
+                    wgTunnel = null;
+                    wgConfig = null;
+                } catch (Exception e) {
+                    android.util.Log.e("IPPulseVPN", "stop failed", e);
+                }
+            });
+        }
+        if (dnsServer != null) dnsServer.stop();
+        if (wgExecutor != null) wgExecutor.shutdown();
         vpnStatus.setText("VPN: Stopped");
         Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
     }
+
+
 
 
     @Override
