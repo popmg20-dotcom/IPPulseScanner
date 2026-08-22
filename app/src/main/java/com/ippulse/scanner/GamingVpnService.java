@@ -382,16 +382,26 @@ public class GamingVpnService extends VpnService {
 
         private static final int MAX_IP_PACKET = 65535;
         private static final int READ_CHUNK = 32768;
+        private static final int ACCUMULATOR_SIZE = 131072;
         private static final int LOCALVPN_BUFFER_SIZE = 16384;
 
         @Override
         public void run() {
 
-            byte[] readBytes =
+            /*
+             * We deliberately use a plain byte[] accumulator here.
+             *
+             * A TUN read is already a packet-oriented read on Android's
+             * VPN interface, but we still support partial/multiple frames
+             * safely without relying on ByteBuffer compact/flip state.
+             */
+            final byte[] readBuffer =
                     new byte[READ_CHUNK];
 
-            ByteBuffer pending =
-                    ByteBuffer.allocate(MAX_IP_PACKET * 2);
+            final byte[] pending =
+                    new byte[ACCUMULATOR_SIZE];
+
+            int pendingLength = 0;
 
             debug("TUN PACKET READER START");
 
@@ -401,7 +411,7 @@ public class GamingVpnService extends VpnService {
                 try {
 
                     int count =
-                            tunIn.read(readBytes);
+                            tunIn.read(readBuffer);
 
                     if (count < 0) {
 
@@ -413,54 +423,62 @@ public class GamingVpnService extends VpnService {
                         continue;
                     }
 
-                    pending.compact();
-
-                    if (pending.remaining() < count) {
+                    /*
+                     * Append the new bytes to the accumulator.
+                     */
+                    if (pendingLength + count > pending.length) {
 
                         debug(
-                                "TUN PENDING OVERFLOW count="
+                                "TUN ACCUMULATOR OVERFLOW pending="
+                                        + pendingLength
+                                        + " count="
                                         + count
-                                        + " remaining="
-                                        + pending.remaining()
                         );
 
-                        pending.clear();
+                        /*
+                         * Reset framing rather than parsing corrupted data.
+                         */
+                        pendingLength = 0;
                         continue;
                     }
 
-                    pending.put(
-                            readBytes,
+                    System.arraycopy(
+                            readBuffer,
                             0,
+                            pending,
+                            pendingLength,
                             count
                     );
 
-                    pending.flip();
+                    pendingLength += count;
 
+                    int offset = 0;
+
+                    /*
+                     * Extract as many complete IP packets as possible.
+                     */
                     while (true) {
 
                         int available =
-                                pending.remaining();
+                                pendingLength - offset;
 
                         if (available < 20) {
                             break;
                         }
 
-                        int startPos =
-                                pending.position();
-
-                        int versionIhl =
-                                pending.get(startPos) & 0xFF;
+                        int first =
+                                pending[offset] & 0xFF;
 
                         int version =
-                                (versionIhl >>> 4) & 0x0F;
+                                (first >>> 4) & 0x0F;
 
                         int ihlWords =
-                                versionIhl & 0x0F;
+                                first & 0x0F;
 
                         /*
-                         * IPv6 is intentionally dropped, but the
-                         * ENTIRE IPv6 frame is consumed so framing
-                         * stays aligned.
+                         * -------------------------------------------------
+                         * IPv6
+                         * -------------------------------------------------
                          */
                         if (version == 6) {
 
@@ -469,43 +487,42 @@ public class GamingVpnService extends VpnService {
                             }
 
                             int payloadLength =
-                                    ((pending.get(startPos + 4) & 0xFF) << 8)
-                                            | (pending.get(startPos + 5) & 0xFF);
+                                    ((pending[offset + 4] & 0xFF) << 8)
+                                            | (pending[offset + 5] & 0xFF);
 
-                            int total =
+                            int totalLength =
                                     40 + payloadLength;
 
-                            if (total < 40
-                                    || total > MAX_IP_PACKET) {
+                            if (totalLength < 40
+                                    || totalLength > MAX_IP_PACKET) {
 
                                 debug(
                                         "TUN INVALID IPV6 LENGTH "
-                                                + total
+                                                + totalLength
                                 );
 
-                                pending.position(
-                                        startPos + 1
-                                );
-
+                                offset += 1;
                                 continue;
                             }
 
-                            if (available < total) {
+                            if (available < totalLength) {
                                 break;
                             }
 
                             debug(
                                     "TUN IPV6 DROPPED len="
-                                            + total
+                                            + totalLength
                             );
 
-                            pending.position(
-                                    startPos + total
-                            );
-
+                            offset += totalLength;
                             continue;
                         }
 
+                        /*
+                         * -------------------------------------------------
+                         * Invalid/non-IPv4
+                         * -------------------------------------------------
+                         */
                         if (version != 4
                                 || ihlWords < 5) {
 
@@ -517,10 +534,7 @@ public class GamingVpnService extends VpnService {
                                             + ihlWords
                             );
 
-                            pending.position(
-                                    startPos + 1
-                            );
-
+                            offset += 1;
                             continue;
                         }
 
@@ -532,8 +546,8 @@ public class GamingVpnService extends VpnService {
                         }
 
                         int totalLength =
-                                ((pending.get(startPos + 2) & 0xFF) << 8)
-                                        | (pending.get(startPos + 3) & 0xFF);
+                                ((pending[offset + 2] & 0xFF) << 8)
+                                        | (pending[offset + 3] & 0xFF);
 
                         if (totalLength < headerLength
                                 || totalLength > MAX_IP_PACKET) {
@@ -545,20 +559,21 @@ public class GamingVpnService extends VpnService {
                                             + headerLength
                             );
 
-                            pending.position(
-                                    startPos + 1
-                            );
-
+                            offset += 1;
                             continue;
                         }
 
+                        /*
+                         * Complete packet has not arrived yet.
+                         */
                         if (available < totalLength) {
                             break;
                         }
 
                         /*
-                         * LocalVPN works with 16KB direct buffers.
-                         * currentMtu=1400 means normal packets fit.
+                         * LocalVPN's pool buffers are 16KB.
+                         * Current VPN MTU is 1400, so ordinary packets
+                         * are safely below this limit.
                          */
                         if (totalLength > LOCALVPN_BUFFER_SIZE) {
 
@@ -567,10 +582,7 @@ public class GamingVpnService extends VpnService {
                                             + totalLength
                             );
 
-                            pending.position(
-                                    startPos + totalLength
-                            );
-
+                            offset += totalLength;
                             continue;
                         }
 
@@ -585,44 +597,77 @@ public class GamingVpnService extends VpnService {
                                             + packetBuffer.capacity()
                             );
 
-                            pending.position(
-                                    startPos + totalLength
+                            offset += totalLength;
+                            ByteBufferPool.release(
+                                    packetBuffer
                             );
-
                             continue;
                         }
 
-                        ByteBuffer slice =
-                                pending.slice();
+                        packetBuffer.clear();
 
-                        slice.limit(totalLength);
-
-                        packetBuffer.put(slice);
-                        packetBuffer.flip();
-                        packetBuffer.limit(totalLength);
-
-                        pending.position(
-                                startPos + totalLength
+                        packetBuffer.put(
+                                pending,
+                                offset,
+                                totalLength
                         );
 
+                        packetBuffer.flip();
+
+                        /*
+                         * IMPORTANT:
+                         * packetBuffer must remain owned by Packet/worker
+                         * after processTunPacket() when consumed=true.
+                         */
                         processTunPacket(
                                 packetBuffer
                         );
+
+                        offset += totalLength;
                     }
 
-                    pending.compact();
+                    /*
+                     * Preserve incomplete trailing bytes.
+                     */
+                    if (offset > 0) {
+
+                        int remaining =
+                                pendingLength - offset;
+
+                        if (remaining > 0) {
+
+                            System.arraycopy(
+                                    pending,
+                                    offset,
+                                    pending,
+                                    0,
+                                    remaining
+                            );
+                        }
+
+                        pendingLength = remaining;
+                    }
+
+                } catch (IOException e) {
+
+                    if (!running) {
+                        break;
+                    }
+
+                    debug(
+                            "TUN READER IO ERROR "
+                                    + e.getClass().getName()
+                                    + ": "
+                                    + String.valueOf(
+                                            e.getMessage()
+                                    )
+                    );
 
                 } catch (Exception e) {
 
                     if (!running) {
                         break;
                     }
-
-                    Log.e(
-                            TAG,
-                            "TUN reader error",
-                            e
-                    );
 
                     debug(
                             "TUN READER ERROR "
@@ -700,6 +745,7 @@ public class GamingVpnService extends VpnService {
             } finally {
 
                 if (!consumed) {
+
                     ByteBufferPool.release(
                             packetBuffer
                     );
