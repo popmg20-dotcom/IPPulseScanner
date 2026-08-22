@@ -4,13 +4,11 @@ import android.app.Service;
 import android.content.Intent;
 import android.net.VpnService;
 import android.os.IBinder;
-import com.ippulse.scanner.utils.Logger;
 import com.wireguard.android.backend.GoBackend;
 import com.wireguard.config.Config;
 import com.wireguard.config.Interface;
 import com.wireguard.config.Peer;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,7 +22,6 @@ public class WireGuardVpnService extends VpnService {
     @Override
     public void onCreate() {
         super.onCreate();
-        Logger.init(this);
         backend = new GoBackend(this);
     }
 
@@ -70,14 +67,10 @@ public class WireGuardVpnService extends VpnService {
             peerBuilder.parseAllowedIPs(allowedIPs);
             configBuilder.addPeer(peerBuilder.build());
 
-            Logger.d("Starting WireGuard tunnel...");
             backend.startTunnel(configBuilder.build());
-            Logger.d("Tunnel started successfully.");
         } catch (Exception e) {
-            Logger.e("Failed to start tunnel", e);
             e.printStackTrace();
             if (dnsServer != null) dnsServer.stop();
-        Logger.d("Tunnel stopped.");
             stopSelf();
         }
     }
@@ -86,22 +79,21 @@ public class WireGuardVpnService extends VpnService {
         try {
             if (backend != null) backend.stopTunnel();
         } catch (Exception e) {
-            Logger.e("Failed to start tunnel", e);
             e.printStackTrace();
         }
         if (dnsServer != null) dnsServer.stop();
-        Logger.d("Tunnel stopped.");
         stopSelf();
     }
 
     private Map<String, String> parseHosts(String hostsStr) {
         Map<String, String> map = new HashMap<>();
         if (hostsStr != null) {
-            String[] lines = hostsStr.split("\n");
+            String[] lines = hostsStr.split("\\n");
             for (String line : lines) {
                 line = line.trim();
                 if (line.isEmpty() || line.startsWith("#")) continue;
-                String[] parts = line.split("\s+");
+                // این خط را دقیقاً با دو بک‌اسلش بنویسید
+                String[] parts = line.split("\\s+");
                 if (parts.length >= 2) {
                     map.put(parts[1].toLowerCase(), parts[0]);
                 }
