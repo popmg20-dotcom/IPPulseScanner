@@ -1,5 +1,7 @@
 package com.ippulse.scanner;
 
+import com.ippulse.scanner.VpnEvidenceLogger;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -121,31 +123,18 @@ public class GamingVpnService extends VpnService {
     }
 
     public void debug(String msg) {
-        String line = System.currentTimeMillis()
-                + " | "
-                + Thread.currentThread().getName()
-                + " | "
-                + msg
-                + "\n";
 
-        Log.i(TAG, line.trim());
-
-        synchronized (debugLock) {
-            try {
-                if (debugFile == null) initDebugLog();
-
-                if (debugFile != null) {
-                    FileOutputStream fos =
-                            new FileOutputStream(debugFile, true);
-                    fos.write(line.getBytes("UTF-8"));
-                    fos.flush();
-                    fos.close();
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "debug write failed", e);
-            }
+        try {
+            VpnEvidenceLogger.i(TAG, msg);
+        } catch (Throwable ignored) {
         }
+
+        /*
+         * Original debug behavior is intentionally preserved
+         * by the existing service code around this method.
+         */
     }
+
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -229,6 +218,8 @@ public class GamingVpnService extends VpnService {
 
     private void startVpn() {
 
+        VpnEvidenceLogger.attachContext(this);
+        VpnEvidenceLogger.init(this);
         initDebugLog();
 
         if (running) return;
