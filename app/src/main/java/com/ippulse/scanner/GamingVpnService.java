@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.ContentValues;
 import android.content.pm.ServiceInfo;
 import android.net.VpnService;
+import android.system.Os;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -31,6 +32,7 @@ import com.ippulse.scanner.localvpn.UDPOutput;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -730,6 +732,23 @@ public class GamingVpnService extends VpnService {
                     return;
                 }
 
+                if (packet.isICMP()) {
+
+                    debug(
+                            "ICMP ECHO REQUEST "
+                                    + packet.ip4Header
+                                            .destinationAddress
+                                            .getHostAddress()
+                    );
+
+                    handleIcmpEcho(
+                            packet
+                    );
+
+                    consumed = true;
+                    return;
+                }
+
                 debug(
                         "TUN UNSUPPORTED PROTOCOL "
                                 + packet.ip4Header.protocol
@@ -930,6 +949,512 @@ public class GamingVpnService extends VpnService {
     /*
      * DNS target is the virtual VPN DNS address.
      */
+
+    /*
+     * ============================================================
+     * ICMP ECHO TEST
+     * ============================================================
+     *
+     * Purpose:
+     *
+     *   TUN ICMP Echo Request
+     *       -> protected ICMP socket
+     *       -> physical network
+     *       -> Echo Reply
+     *       -> TUN
+     *
+     * This is only for connectivity/hosting verification.
+     */
+    private void handleIcmpEcho(Packet packet) {
+
+        if (packet == null
+                || packet.ip4Header == null
+                || !packet.isICMP()) {
+            return;
+        }
+
+        final ByteBuffer input =
+                packet.backingBuffer.duplicate();
+
+        input.position(0);
+
+        final int ipHeaderLength =
+                packet.ip4Header.headerLength;
+
+        final int totalLength =
+                packet.ip4Header.totalLength;
+
+        if (totalLength < ipHeaderLength + 8
+                || totalLength > input.capacity()) {
+
+            debug(
+                    "ICMP INVALID total="
+                            + totalLength
+                            + " header="
+                            + ipHeaderLength
+            );
+
+            return;
+        }
+
+        final int icmpOffset =
+                ipHeaderLength;
+
+        final int type =
+                input.get(icmpOffset) & 0xFF;
+
+        final int code =
+                input.get(icmpOffset + 1) & 0xFF;
+
+        /*
+         * Only IPv4 Echo Request.
+         */
+        if (type != 8 || code != 0) {
+
+            debug(
+                    "ICMP UNSUPPORTED type="
+                            + type
+                            + " code="
+                            + code
+            );
+
+            return;
+        }
+
+        final int identifier =
+                input.getShort(
+                        icmpOffset + 4
+                ) & 0xFFFF;
+
+        final int sequence =
+                input.getShort(
+                        icmpOffset + 6
+                ) & 0xFFFF;
+
+        final byte[] payload =
+                new byte[
+                        totalLength
+                                - icmpOffset
+                                - 8
+                ];
+
+        input.position(
+                icmpOffset + 8
+        );
+
+        input.get(payload);
+
+        final InetAddress destination =
+                packet.ip4Header.destinationAddress;
+
+        final InetAddress source =
+                packet.ip4Header.sourceAddress;
+
+        new Thread(
+                new Runnable() {
+
+                    @Override
+                    public void run() {
+
+                        FileDescriptor fd = null;
+
+                        try {
+
+                            fd =
+                                    Os.socket(
+                                            android.system.OsConstants.AF_INET,
+                                            android.system.OsConstants.SOCK_DGRAM,
+                                            android.system.OsConstants.IPPROTO_ICMP
+                                    );
+
+                            /*
+                             * Critical:
+                             * prevent recursive entry into our VPN.
+                             */
+                            if (!protect(
+                                    fd
+                            )) {
+
+                                debug(
+                                        "ICMP PROTECT FAILED"
+                                                + " "
+                                                + destination
+                                                        .getHostAddress()
+                                );
+
+                                return;
+                            }
+
+                            byte[] request =
+                                    new byte[
+                                            8 + payload.length
+                                    ];
+
+                            request[0] = 8;
+                            request[1] = 0;
+
+                            request[4] =
+                                    (byte)
+                                            (identifier >>> 8);
+
+                            request[5] =
+                                    (byte)
+                                            identifier;
+
+                            request[6] =
+                                    (byte)
+                                            (sequence >>> 8);
+
+                            request[7] =
+                                    (byte)
+                                            sequence;
+
+                            System.arraycopy(
+                                    payload,
+                                    0,
+                                    request,
+                                    8,
+                                    payload.length
+                            );
+
+                            int checksum =
+                                    icmpChecksum(
+                                            request
+                                    );
+
+                            request[2] =
+                                    (byte)
+                                            (checksum >>> 8);
+
+                            request[3] =
+                                    (byte)
+                                            checksum;
+
+                            Os.sendto(
+                                    fd,
+                                    request,
+                                    0,
+                                    request.length,
+                                    0,
+                                    new InetSocketAddress(
+                                            destination,
+                                            0
+                                    )
+                            );
+
+                            debug(
+                                    "ICMP SENT "
+                                            + destination
+                                                    .getHostAddress()
+                                            + " id="
+                                            + identifier
+                                            + " seq="
+                                            + sequence
+                            );
+
+                            /*
+                             * Receive with a bounded worker lifetime.
+                             * The socket itself is closed in finally.
+                             */
+                            byte[] reply =
+                                    new byte[4096];
+
+                            int received =
+                                    Os.recvfrom(
+                                            fd,
+                                            reply,
+                                            0,
+                                            reply.length,
+                                            0,
+                                            null
+                                    );
+
+                            if (received < 8) {
+
+                                debug(
+                                        "ICMP REPLY TOO SHORT "
+                                                + received
+                                );
+
+                                return;
+                            }
+
+                            int offset = 0;
+
+                            /*
+                             * Accept either:
+                             *
+                             *   ICMP payload
+                             *
+                             * or:
+                             *
+                             *   IPv4 + ICMP
+                             */
+                            if ((reply[0] & 0xFF) == 0x45) {
+
+                                int ihl =
+                                        (reply[0] & 0x0F)
+                                                * 4;
+
+                                if (ihl >= 20
+                                        && received >= ihl + 8) {
+
+                                    offset = ihl;
+                                }
+                            }
+
+                            int replyType =
+                                    reply[offset]
+                                            & 0xFF;
+
+                            int replyCode =
+                                    reply[offset + 1]
+                                            & 0xFF;
+
+                            if (replyType != 0
+                                    || replyCode != 0) {
+
+                                debug(
+                                        "ICMP NOT ECHO REPLY "
+                                                + "type="
+                                                + replyType
+                                                + " code="
+                                                + replyCode
+                                );
+
+                                return;
+                            }
+
+                            byte[] icmp =
+                                    new byte[
+                                            8 + payload.length
+                                    ];
+
+                            icmp[0] = 0;
+                            icmp[1] = 0;
+
+                            icmp[4] =
+                                    (byte)
+                                            (identifier >>> 8);
+
+                            icmp[5] =
+                                    (byte)
+                                            identifier;
+
+                            icmp[6] =
+                                    (byte)
+                                            (sequence >>> 8);
+
+                            icmp[7] =
+                                    (byte)
+                                            sequence;
+
+                            System.arraycopy(
+                                    payload,
+                                    0,
+                                    icmp,
+                                    8,
+                                    payload.length
+                            );
+
+                            int replyChecksum =
+                                    icmpChecksum(
+                                            icmp
+                                    );
+
+                            icmp[2] =
+                                    (byte)
+                                            (replyChecksum >>> 8);
+
+                            icmp[3] =
+                                    (byte)
+                                            replyChecksum;
+
+                            ByteBuffer output =
+                                    ByteBufferPool.acquire();
+
+                            output.clear();
+
+                            /*
+                             * Reply goes back to the original
+                             * application:
+                             *
+                             * source = target IP
+                             * destination = app's original IP
+                             */
+                            output.put(
+                                    (byte) 0x45
+                            );
+
+                            output.put((byte) 0);
+
+                            output.putShort(
+                                    (short)
+                                            (
+                                                    20
+                                                            + icmp.length
+                                            )
+                            );
+
+                            output.putShort(
+                                    (short) 0
+                            );
+
+                            output.putShort(
+                                    (short) 0
+                            );
+
+                            output.put(
+                                    (byte) 64
+                            );
+
+                            output.put(
+                                    (byte) 1
+                            );
+
+                            output.putShort(
+                                    (short) 0
+                            );
+
+                            output.put(
+                                    destination
+                                            .getAddress(),
+                                    0,
+                                    4
+                            );
+
+                            output.put(
+                                    source
+                                            .getAddress(),
+                                    0,
+                                    4
+                            );
+
+                            output.put(
+                                    icmp
+                            );
+
+                            fixIpv4Checksum(
+                                    output
+                            );
+
+                            int resultLength =
+                                    20 + icmp.length;
+
+                            output.position(
+                                    resultLength
+                            );
+
+                            output.limit(
+                                    resultLength
+                            );
+
+                            networkToDeviceQueue.offer(
+                                    output
+                            );
+
+                            debug(
+                                    "ICMP REPLY "
+                                            + destination
+                                                    .getHostAddress()
+                                            + " id="
+                                            + identifier
+                                            + " seq="
+                                            + sequence
+                            );
+
+                        } catch (Exception e) {
+
+                            debug(
+                                    "ICMP ERROR "
+                                            + Log.getStackTraceString(
+                                            e
+                                    )
+                            );
+
+                        } finally {
+
+                            if (fd != null) {
+
+                                try {
+                                    Os.close(fd);
+                                } catch (Exception ignored) {
+                                }
+                            }
+                        }
+                    }
+                },
+                "icmp-upstream"
+        ).start();
+    }
+
+    private int icmpChecksum(
+            byte[] data) {
+
+        long sum = 0;
+
+        int i = 0;
+
+        while (i + 1 < data.length) {
+
+            sum +=
+                    ((data[i] & 0xFF) << 8)
+                            | (data[i + 1] & 0xFF);
+
+            i += 2;
+        }
+
+        if (i < data.length) {
+            sum +=
+                    (data[i] & 0xFF) << 8;
+        }
+
+        while ((sum >>> 16) != 0) {
+
+            sum =
+                    (sum & 0xFFFF)
+                            + (sum >>> 16);
+        }
+
+        return (~sum) & 0xFFFF;
+    }
+
+    private void fixIpv4Checksum(
+            ByteBuffer buffer) {
+
+        ByteBuffer b =
+                buffer.duplicate();
+
+        b.position(0);
+
+        b.putShort(
+                10,
+                (short) 0
+        );
+
+        int sum = 0;
+
+        for (int i = 0; i < 20; i += 2) {
+
+            sum +=
+                    ((b.get(i) & 0xFF) << 8)
+                            | (b.get(i + 1) & 0xFF);
+        }
+
+        while ((sum >>> 16) != 0) {
+
+            sum =
+                    (sum & 0xFFFF)
+                            + (sum >>> 16);
+        }
+
+        b.putShort(
+                10,
+                (short)
+                        ((~sum) & 0xFFFF)
+        );
+    }
+
     private boolean isDnsPacket(Packet packet) {
 
         return packet.udpHeader != null

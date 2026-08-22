@@ -37,16 +37,30 @@ public class Packet
 
     private boolean isTCP;
     private boolean isUDP;
+    private boolean isICMP;
 
     public Packet(ByteBuffer buffer) throws UnknownHostException {
         this.ip4Header = new IP4Header(buffer);
+
         if (this.ip4Header.protocol == IP4Header.TransportProtocol.TCP) {
             this.tcpHeader = new TCPHeader(buffer);
             this.isTCP = true;
         } else if (ip4Header.protocol == IP4Header.TransportProtocol.UDP) {
             this.udpHeader = new UDPHeader(buffer);
             this.isUDP = true;
+        } else {
+            /*
+             * IPv4 protocol field is byte 9.
+             * ICMP = protocol 1.
+             */
+            int protocol =
+                    buffer.get(9) & 0xFF;
+
+            if (protocol == 1) {
+                this.isICMP = true;
+            }
         }
+
         this.backingBuffer = buffer;
     }
 
@@ -70,6 +84,11 @@ public class Packet
     public boolean isUDP()
     {
         return isUDP;
+    }
+
+    public boolean isICMP()
+    {
+        return isICMP;
     }
 
     public void swapSourceAndDestination()
