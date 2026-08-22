@@ -55,14 +55,10 @@ public class LocalDnsServer {
         try {
             byte[] requestData = packet.getData();
             int length = packet.getLength();
-            // فقط به کوئری‌های A پاسخ می‌دهیم
-            // ساختار DNS: header (12 bytes) + question
             if (length < 12) return;
-            // تعداد سوالات
             int qdCount = ((requestData[4] & 0xFF) << 8) | (requestData[5] & 0xFF);
-            if (qdCount != 1) return; // فقط یک سوال پشتیبانی می‌کنیم
+            if (qdCount != 1) return;
 
-            // استخراج نام دامنه
             int pos = 12;
             StringBuilder domainBuilder = new StringBuilder();
             while (pos < length) {
@@ -77,60 +73,42 @@ public class LocalDnsServer {
                 }
             }
             String domain = domainBuilder.toString().toLowerCase();
-            pos++; // skip null byte
+            pos++;
             if (pos + 4 > length) return;
             int qtype = ((requestData[pos] & 0xFF) << 8) | (requestData[pos + 1] & 0xFF);
-            int qclass = ((requestData[pos + 2] & 0xFF) << 8) | (requestData[pos + 3] & 0xFF);
-            if (qtype != 1 && qtype != 28) { // فقط A و AAAA
-                // برای سادگی فقط A را برمی‌گردانیم
-                if (qtype != 1) return;
-            }
+            if (qtype != 1) return;
 
-            // ساخت پاسخ
             byte[] response = new byte[512];
-            // Header
-            System.arraycopy(requestData, 0, response, 0, 2); // ID
-            // Flags: response, recursion available
+            System.arraycopy(requestData, 0, response, 0, 2);
             response[2] = (byte) 0x81;
             response[3] = (byte) 0x80;
-            // QDCOUNT
             response[4] = requestData[4];
             response[5] = requestData[5];
-            // ANCOUNT
             response[6] = 0x00;
             response[7] = 0x01;
-            // NSCOUNT, ARCOUNT = 0
             response[8] = 0x00;
             response[9] = 0x00;
             response[10] = 0x00;
             response[11] = 0x00;
-            // Copy question section
+
             int questionEnd = pos + 4;
             System.arraycopy(requestData, 12, response, 12, questionEnd - 12);
-            // Answer section
             int answerPos = questionEnd;
-            // Name pointer to question
             response[answerPos++] = (byte) 0xC0;
             response[answerPos++] = 0x0C;
-            // Type A
             response[answerPos++] = 0x00;
             response[answerPos++] = 0x01;
-            // Class IN
             response[answerPos++] = 0x00;
             response[answerPos++] = 0x01;
-            // TTL = 60
             response[answerPos++] = 0x00;
             response[answerPos++] = 0x00;
             response[answerPos++] = 0x00;
             response[answerPos++] = 0x3C;
-            // RDLENGTH = 4
             response[answerPos++] = 0x00;
             response[answerPos++] = 0x04;
 
-            // IP address
             String mappedIp = hostMappings.get(domain);
             if (mappedIp == null) {
-                // Forward to upstream
                 DatagramSocket upstreamSocket = new DatagramSocket();
                 upstreamSocket.setSoTimeout(5000);
                 DatagramPacket upstreamPacket = new DatagramPacket(requestData, length,
