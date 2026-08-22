@@ -1,6 +1,7 @@
 package com.ippulse.scanner.wireguard;
 
 import android.app.Service;
+import android.net.VpnService;
 import android.content.Intent;
 import android.os.IBinder;
 import com.wireguard.android.backend.GoBackend;
@@ -14,7 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.Map;
 
-public class WireGuardVpnService extends Service {
+public class WireGuardVpnService extends VpnService {
     public static final String ACTION_START = "com.ippulse.scanner.wireguard.START";
     public static final String ACTION_STOP = "com.ippulse.scanner.wireguard.STOP";
 
@@ -62,10 +63,18 @@ public class WireGuardVpnService extends Service {
             String allowedIPs = intent.getStringExtra("allowed_ips");
             String hostsStr = intent.getStringExtra("hosts");
 
+            // پارس هاستینگ و اجرای DNS (اگر خطا داد، VPN را متوقف نمی‌کنیم)
             Map<String, String> hostMappings = parseHosts(hostsStr);
-            dnsServer = new LocalDnsServer(hostMappings, dns);
-            dnsServer.start();
+            try {
+                dnsServer = new LocalDnsServer(hostMappings, dns);
+                dnsServer.start();
+                Logger.d("Local DNS server started");
+            } catch (Exception e) {
+                Logger.e("DNS server start failed", e);
+                dnsServer = null;
+            }
 
+            // ساخت کانفیگ
             Config.Builder configBuilder = new Config.Builder();
             Interface.Builder ifaceBuilder = new Interface.Builder();
             ifaceBuilder.parsePrivateKey(privateKey);
@@ -83,17 +92,19 @@ public class WireGuardVpnService extends Service {
             currentConfig = configBuilder.build();
             currentTunnel = new SimpleTunnel("wg0");
 
+            // اجرای تونل در پس‌زمینه
             executor.execute(() -> {
                 try {
                     backend.setState(currentTunnel, Tunnel.State.UP, currentConfig);
+                    Logger.d("Tunnel UP");
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Logger.e("setState failed", e);
                     if (dnsServer != null) dnsServer.stop();
                     stopSelf();
                 }
             });
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.e("startTunnel error", e);
             if (dnsServer != null) dnsServer.stop();
             stopSelf();
         }
