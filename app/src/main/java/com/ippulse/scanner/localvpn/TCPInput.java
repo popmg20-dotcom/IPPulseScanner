@@ -17,7 +17,7 @@ import com.ippulse.scanner.localvpn.TCB.TCBStatus;
  * Reads data from real TCP sockets and converts it back to
  * packets written to the VPN TUN interface.
  *
- * Also completes non-blocking outbound TCP connects.
+ * Reads data from already-established outbound TCP sockets.
  */
 public class TCPInput implements Runnable {
 
@@ -70,10 +70,13 @@ public class TCPInput implements Runnable {
 
                     try {
 
-                        if (key.isConnectable()) {
-                            processConnect(key);
-
-                        } else if (key.isReadable()) {
+                        /*
+                         * TCPOutput performs the physical blocking connect
+                         * and registers the socket with OP_READ afterwards.
+                         *
+                         * TCPInput is therefore strictly network-read only.
+                         */
+                        if (key.isReadable()) {
                             processInput(key);
                         }
 
@@ -118,162 +121,6 @@ public class TCPInput implements Runnable {
      * The selector is woken AFTER registration so the selector
      * thread cannot miss the newly registered key.
      */
-    private void processConnect(SelectionKey key) {
-
-        TCB tcb = (TCB) key.attachment();
-
-        if (tcb == null) {
-            try {
-                key.cancel();
-            } catch (Exception ignored) {
-            }
-            return;
-        }
-
-        SocketChannel channel =
-                (SocketChannel) key.channel();
-
-        Log.i(
-                TAG,
-                "TCP OP_CONNECT FIRED: "
-                        + tcb.ipAndPort
-        );
-
-        try {
-
-            Log.i(
-                    TAG,
-                    "TCP finishConnect START: "
-                            + tcb.ipAndPort
-            );
-
-            boolean connected =
-                    channel.finishConnect();
-
-            Log.i(
-                    TAG,
-                    "TCP finishConnect RESULT="
-                            + connected
-                            + ": "
-                            + tcb.ipAndPort
-            );
-
-            if (!connected) {
-
-                /*
-                 * It is still not complete.
-                 * Keep OP_CONNECT active.
-                 */
-                key.interestOps(
-                        SelectionKey.OP_CONNECT
-                );
-
-                return;
-            }
-
-            tcb.status = TCBStatus.SYN_RECEIVED;
-
-            ByteBuffer responseBuffer =
-                    ByteBufferPool.acquire();
-
-            Packet referencePacket =
-                    tcb.referencePacket;
-
-            referencePacket.updateTCPBuffer(
-                    responseBuffer,
-                    (byte) (
-                            Packet.TCPHeader.SYN
-                                    | Packet.TCPHeader.ACK
-                    ),
-                    tcb.mySequenceNum,
-                    tcb.myAcknowledgementNum,
-                    0
-            );
-
-            tcb.mySequenceNum++;
-
-            outputQueue.offer(responseBuffer);
-
-            /*
-             * From this point onward we only read from
-             * the physical network socket.
-             */
-            key.interestOps(
-                    SelectionKey.OP_READ
-            );
-
-            tcb.selectionKey = key;
-            tcb.waitingForNetworkData = true;
-
-            /*
-             * Wake selector after all registration/state changes.
-             */
-            selector.wakeup();
-
-            Log.i(
-                    TAG,
-                    "TCP CONNECTED: "
-                            + tcb.ipAndPort
-            );
-
-            Log.i(
-                    TAG,
-                    "TCP SYN-ACK QUEUED: "
-                            + tcb.ipAndPort
-            );
-
-        } catch (IOException e) {
-
-            Log.e(
-                    TAG,
-                    "TCP finishConnect ERROR: "
-                            + tcb.ipAndPort,
-                    e
-            );
-
-            vpnDebug(
-                    "TCP CONNECT ERROR "
-                            + tcb.ipAndPort
-                            + " "
-                            + e.getClass().getName()
-                            + ": "
-                            + String.valueOf(e.getMessage())
-            );
-
-            try {
-
-                ByteBuffer responseBuffer =
-                        ByteBufferPool.acquire();
-
-                tcb.referencePacket.updateTCPBuffer(
-                        responseBuffer,
-                        (byte) Packet.TCPHeader.RST,
-                        0,
-                        tcb.myAcknowledgementNum,
-                        0
-                );
-
-                outputQueue.offer(responseBuffer);
-
-            } catch (Exception responseError) {
-
-                Log.e(
-                        TAG,
-                        "TCP RST BUILD ERROR "
-                                + tcb.ipAndPort,
-                        responseError
-                );
-            }
-
-            try {
-                key.cancel();
-            } catch (Exception ignored) {
-            }
-
-            TCB.closeTCB(tcb);
-        }
-    }
-
     private void processInput(SelectionKey key) {
 
         TCB tcb = (TCB) key.attachment();

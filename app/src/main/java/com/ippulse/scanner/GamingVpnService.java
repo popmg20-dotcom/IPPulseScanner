@@ -587,8 +587,28 @@ public class GamingVpnService extends VpnService {
                             /*
                              * Copy exactly ONE complete IP packet.
                              */
+                            /*
+                             * LocalVPN ByteBufferPool is a 16KB direct-buffer
+                             * pool. Do NOT create a heap buffer and later hand
+                             * it to ByteBufferPool.release().
+                             */
+                            if (totalLength > 16384) {
+
+                                debug(
+                                        "TUN PACKET TOO LARGE FOR LOCALVPN "
+                                                + "len="
+                                                + totalLength
+                                );
+
+                                pending.position(
+                                        startPos + totalLength
+                                );
+
+                                continue;
+                            }
+
                             ByteBuffer packetBuffer =
-                                    ByteBuffer.allocate(totalLength);
+                                    ByteBuffer.allocateDirect(16384);
 
                             ByteBuffer slice =
                                     pending.slice();
@@ -597,6 +617,7 @@ public class GamingVpnService extends VpnService {
 
                             packetBuffer.put(slice);
                             packetBuffer.flip();
+                            packetBuffer.limit(totalLength);
 
                             /*
                              * Advance accumulator.

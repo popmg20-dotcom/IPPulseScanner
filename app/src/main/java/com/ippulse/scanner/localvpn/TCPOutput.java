@@ -560,7 +560,10 @@ public class TCPOutput implements Runnable {
             }
 
             if (payloadSize == 0) {
-                ByteBufferPool.release(responseBuffer);
+                /*
+                 * The run() loop owns responseBuffer and will release
+                 * it when position() == 0. Never release it here too.
+                 */
                 return;
             }
 
