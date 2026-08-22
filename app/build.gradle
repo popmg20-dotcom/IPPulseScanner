@@ -2,7 +2,8 @@ apply plugin: 'com.android.application'
 
 repositories {
     google()
-    mavenCentral()
+    maven { url 'https://maven.aliyun.com/repository/central' }
+        mavenCentral()
 }
 
 android {
