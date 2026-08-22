@@ -360,12 +360,24 @@ public class MainActivity extends Activity {
                 FileLogger.d("setState UP success");
                 android.util.Log.d("IPPulseVPN", "Tunnel UP");
             } catch (Exception e) {
+                String fullError = "Error: " + e.toString() + "\n\n" + android.util.Log.getStackTraceString(e);
                 FileLogger.e("setState failed", e);
                 android.util.Log.e("IPPulseVPN", "setState failed", e);
                 if (dnsServer != null) dnsServer.stop();
+                String finalError = fullError;
                 runOnUiThread(() -> {
                     vpnStatus.setText("VPN: Error");
-                    Toast.makeText(MainActivity.this, "VPN failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    new android.app.AlertDialog.Builder(MainActivity.this)
+                            .setTitle("VPN Error Details")
+                            .setMessage(finalError)
+                            .setPositiveButton("Copy", (dialog, which) -> {
+                                android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+                                android.content.ClipData clip = android.content.ClipData.newPlainText("VPN Error", finalError);
+                                clipboard.setPrimaryClip(clip);
+                                Toast.makeText(MainActivity.this, "Error copied", Toast.LENGTH_SHORT).show();
+                            })
+                            .setNegativeButton("Close", null)
+                            .show();
                 });
             }
         });
