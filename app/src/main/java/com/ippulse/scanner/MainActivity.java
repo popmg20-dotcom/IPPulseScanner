@@ -279,22 +279,29 @@ public class MainActivity extends Activity {
         }
 
         // ساخت کانفیگ
-        Config.Builder configBuilder = new Config.Builder();
-        Interface.Builder ifaceBuilder = new Interface.Builder();
-        ifaceBuilder.parsePrivateKey(privateKey);
-        ifaceBuilder.parseAddresses(address);
-        ifaceBuilder.parseDnsServers("127.0.0.1");
-        ifaceBuilder.parseMtu(String.valueOf(mtu));
-        configBuilder.setInterface(ifaceBuilder.build());
+        try {
+            Config.Builder configBuilder = new Config.Builder();
+            Interface.Builder ifaceBuilder = new Interface.Builder();
+            ifaceBuilder.parsePrivateKey(privateKey);
+            ifaceBuilder.parseAddresses(address);
+            ifaceBuilder.parseDnsServers("127.0.0.1");
+            ifaceBuilder.parseMtu(String.valueOf(mtu));
+            configBuilder.setInterface(ifaceBuilder.build());
 
-        Peer.Builder peerBuilder = new Peer.Builder();
-        peerBuilder.parsePublicKey(peerKey);
-        peerBuilder.parseEndpoint(endpoint);
-        peerBuilder.parseAllowedIPs(allowedIPs);
-        configBuilder.addPeer(peerBuilder.build());
+            Peer.Builder peerBuilder = new Peer.Builder();
+            peerBuilder.parsePublicKey(peerKey);
+            peerBuilder.parseEndpoint(endpoint);
+            peerBuilder.parseAllowedIPs(allowedIPs);
+            configBuilder.addPeer(peerBuilder.build());
 
-        wgConfig = configBuilder.build();
-        wgTunnel = new SimpleTunnel("wg0");
+            wgConfig = configBuilder.build();
+            wgTunnel = new SimpleTunnel("wg0");
+        } catch (com.wireguard.config.BadConfigException e) {
+            android.util.Log.e("IPPulseVPN", "Bad config", e);
+            if (dnsServer != null) dnsServer.stop();
+            Toast.makeText(MainActivity.this, "Bad config: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            return;
+        }
 
         wgExecutor.execute(() -> {
             try {
