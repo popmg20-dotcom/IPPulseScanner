@@ -31,6 +31,7 @@
             
         
         
+        
         <service
             android:name=".wireguard.WireGuardVpnService"
             android:permission="android.permission.BIND_VPN_SERVICE"
@@ -39,5 +40,6 @@
                 <action android:name="android.net.VpnService" />
             </intent-filter>
         </service>
-</application>
+
+    </application>
 </manifest>
