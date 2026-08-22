@@ -41,6 +41,7 @@ import java.net.Socket;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.Selector;
 
 import java.util.ArrayList;
@@ -363,13 +364,33 @@ public class GamingVpnService extends VpnService {
 
     private final class TunRunnable implements Runnable {
 
+        /*
+         * TUN/FileChannel is non-blocking.
+         *
+         * A single read() is NOT guaranteed to contain one complete
+         * IPv4 packet. It may contain:
+         *
+         *   1) a partial packet
+         *   2) exactly one packet
+         *   3) multiple packets
+         *
+         * Therefore we accumulate raw bytes and only create Packet
+         * after the complete IPv4 frame is available.
+         */
+        private static final int MAX_IP_PACKET = 65535;
+        private static final int READ_CHUNK = 32768;
+
         @Override
         public void run() {
 
             FileChannel inputChannel = tunIn.getChannel();
             FileChannel outputChannel = tunOut.getChannel();
 
-            ByteBuffer buffer = ByteBufferPool.acquire();
+            ByteBuffer readBuffer =
+                    ByteBuffer.allocateDirect(READ_CHUNK);
+
+            ByteBuffer pending =
+                    ByteBuffer.allocate(MAX_IP_PACKET * 2);
 
             boolean dataSent = true;
 
@@ -377,124 +398,223 @@ public class GamingVpnService extends VpnService {
 
                 try {
 
-                    if (dataSent) {
-                        buffer.clear();
-                    } else {
-                        dataSent = true;
-                    }
+                    /*
+                     * -------------------------------------------------
+                     * 1. Read raw bytes from TUN
+                     * -------------------------------------------------
+                     */
+                    readBuffer.clear();
 
-                    int read = inputChannel.read(buffer);
+                    int read =
+                            inputChannel.read(readBuffer);
 
                     if (read > 0) {
 
-                        buffer.flip();
+                        readBuffer.flip();
 
-                        boolean bufferConsumed = false;
-
-                        try {
-
-                            Packet packet = new Packet(buffer);
-
-                            /*
-                             * FIRST:
-                             * IP BLOCK.
-                             */
-                            if (isBlocked(packet)) {
-
-                                debug(
-                                        "BLOCK "
-                                                + packet.ip4Header.destinationAddress
-                                                        .getHostAddress()
-                                );
-
-                                bufferConsumed = false;
-                            }
-
-                            /*
-                             * SECOND:
-                             * DNS interception.
-                             */
-                            else if (
-                                    packet.isUDP()
-                                            && isDnsPacket(packet)
-                            ) {
-
-                                handleDns(packet);
-
-                            }
-
-                            /*
-                             * THIRD:
-                             * Normal UDP internet traffic.
-                             */
-                            else if (packet.isUDP()) {
-
-                                deviceToNetworkUDPQueue.offer(packet);
-                                bufferConsumed = true;
-
-                            }
-
-                            /*
-                             * FOURTH:
-                             * Normal TCP internet traffic.
-                             */
-                            else if (packet.isTCP()) {
-
-                                deviceToNetworkTCPQueue.offer(packet);
-                                bufferConsumed = true;
-                            }
-
-                        } catch (Exception parseErr) {
-
-                            Log.w(
-                                    TAG,
-                                    "Skipped unparseable packet",
-                                    parseErr
-                            );
+                        if (pending.remaining() < read) {
 
                             debug(
-                                    "PACKET PARSE ERROR: "
-                                            + Log.getStackTraceString(parseErr)
+                                    "TUN PENDING OVERFLOW read="
+                                            + read
+                                            + " remaining="
+                                            + pending.remaining()
+                            );
+
+                            /*
+                             * Drop corrupted/oversized accumulated data
+                             * instead of letting Packet throw.
+                             */
+                            pending.clear();
+
+                        } else {
+
+                            pending.put(readBuffer);
+                        }
+
+                        pending.flip();
+
+                        /*
+                         * -------------------------------------------------
+                         * 2. Extract ALL complete IPv4 packets
+                         * -------------------------------------------------
+                         */
+                        while (true) {
+
+                            int available =
+                                    pending.remaining();
+
+                            if (available < 20) {
+                                break;
+                            }
+
+                            int startPos =
+                                    pending.position();
+
+                            /*
+                             * IPv4 version/IHL.
+                             */
+                            int versionIhl =
+                                    pending.get(startPos) & 0xFF;
+
+                            int version =
+                                    (versionIhl >> 4) & 0x0F;
+
+                            int ihlWords =
+                                    versionIhl & 0x0F;
+
+                            if (version != 4
+                                    || ihlWords < 5) {
+
+                                debug(
+                                        "TUN INVALID IPV4 HEADER "
+                                                + "version="
+                                                + version
+                                                + " ihl="
+                                                + ihlWords
+                                );
+
+                                /*
+                                 * Search for the next plausible IPv4
+                                 * header instead of feeding garbage to
+                                 * Packet.
+                                 */
+                                pending.position(
+                                        startPos + 1
+                                );
+
+                                continue;
+                            }
+
+                            int headerLength =
+                                    ihlWords * 4;
+
+                            if (available < headerLength) {
+                                break;
+                            }
+
+                            /*
+                             * IPv4 total length is bytes 2..3.
+                             */
+                            int totalLength =
+                                    ((pending.get(startPos + 2) & 0xFF) << 8)
+                                            | (pending.get(startPos + 3) & 0xFF);
+
+                            if (totalLength < headerLength
+                                    || totalLength > MAX_IP_PACKET) {
+
+                                debug(
+                                        "TUN INVALID IP LENGTH "
+                                                + totalLength
+                                                + " header="
+                                                + headerLength
+                                );
+
+                                pending.position(
+                                        startPos + 1
+                                );
+
+                                continue;
+                            }
+
+                            /*
+                             * Wait for the rest of this IP packet.
+                             */
+                            if (available < totalLength) {
+                                break;
+                            }
+
+                            /*
+                             * Copy exactly ONE complete IP packet.
+                             */
+                            ByteBuffer packetBuffer =
+                                    ByteBuffer.allocate(totalLength);
+
+                            ByteBuffer slice =
+                                    pending.slice();
+
+                            slice.limit(totalLength);
+
+                            packetBuffer.put(slice);
+                            packetBuffer.flip();
+
+                            /*
+                             * Advance accumulator.
+                             */
+                            pending.position(
+                                    startPos + totalLength
+                            );
+
+                            /*
+                             * Process the complete packet.
+                             */
+                            processTunPacket(
+                                    packetBuffer
                             );
                         }
 
-                        if (!bufferConsumed) {
-                            ByteBufferPool.release(buffer);
-                        }
+                        /*
+                         * Compact remaining partial packet bytes
+                         * to the beginning of the accumulator.
+                         */
+                        pending.compact();
 
-                        buffer = ByteBufferPool.acquire();
+                        dataSent = true;
+
+                    } else if (read == 0) {
+
+                        dataSent = false;
 
                     } else {
 
-                        dataSent = false;
+                        debug("TUN EOF");
+
+                        break;
                     }
 
                     /*
-                     * Write packets returned by TCP/UDP/DNS workers.
+                     * -------------------------------------------------
+                     * 3. Write packets returned by workers back to TUN
+                     * -------------------------------------------------
                      */
                     ByteBuffer outBuffer;
 
                     while (
-                            (outBuffer = networkToDeviceQueue.poll())
+                            (outBuffer =
+                                    networkToDeviceQueue.poll())
                                     != null
                     ) {
 
-                        outBuffer.flip();
-
                         try {
+
+                            outBuffer.flip();
+
                             while (outBuffer.hasRemaining()) {
                                 outputChannel.write(outBuffer);
                             }
+
                         } catch (IOException e) {
+
                             debug(
                                     "TUN WRITE ERROR: "
-                                            + e.getMessage()
+                                            + e.getClass().getName()
+                                            + ": "
+                                            + String.valueOf(
+                                            e.getMessage()
+                                    )
+                            );
+
+                        } finally {
+
+                            ByteBufferPool.release(
+                                    outBuffer
                             );
                         }
-
-                        ByteBufferPool.release(outBuffer);
                     }
 
+                    /*
+                     * Avoid busy spinning in non-blocking mode.
+                     */
                     if (
                             !dataSent
                                     && networkToDeviceQueue.isEmpty()
@@ -502,11 +622,29 @@ public class GamingVpnService extends VpnService {
                         Thread.sleep(5);
                     }
 
+                } catch (ClosedSelectorException e) {
+
+                    debug(
+                            "TUN SELECTOR CLOSED: "
+                                    + e
+                    );
+
+                    break;
+
+                } catch (InterruptedException e) {
+
+                    Thread.currentThread().interrupt();
+                    break;
+
                 } catch (Exception e) {
 
                     if (running) {
 
-                        Log.e(TAG, "TUN loop error", e);
+                        Log.e(
+                                TAG,
+                                "TUN loop error",
+                                e
+                        );
 
                         debug(
                                 "TUN LOOP ERROR: "
@@ -514,11 +652,106 @@ public class GamingVpnService extends VpnService {
                         );
                     }
 
-                    break;
+                    /*
+                     * Do not immediately kill the VPN for one malformed
+                     * packet. Continue while the service is still alive.
+                     */
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
             }
+        }
 
-            ByteBufferPool.release(buffer);
+        private void processTunPacket(
+                ByteBuffer packetBuffer) {
+
+            boolean consumed = false;
+
+            try {
+
+                Packet packet =
+                        new Packet(packetBuffer);
+
+                /*
+                 * IP BLOCK
+                 */
+                if (isBlocked(packet)) {
+
+                    debug(
+                            "BLOCK "
+                                    + packet.ip4Header.destinationAddress
+                                    .getHostAddress()
+                    );
+
+                    return;
+                }
+
+                /*
+                 * DNS interception
+                 */
+                if (
+                        packet.isUDP()
+                                && isDnsPacket(packet)
+                ) {
+
+                    handleDns(packet);
+                    return;
+                }
+
+                /*
+                 * UDP internet traffic
+                 */
+                if (packet.isUDP()) {
+
+                    deviceToNetworkUDPQueue.offer(packet);
+                    consumed = true;
+                    return;
+                }
+
+                /*
+                 * TCP internet traffic
+                 */
+                if (packet.isTCP()) {
+
+                    deviceToNetworkTCPQueue.offer(packet);
+                    consumed = true;
+                    return;
+                }
+
+                /*
+                 * Ignore unsupported protocols.
+                 */
+                debug(
+                        "TUN UNSUPPORTED PROTOCOL "
+                                + packet.ip4Header.protocol
+                );
+
+            } catch (Exception e) {
+
+                debug(
+                        "PACKET PARSE ERROR: "
+                                + Log.getStackTraceString(e)
+                );
+
+            } finally {
+
+                /*
+                 * Packet owns the backing buffer after construction.
+                 * When we queue it to LocalVPN we must not release it
+                 * here. For blocked/DNS/unsupported/error packets there
+                 * is no downstream worker, so release it.
+                 */
+                if (!consumed) {
+
+                    ByteBufferPool.release(
+                            packetBuffer
+                    );
+                }
+            }
         }
     }
 
