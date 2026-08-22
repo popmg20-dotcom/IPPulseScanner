@@ -38,6 +38,6 @@
         <service
         android:name="com.wireguard.android.backend.GoBackend$VpnService"
         android:exported="false"
-        tools:replace="android:exported" />
+        />
 </application>
 </manifest>

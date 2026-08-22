@@ -1,8 +1,6 @@
 package com.ippulse.scanner;
 
-import com.wireguard.android.backend.GoBackend;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -25,16 +23,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
-import com.ippulse.scanner.utils.FileLogger;
-import android.util.Base64;
-import com.wireguard.android.backend.GoBackend;
-import com.wireguard.android.backend.Tunnel;
-import com.wireguard.config.Config;
-import com.wireguard.config.Interface;
-import com.wireguard.config.Peer;
-import com.ippulse.scanner.wireguard.LocalDnsServer;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.*;
 import java.io.IOException;
 import java.io.File;
@@ -69,7 +57,6 @@ public class MainActivity extends Activity {
     private Button btnStartVpn, btnStopVpn, btnApplyIp;
     private TextView vpnStatus;
     private EditText vpnDns, vpnHosts, vpnMasterIp, vpnMtu;
-    private EditText wgPrivateKey, wgAddress, wgPeerKey, wgEndpoint, wgAllowedIPs;
 
     private ExecutorService executor;
     private Thread deepTestThread;
@@ -92,26 +79,13 @@ public class MainActivity extends Activity {
     private Tunnel wgTunnel;
     private Config wgConfig;
     private ExecutorService wgExecutor;
-    private HashMap<String, String> pendingHostsMap;
-    private String pendingDns;
     private LocalDnsServer dnsServer;
-
-    // SimpleTunnel برای GoBackend
-    private static class SimpleTunnel implements Tunnel {
-        private final String name;
-        SimpleTunnel(String name) { this.name = name; }
-        @Override public String getName() { return name; }
-        @Override public void onStateChange(Tunnel.State state) { }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        FileLogger.init(this);
 
-        wgBackend = new GoBackend(this);
-        wgExecutor = null; // ساخته می‌شود در هر استارت
 
         tab1Container = findViewById(R.id.tab1Container);
         btnTab1 = findViewById(R.id.btnTab1);
@@ -209,16 +183,9 @@ public class MainActivity extends Activity {
         vpnMtu.setText(prefs.getString("mtu", "1400"));
         vpnMasterIp.setText(prefs.getString("masterIp", "109.61.42.251"));
         vpnHosts.setText(prefs.getString("hosts", ""));
-        wgPrivateKey.setText(prefs.getString("wg_private_key", ""));
-        wgAddress.setText(prefs.getString("wg_address", ""));
-        wgPeerKey.setText(prefs.getString("wg_peer_key", ""));
-        wgEndpoint.setText(prefs.getString("wg_endpoint", ""));
-        wgPrivateKey.setText(prefs.getString("wg_private_key", "8DctVK60Qaux3X9vMzVDfM+CVwbVJlT93KINrjTDQGs="));
+                                        wgPrivateKey.setText(prefs.getString("wg_private_key", "8DctVK60Qaux3X9vMzVDfM+CVwbVJlT93KINrjTDQGs="));
         wgAddress.setText(prefs.getString("wg_address", "193.239.118.200/32,172.16.140.5/32,172.16.2.209/32,10.255.255.1/32"));
-        wgPeerKey.setText(prefs.getString("wg_peer_key", ""));
-        wgEndpoint.setText(prefs.getString("wg_endpoint", ""));
-        wgAllowedIPs.setText(prefs.getString("wg_allowed_ips", ""));
-        if (vpnHosts.getText().toString().trim().isEmpty()) {
+                                if (vpnHosts.getText().toString().trim().isEmpty()) {
             String defaultIp = vpnMasterIp.getText().toString().trim();
             StringBuilder sb = new StringBuilder();
             for (String domain : defaultDomains) {
@@ -235,12 +202,7 @@ public class MainActivity extends Activity {
             .putString("hosts", vpnHosts.getText().toString().trim())
             .putString("mtu", vpnMtu.getText().toString().trim())
             .putString("masterIp", vpnMasterIp.getText().toString().trim())
-            .putString("wg_private_key", wgPrivateKey.getText().toString().trim())
-            .putString("wg_address", wgAddress.getText().toString().trim())
-            .putString("wg_peer_key", wgPeerKey.getText().toString().trim())
-            .putString("wg_endpoint", wgEndpoint.getText().toString().trim())
-            .putString("wg_allowed_ips", wgAllowedIPs.getText().toString().trim())
-            .apply();
+                                                                        .apply();
     }
 
     private void applyMasterIp() {
@@ -258,16 +220,35 @@ public class MainActivity extends Activity {
         Toast.makeText(this, "IP به همه دامنه‌ها اعمال شد", Toast.LENGTH_SHORT).show();
     }
 
+
+
+
+
+
+
+
+    private String hostsMapToString(HashMap<String, String> map) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            sb.append(entry.getValue()).append(" ").append(entry.getKey()).append("\n");
+        }
+        return sb.toString();
+    }
+
+
+
+
+
+    private void stopVpn() {
+        GamingVpnService.stop(this);
+        vpnStatus.setText("VPN: Stopped");
+        Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
+    }
+
     private void startVpn() {
         saveVpnSettings();
         String dns = vpnDns.getText().toString().trim();
         HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-        String wgPrivateKeyStr = wgPrivateKey.getText().toString().trim();
-        String wgAddressStr = wgAddress.getText().toString().trim();
-        String wgPeerKeyStr = wgPeerKey.getText().toString().trim();
-        String wgEndpointStr = wgEndpoint.getText().toString().trim();
-        String wgAllowedIPsStr = wgAllowedIPs.getText().toString().trim();
-        int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
 
         if (Build.VERSION.SDK_INT >= 33) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -280,160 +261,12 @@ public class MainActivity extends Activity {
         if (intent != null) {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
-            startWireGuardVpn(wgPrivateKeyStr, wgAddressStr, wgPeerKeyStr, wgEndpointStr, wgAllowedIPsStr, dns, mtu, hostsMap);
+            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
+            GamingVpnService.start(this, dns, mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         }
     }
-
-
-
-    private boolean isValidWireGuardKey(String key) {
-        if (key == null) return false;
-        key = key.trim();
-        if (key.length() != 44) return false;
-        try {
-            byte[] decoded = Base64.decode(key, Base64.DEFAULT);
-            return decoded.length == 32;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private void startWireGuardVpn(String privateKey, String address, String peerKey, String endpoint, String allowedIPs, String dns, int mtu, HashMap<String, String> hostsMap) {
-        FileLogger.d("=== startWireGuardVpn called ===");
-        FileLogger.d("privateKey length=" + (privateKey == null ? "null" : privateKey.length()));
-        FileLogger.d("address=" + address);
-        FileLogger.d("dns=" + dns);
-        FileLogger.d("mtu=" + mtu);
-        FileLogger.d("peerKey=" + (peerKey == null ? "null" : peerKey.length()));
-        FileLogger.d("endpoint=" + endpoint);
-        FileLogger.d("allowedIPs=" + allowedIPs);
-
-        // بررسی کلید خصوصی
-        if (!isValidWireGuardKey(privateKey)) {
-            Toast.makeText(this, "Private Key is invalid! Must be 44 chars base64.", Toast.LENGTH_LONG).show();
-            return;
-        }
-        // ذخیره برای استفاده بعد از تونل
-        pendingHostsMap = hostsMap;
-        pendingDns = dns;
-
-        // DNS سرور محلی بعد از بالا آمدن تونل شروع می‌شود
-
-        // ساخت کانفیگ
-        try {
-            FileLogger.d("Building config...");
-            Config.Builder configBuilder = new Config.Builder();
-            Interface.Builder ifaceBuilder = new Interface.Builder();
-            ifaceBuilder.parsePrivateKey(privateKey);
-            ifaceBuilder.parseAddresses(address.replaceAll("[^0-9./:,]", "").trim());
-            ifaceBuilder.parseDnsServers("10.255.255.1");
-            ifaceBuilder.parseMtu(String.valueOf(mtu));
-            configBuilder.setInterface(ifaceBuilder.build());
-
-            // فقط در صورتی Peer اضافه کن که کلید و endpoint وارد شده باشند
-            if (peerKey != null && !peerKey.isEmpty() && endpoint != null && !endpoint.isEmpty()) {
-                Peer.Builder peerBuilder = new Peer.Builder();
-                peerBuilder.parsePublicKey(peerKey);
-                peerBuilder.parseEndpoint(endpoint);
-                peerBuilder.parseAllowedIPs(allowedIPs);
-                configBuilder.addPeer(peerBuilder.build());
-            }
-
-            wgConfig = configBuilder.build();
-            wgTunnel = new SimpleTunnel("wg0");
-            FileLogger.d("Config built successfully, tunnel name=" + wgTunnel.getName());
-        } catch (com.wireguard.config.BadConfigException e) {
-            FileLogger.e("BadConfigException", e);
-            android.util.Log.e("IPPulseVPN", "Bad config", e);
-            if (dnsServer != null) dnsServer.stop();
-            Toast.makeText(MainActivity.this, "Bad config: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        if (wgExecutor == null || wgExecutor.isShutdown()) {
-            wgExecutor = Executors.newSingleThreadExecutor();
-        }
-        final ExecutorService executor = wgExecutor;
-        executor.execute(() -> {
-            try {
-                FileLogger.d("Calling setState UP...");
-                wgBackend.setState(wgTunnel, Tunnel.State.UP, wgConfig);
-                FileLogger.d("setState UP success");
-                android.util.Log.d("IPPulseVPN", "Tunnel UP");
-                // شروع DNS محلی بعد از تونل
-                if (pendingHostsMap != null) {
-                    try {
-                        dnsServer = new LocalDnsServer(pendingHostsMap, pendingDns, "10.255.255.1");
-                        dnsServer.start();
-                        FileLogger.d("Local DNS server started on 10.255.255.1");
-                    } catch (Exception e) {
-                        FileLogger.e("DNS start failed", e);
-                        dnsServer = null;
-                    }
-                }
-            } catch (Exception e) {
-                String fullError = "Error: " + e.toString() + "\n\n" + android.util.Log.getStackTraceString(e);
-                FileLogger.e("setState failed", e);
-                android.util.Log.e("IPPulseVPN", "setState failed", e);
-                if (dnsServer != null) dnsServer.stop();
-                String finalError = fullError;
-                runOnUiThread(() -> {
-                    vpnStatus.setText("VPN: Error");
-                    new android.app.AlertDialog.Builder(MainActivity.this)
-                            .setTitle("VPN Error Details")
-                            .setMessage(finalError)
-                            .setPositiveButton("Copy", (dialog, which) -> {
-                                android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(android.content.Context.CLIPBOARD_SERVICE);
-                                android.content.ClipData clip = android.content.ClipData.newPlainText("VPN Error", finalError);
-                                clipboard.setPrimaryClip(clip);
-                                Toast.makeText(MainActivity.this, "Error copied", Toast.LENGTH_SHORT).show();
-                            })
-                            .setNegativeButton("Close", null)
-                            .show();
-                });
-            }
-        });
-    }
-
-
-
-    private String hostsMapToString(HashMap<String, String> map) {
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            sb.append(entry.getValue()).append(" ").append(entry.getKey()).append("\n");
-        }
-        return sb.toString();
-    }
-
-    private void stopVpn() {
-        if (wgTunnel != null && wgConfig != null) {
-            if (wgExecutor == null || wgExecutor.isShutdown()) {
-            wgExecutor = Executors.newSingleThreadExecutor();
-        }
-        final ExecutorService executor = wgExecutor;
-        executor.execute(() -> {
-                try {
-                    wgBackend.setState(wgTunnel, Tunnel.State.DOWN, wgConfig);
-                    wgTunnel = null;
-                    wgConfig = null;
-                } catch (Exception e) {
-                    android.util.Log.e("IPPulseVPN", "stop failed", e);
-                }
-            });
-        }
-        if (dnsServer != null) dnsServer.stop();
-        if (wgExecutor != null) {
-            wgExecutor.shutdownNow();
-            wgExecutor = null;
-        }
-        vpnStatus.setText("VPN: Stopped");
-        Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
-    }
-
-
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
