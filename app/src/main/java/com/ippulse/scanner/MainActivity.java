@@ -1,5 +1,6 @@
 package com.ippulse.scanner;
 
+import com.wireguard.android.backend.GoBackend;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ClipData;

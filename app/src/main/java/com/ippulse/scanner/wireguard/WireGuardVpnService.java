@@ -10,6 +10,8 @@ import com.wireguard.config.Interface;
 import com.wireguard.config.Peer;
 
 import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.Map;
 
 public class WireGuardVpnService extends Service {
@@ -19,6 +21,7 @@ public class WireGuardVpnService extends Service {
     private GoBackend backend;
     private LocalDnsServer dnsServer;
     private Tunnel currentTunnel;
+    private ExecutorService executor;
     private Config currentConfig;
 
     // Simple implementation of Tunnel interface for handling by GoBackend
@@ -33,6 +36,7 @@ public class WireGuardVpnService extends Service {
     public void onCreate() {
         super.onCreate();
         backend = new GoBackend(this);
+        executor = Executors.newSingleThreadExecutor();
     }
 
     @Override
@@ -77,9 +81,17 @@ public class WireGuardVpnService extends Service {
             configBuilder.addPeer(peerBuilder.build());
 
             currentConfig = configBuilder.build();
-            currentTunnel = new SimpleTunnel("ippulse-wg");
+            currentTunnel = new SimpleTunnel("wg0");
 
-            backend.setState(currentTunnel, Tunnel.State.UP, currentConfig);
+            executor.execute(() -> {
+                try {
+                    backend.setState(currentTunnel, Tunnel.State.UP, currentConfig);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    if (dnsServer != null) dnsServer.stop();
+                    stopSelf();
+                }
+            });
         } catch (Exception e) {
             e.printStackTrace();
             if (dnsServer != null) dnsServer.stop();
@@ -90,7 +102,13 @@ public class WireGuardVpnService extends Service {
     private void stopTunnel() {
         try {
             if (currentTunnel != null && currentConfig != null) {
-                backend.setState(currentTunnel, Tunnel.State.DOWN, currentConfig);
+                executor.execute(() -> {
+                    try {
+                        backend.setState(currentTunnel, Tunnel.State.DOWN, currentConfig);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
                 currentTunnel = null;
                 currentConfig = null;
             }
@@ -98,6 +116,7 @@ public class WireGuardVpnService extends Service {
             e.printStackTrace();
         }
         if (dnsServer != null) dnsServer.stop();
+        if (executor != null) executor.shutdown();
         stopSelf();
     }
 
