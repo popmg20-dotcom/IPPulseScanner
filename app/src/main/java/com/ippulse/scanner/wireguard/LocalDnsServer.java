@@ -79,7 +79,8 @@ public class LocalDnsServer {
             pos++;
             if (pos + 4 > length) return;
             int qtype = ((requestData[pos] & 0xFF) << 8) | (requestData[pos + 1] & 0xFF);
-            if (qtype != 1) return;
+            // فقط A و AAAA را پشتیبانی می‌کنیم
+            if (qtype != 1 && qtype != 28) return;
 
             byte[] response = new byte[512];
             System.arraycopy(requestData, 0, response, 0, 2);

@@ -111,7 +111,7 @@ public class MainActivity extends Activity {
         FileLogger.init(this);
 
         wgBackend = new GoBackend(this);
-        wgExecutor = Executors.newSingleThreadExecutor();
+        wgExecutor = null; // ساخته می‌شود در هر استارت
 
         tab1Container = findViewById(R.id.tab1Container);
         btnTab1 = findViewById(R.id.btnTab1);
@@ -217,7 +217,7 @@ public class MainActivity extends Activity {
         wgAddress.setText(prefs.getString("wg_address", "193.239.118.200/32,172.16.140.5/32,172.16.2.209/32,10.255.255.1/32"));
         wgPeerKey.setText(prefs.getString("wg_peer_key", ""));
         wgEndpoint.setText(prefs.getString("wg_endpoint", ""));
-        wgAllowedIPs.setText(prefs.getString("wg_allowed_ips", "0.0.0.0/0, ::/0"));
+        wgAllowedIPs.setText(prefs.getString("wg_allowed_ips", ""));
         if (vpnHosts.getText().toString().trim().isEmpty()) {
             String defaultIp = vpnMasterIp.getText().toString().trim();
             StringBuilder sb = new StringBuilder();
@@ -348,7 +348,11 @@ public class MainActivity extends Activity {
             return;
         }
 
-        wgExecutor.execute(() -> {
+        if (wgExecutor == null || wgExecutor.isShutdown()) {
+            wgExecutor = Executors.newSingleThreadExecutor();
+        }
+        final ExecutorService executor = wgExecutor;
+        executor.execute(() -> {
             try {
                 FileLogger.d("Calling setState UP...");
                 wgBackend.setState(wgTunnel, Tunnel.State.UP, wgConfig);
@@ -401,7 +405,11 @@ public class MainActivity extends Activity {
 
     private void stopVpn() {
         if (wgTunnel != null && wgConfig != null) {
-            wgExecutor.execute(() -> {
+            if (wgExecutor == null || wgExecutor.isShutdown()) {
+            wgExecutor = Executors.newSingleThreadExecutor();
+        }
+        final ExecutorService executor = wgExecutor;
+        executor.execute(() -> {
                 try {
                     wgBackend.setState(wgTunnel, Tunnel.State.DOWN, wgConfig);
                     wgTunnel = null;
@@ -412,7 +420,10 @@ public class MainActivity extends Activity {
             });
         }
         if (dnsServer != null) dnsServer.stop();
-        if (wgExecutor != null) wgExecutor.shutdown();
+        if (wgExecutor != null) {
+            wgExecutor.shutdownNow();
+            wgExecutor = null;
+        }
         vpnStatus.setText("VPN: Stopped");
         Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
     }
