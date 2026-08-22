@@ -315,6 +315,10 @@ public class MainActivity extends Activity {
             Toast.makeText(this, "Private Key is invalid! Must be 44 chars base64.", Toast.LENGTH_LONG).show();
             return;
         }
+        // ذخیره برای استفاده بعد از تونل
+        pendingHostsMap = hostsMap;
+        pendingDns = dns;
+
         // DNS سرور محلی بعد از بالا آمدن تونل شروع می‌شود
 
         // ساخت کانفیگ
