@@ -8,6 +8,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
+import com.ippulse.scanner.utils.Logger;
 
 public class LocalDnsServer {
     private final Map<String, String> hostMappings;
@@ -24,6 +25,7 @@ public class LocalDnsServer {
     public void start() throws IOException {
         if (running) return;
         socket = new DatagramSocket(new InetSocketAddress("127.0.0.1", 53));
+        Logger.d("Local DNS server started on 127.0.0.1:53");
         running = true;
         thread = new Thread(this::runLoop);
         thread.start();
@@ -60,6 +62,7 @@ public class LocalDnsServer {
                 String ip = hostMappings.get(domain);
                 ARecord record = new ARecord(Name.fromString(domain), DClass.IN, 60, InetAddress.getByName(ip));
                 response.addRecord(record, Section.ANSWER);
+                Logger.d("Mapped domain: " + domain + " -> " + ip);
                 byte[] respData = response.toWire();
                 DatagramPacket respPacket = new DatagramPacket(respData, respData.length, packet.getAddress(), packet.getPort());
                 socket.send(respPacket);
@@ -71,6 +74,7 @@ public class LocalDnsServer {
                 byte[] respBuf = new byte[512];
                 DatagramPacket upstreamResponse = new DatagramPacket(respBuf, respBuf.length);
                 upstreamSocket.receive(upstreamResponse);
+                Logger.d("Forwarded DNS query for: " + domain);
                 upstreamSocket.close();
 
                 DatagramPacket respPacket = new DatagramPacket(upstreamResponse.getData(), upstreamResponse.getLength(), packet.getAddress(), packet.getPort());

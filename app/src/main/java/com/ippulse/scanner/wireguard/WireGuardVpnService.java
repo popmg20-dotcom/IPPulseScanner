@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.net.VpnService;
 import android.os.IBinder;
+import com.ippulse.scanner.utils.Logger;
 import com.wireguard.android.backend.GoBackend;
 import com.wireguard.config.Config;
 import com.wireguard.config.Interface;
@@ -23,6 +24,7 @@ public class WireGuardVpnService extends VpnService {
     @Override
     public void onCreate() {
         super.onCreate();
+        Logger.init(this);
         backend = new GoBackend(this);
     }
 
@@ -68,10 +70,14 @@ public class WireGuardVpnService extends VpnService {
             peerBuilder.parseAllowedIPs(allowedIPs);
             configBuilder.addPeer(peerBuilder.build());
 
+            Logger.d("Starting WireGuard tunnel...");
             backend.startTunnel(configBuilder.build());
+            Logger.d("Tunnel started successfully.");
         } catch (Exception e) {
+            Logger.e("Failed to start tunnel", e);
             e.printStackTrace();
             if (dnsServer != null) dnsServer.stop();
+        Logger.d("Tunnel stopped.");
             stopSelf();
         }
     }
@@ -80,9 +86,11 @@ public class WireGuardVpnService extends VpnService {
         try {
             if (backend != null) backend.stopTunnel();
         } catch (Exception e) {
+            Logger.e("Failed to start tunnel", e);
             e.printStackTrace();
         }
         if (dnsServer != null) dnsServer.stop();
+        Logger.d("Tunnel stopped.");
         stopSelf();
     }
 
