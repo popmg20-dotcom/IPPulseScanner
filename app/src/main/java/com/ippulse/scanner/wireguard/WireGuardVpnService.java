@@ -2,7 +2,6 @@ package com.ippulse.scanner.wireguard;
 
 import android.app.Service;
 import android.content.Intent;
-import android.net.VpnService;
 import android.os.IBinder;
 import com.wireguard.android.backend.GoBackend;
 import com.wireguard.android.backend.Tunnel;
@@ -13,7 +12,7 @@ import com.wireguard.config.Peer;
 import java.util.HashMap;
 import java.util.Map;
 
-public class WireGuardVpnService extends VpnService {
+public class WireGuardVpnService extends Service {
     public static final String ACTION_START = "com.ippulse.scanner.wireguard.START";
     public static final String ACTION_STOP = "com.ippulse.scanner.wireguard.STOP";
 

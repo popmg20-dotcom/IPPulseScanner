@@ -230,7 +230,7 @@ public class MainActivity extends Activity {
             }
         }
 
-        Intent intent = VpnService.prepare(this);
+        Intent intent = GoBackend.VpnService.prepare(this);
         if (intent != null) {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
