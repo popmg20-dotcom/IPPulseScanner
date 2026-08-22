@@ -11,4 +11,9 @@ android {
         versionCode 1
         versionName '1.0'
     }
+
+dependencies {
+    implementation 'com.wireguard.android:tunnel:1.0.20230706'
+    implementation 'dnsjava:dnsjava:3.5.2'
+}
 }
