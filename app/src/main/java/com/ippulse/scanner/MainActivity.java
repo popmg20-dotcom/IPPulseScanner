@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import com.ippulse.scanner.utils.FileLogger;
 import android.util.Base64;
 import com.wireguard.android.backend.GoBackend;
 import com.wireguard.android.backend.Tunnel;
@@ -105,6 +106,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        FileLogger.init(this);
 
         wgBackend = new GoBackend(this);
         wgExecutor = Executors.newSingleThreadExecutor();
@@ -283,6 +285,15 @@ public class MainActivity extends Activity {
     }
 
     private void startWireGuardVpn(String privateKey, String address, String peerKey, String endpoint, String allowedIPs, String dns, int mtu, HashMap<String, String> hostsMap) {
+        FileLogger.d("=== startWireGuardVpn called ===");
+        FileLogger.d("privateKey length=" + (privateKey == null ? "null" : privateKey.length()));
+        FileLogger.d("address=" + address);
+        FileLogger.d("dns=" + dns);
+        FileLogger.d("mtu=" + mtu);
+        FileLogger.d("peerKey=" + (peerKey == null ? "null" : peerKey.length()));
+        FileLogger.d("endpoint=" + endpoint);
+        FileLogger.d("allowedIPs=" + allowedIPs);
+
         // بررسی کلید خصوصی
         if (!isValidWireGuardKey(privateKey)) {
             Toast.makeText(this, "Private Key is invalid! Must be 44 chars base64.", Toast.LENGTH_LONG).show();
@@ -299,6 +310,7 @@ public class MainActivity extends Activity {
 
         // ساخت کانفیگ
         try {
+            FileLogger.d("Building config...");
             Config.Builder configBuilder = new Config.Builder();
             Interface.Builder ifaceBuilder = new Interface.Builder();
             ifaceBuilder.parsePrivateKey(privateKey);
@@ -318,7 +330,9 @@ public class MainActivity extends Activity {
 
             wgConfig = configBuilder.build();
             wgTunnel = new SimpleTunnel("wg0");
+            FileLogger.d("Config built successfully, tunnel name=" + wgTunnel.getName());
         } catch (com.wireguard.config.BadConfigException e) {
+            FileLogger.e("BadConfigException", e);
             android.util.Log.e("IPPulseVPN", "Bad config", e);
             if (dnsServer != null) dnsServer.stop();
             Toast.makeText(MainActivity.this, "Bad config: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -327,9 +341,12 @@ public class MainActivity extends Activity {
 
         wgExecutor.execute(() -> {
             try {
+                FileLogger.d("Calling setState UP...");
                 wgBackend.setState(wgTunnel, Tunnel.State.UP, wgConfig);
+                FileLogger.d("setState UP success");
                 android.util.Log.d("IPPulseVPN", "Tunnel UP");
             } catch (Exception e) {
+                FileLogger.e("setState failed", e);
                 android.util.Log.e("IPPulseVPN", "setState failed", e);
                 if (dnsServer != null) dnsServer.stop();
                 runOnUiThread(() -> {
