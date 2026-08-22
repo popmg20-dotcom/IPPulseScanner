@@ -463,22 +463,81 @@ public class GamingVpnService extends VpnService {
                             int ihlWords =
                                     versionIhl & 0x0F;
 
+                            /*
+                             * IPv6 frame.
+                             *
+                             * The current LocalVPN packet engine is IPv4-only.
+                             * We MUST consume the complete IPv6 frame here,
+                             * otherwise advancing one byte would destroy
+                             * accumulator framing and make every following
+                             * byte look like a fake IPv4 header.
+                             */
+                            if (version == 6) {
+
+                                if (available < 40) {
+                                    break;
+                                }
+
+                                int ipv6PayloadLength =
+                                        ((pending.get(startPos + 4) & 0xFF) << 8)
+                                                | (pending.get(startPos + 5) & 0xFF);
+
+                                int ipv6TotalLength =
+                                        40 + ipv6PayloadLength;
+
+                                if (ipv6TotalLength < 40
+                                        || ipv6TotalLength > MAX_IP_PACKET) {
+
+                                    debug(
+                                            "TUN INVALID IPV6 LENGTH "
+                                                    + ipv6TotalLength
+                                    );
+
+                                    /*
+                                     * Drop one byte only when the IPv6
+                                     * header itself is corrupt.
+                                     */
+                                    pending.position(
+                                            startPos + 1
+                                    );
+
+                                    continue;
+                                }
+
+                                if (available < ipv6TotalLength) {
+                                    break;
+                                }
+
+                                debug(
+                                        "TUN IPV6 DROPPED len="
+                                                + ipv6TotalLength
+                                );
+
+                                pending.position(
+                                        startPos + ipv6TotalLength
+                                );
+
+                                continue;
+                            }
+
+                            /*
+                             * Unknown/non-IPv4 frame.
+                             *
+                             * Only resynchronize one byte for an actually
+                             * malformed frame. Valid IPv6 is handled above
+                             * as a complete frame.
+                             */
                             if (version != 4
                                     || ihlWords < 5) {
 
                                 debug(
-                                        "TUN INVALID IPV4 HEADER "
+                                        "TUN INVALID IP HEADER "
                                                 + "version="
                                                 + version
                                                 + " ihl="
                                                 + ihlWords
                                 );
 
-                                /*
-                                 * Search for the next plausible IPv4
-                                 * header instead of feeding garbage to
-                                 * Packet.
-                                 */
                                 pending.position(
                                         startPos + 1
                                 );
