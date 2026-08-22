@@ -207,6 +207,11 @@ public class MainActivity extends Activity {
         vpnMtu.setText(prefs.getString("mtu", "1400"));
         vpnMasterIp.setText(prefs.getString("masterIp", "109.61.42.251"));
         vpnHosts.setText(prefs.getString("hosts", ""));
+        wgPrivateKey.setText(prefs.getString("wg_private_key", ""));
+        wgAddress.setText(prefs.getString("wg_address", ""));
+        wgPeerKey.setText(prefs.getString("wg_peer_key", ""));
+        wgEndpoint.setText(prefs.getString("wg_endpoint", ""));
+        wgAllowedIPs.setText(prefs.getString("wg_allowed_ips", "0.0.0.0/0, ::/0"));
         if (vpnHosts.getText().toString().trim().isEmpty()) {
             String defaultIp = vpnMasterIp.getText().toString().trim();
             StringBuilder sb = new StringBuilder();
@@ -224,6 +229,11 @@ public class MainActivity extends Activity {
             .putString("hosts", vpnHosts.getText().toString().trim())
             .putString("mtu", vpnMtu.getText().toString().trim())
             .putString("masterIp", vpnMasterIp.getText().toString().trim())
+            .putString("wg_private_key", wgPrivateKey.getText().toString().trim())
+            .putString("wg_address", wgAddress.getText().toString().trim())
+            .putString("wg_peer_key", wgPeerKey.getText().toString().trim())
+            .putString("wg_endpoint", wgEndpoint.getText().toString().trim())
+            .putString("wg_allowed_ips", wgAllowedIPs.getText().toString().trim())
             .apply();
     }
 

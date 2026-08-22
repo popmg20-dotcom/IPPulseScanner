@@ -17,7 +17,7 @@ public class FileLogger {
 
     public static void init(Context context) {
         if (logFile == null) {
-            logFile = new File(context.getFilesDir(), "vpn_log.txt");
+            logFile = new File(context.getExternalFilesDir(null), "vpn_log.txt");
         }
     }
 
