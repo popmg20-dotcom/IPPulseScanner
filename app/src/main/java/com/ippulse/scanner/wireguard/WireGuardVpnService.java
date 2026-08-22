@@ -20,6 +20,15 @@ public class WireGuardVpnService extends VpnService {
     private GoBackend backend;
     private LocalDnsServer dnsServer;
     private Tunnel currentTunnel;
+    private Config currentConfig;
+
+    // Simple implementation of Tunnel interface for handling by GoBackend
+    private static class SimpleTunnel implements Tunnel {
+        private final String name;
+        SimpleTunnel(String name) { this.name = name; }
+        @Override public String getName() { return name; }
+        @Override public void onStateChange(Tunnel.State state) { }
+    }
 
     @Override
     public void onCreate() {
@@ -50,12 +59,10 @@ public class WireGuardVpnService extends VpnService {
             String allowedIPs = intent.getStringExtra("allowed_ips");
             String hostsStr = intent.getStringExtra("hosts");
 
-            // اجرای DNS محلی برای هاستینگ
             Map<String, String> hostMappings = parseHosts(hostsStr);
             dnsServer = new LocalDnsServer(hostMappings, dns);
             dnsServer.start();
 
-            // ساخت کانفیگ با Builder
             Config.Builder configBuilder = new Config.Builder();
             Interface.Builder ifaceBuilder = new Interface.Builder();
             ifaceBuilder.parsePrivateKey(privateKey);
@@ -70,11 +77,10 @@ public class WireGuardVpnService extends VpnService {
             peerBuilder.parseAllowedIPs(allowedIPs);
             configBuilder.addPeer(peerBuilder.build());
 
-            Config config = configBuilder.build();
+            currentConfig = configBuilder.build();
+            currentTunnel = new SimpleTunnel("ippulse-wg");
 
-            // ایجاد تونل و شروع آن
-            currentTunnel = backend.createTunnel(config);
-            backend.setState(currentTunnel, Tunnel.State.UP, config);
+            backend.setState(currentTunnel, Tunnel.State.UP, currentConfig);
         } catch (Exception e) {
             e.printStackTrace();
             if (dnsServer != null) dnsServer.stop();
@@ -84,10 +90,10 @@ public class WireGuardVpnService extends VpnService {
 
     private void stopTunnel() {
         try {
-            if (currentTunnel != null) {
-                backend.setState(currentTunnel, Tunnel.State.DOWN, currentTunnel.getConfig());
-                backend.deleteTunnel(currentTunnel);
+            if (currentTunnel != null && currentConfig != null) {
+                backend.setState(currentTunnel, Tunnel.State.DOWN, currentConfig);
                 currentTunnel = null;
+                currentConfig = null;
             }
         } catch (Exception e) {
             e.printStackTrace();
