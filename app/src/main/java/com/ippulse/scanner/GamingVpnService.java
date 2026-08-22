@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 import java.nio.ByteBuffer;
@@ -1071,8 +1072,11 @@ public class GamingVpnService extends VpnService {
                              * Critical:
                              * prevent recursive entry into our VPN.
                              */
+                            ParcelFileDescriptor protectedPfd =
+                                    ParcelFileDescriptor.dup(fd);
+
                             if (!protect(
-                                    fd
+                                    protectedPfd.getFd()
                             )) {
 
                                 debug(
@@ -1082,8 +1086,19 @@ public class GamingVpnService extends VpnService {
                                                         .getHostAddress()
                                 );
 
+                                try {
+                                    protectedPfd.close();
+                                } catch (Exception ignored) {
+                                }
+
                                 return;
                             }
+
+                            try {
+                                protectedPfd.close();
+                            } catch (Exception ignored) {
+                            }
+
 
                             byte[] request =
                                     new byte[
@@ -1416,7 +1431,7 @@ public class GamingVpnService extends VpnService {
                             + (sum >>> 16);
         }
 
-        return (~sum) & 0xFFFF;
+        return (int) ((~sum) & 0xFFFF);
     }
 
     private void fixIpv4Checksum(
