@@ -92,10 +92,23 @@ public class TCB
 
     public static void closeTCB(TCB tcb)
     {
+        if (tcb == null)
+            return;
+
         tcb.closeChannel();
+
         synchronized (tcbCache)
         {
-            tcbCache.remove(tcb.ipAndPort);
+            /*
+             * Never allow an old connection to delete a newer TCB
+             * that has reused the same ip:port:sourcePort key.
+             */
+            TCB current = tcbCache.get(tcb.ipAndPort);
+
+            if (current == tcb)
+            {
+                tcbCache.remove(tcb.ipAndPort);
+            }
         }
     }
 

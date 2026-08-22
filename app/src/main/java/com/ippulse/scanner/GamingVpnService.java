@@ -782,41 +782,107 @@ public class GamingVpnService extends VpnService {
                 try {
 
                     /*
-                     * Every producer leaves the buffer positioned at
-                     * packet end and limit at packet end.
+                     * Never trust buffer.limit() as the IP packet length.
+                     *
+                     * The buffer may be a pooled 16KB buffer while the
+                     * actual IPv4 packet is much smaller.
+                     *
+                     * The authoritative packet length is IPv4 bytes 2..3.
                      */
-                    int packetLength =
-                            buffer.limit();
-
-                    if (packetLength <= 0
-                            || packetLength > 16384) {
+                    if (buffer.capacity() < 20) {
 
                         debug(
-                                "TUN WRITE INVALID PACKET len="
-                                        + packetLength
+                                "TUN WRITE INVALID RAW BUFFER capacity="
+                                        + buffer.capacity()
+                        );
+
+                        continue;
+                    }
+
+                    ByteBuffer duplicate =
+                            buffer.duplicate();
+
+                    duplicate.position(0);
+
+                    int versionIhl =
+                            duplicate.get(0) & 0xFF;
+
+                    int version =
+                            (versionIhl >>> 4) & 0x0F;
+
+                    int ihlWords =
+                            versionIhl & 0x0F;
+
+                    if (version != 4
+                            || ihlWords < 5) {
+
+                        debug(
+                                "TUN WRITE INVALID IPV4 version="
+                                        + version
+                                        + " ihl="
+                                        + ihlWords
+                        );
+
+                        continue;
+                    }
+
+                    int headerLength =
+                            ihlWords * 4;
+
+                    if (buffer.capacity() < headerLength) {
+
+                        debug(
+                                "TUN WRITE INVALID HEADER len="
+                                        + headerLength
+                                        + " capacity="
+                                        + buffer.capacity()
+                        );
+
+                        continue;
+                    }
+
+                    int ipTotalLength =
+                            ((duplicate.get(2) & 0xFF) << 8)
+                                    | (duplicate.get(3) & 0xFF);
+
+                    if (ipTotalLength < headerLength
+                            || ipTotalLength > buffer.capacity()) {
+
+                        debug(
+                                "TUN WRITE INVALID IPV4 TOTAL="
+                                        + ipTotalLength
+                                        + " header="
+                                        + headerLength
+                                        + " capacity="
+                                        + buffer.capacity()
                         );
 
                         continue;
                     }
 
                     /*
-                     * Convert [0..packetLength] into the exact byte[]
-                     * consumed by FileOutputStream.
+                     * Full tunnel MTU is currentMtu.
+                     * Do not inject oversized packets into TUN.
                      */
-                    byte[] packet =
-                            new byte[packetLength];
+                    if (ipTotalLength > currentMtu) {
 
-                    ByteBuffer duplicate =
-                            buffer.duplicate();
+                        debug(
+                                "TUN WRITE OVERSIZE IPV4 total="
+                                        + ipTotalLength
+                                        + " mtu="
+                                        + currentMtu
+                        );
+
+                        continue;
+                    }
+
+                    byte[] packet =
+                            new byte[ipTotalLength];
 
                     duplicate.position(0);
-                    duplicate.limit(packetLength);
-
+                    duplicate.limit(ipTotalLength);
                     duplicate.get(packet);
 
-                    /*
-                     * Blocking FileOutputStream write.
-                     */
                     tunOut.write(
                             packet,
                             0,
@@ -827,7 +893,7 @@ public class GamingVpnService extends VpnService {
 
                     debug(
                             "TUN WRITE OK len="
-                                    + packetLength
+                                    + ipTotalLength
                     );
 
                 } catch (IOException e) {
@@ -859,6 +925,7 @@ public class GamingVpnService extends VpnService {
             debug("TUN WRITER STOP");
         }
     }
+
 
     /*
      * DNS target is the virtual VPN DNS address.
