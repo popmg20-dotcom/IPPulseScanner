@@ -58,7 +58,7 @@ public class WireGuardVpnService extends VpnService {
             ifaceBuilder.parsePrivateKey(privateKey);
             ifaceBuilder.parseAddresses(address);
             ifaceBuilder.parseDnsServers("127.0.0.1");
-            ifaceBuilder.parseMtu(mtu);
+            ifaceBuilder.parseMtu(String.valueOf(mtu));
             configBuilder.setInterface(ifaceBuilder.build());
 
             Peer.Builder peerBuilder = new Peer.Builder();
