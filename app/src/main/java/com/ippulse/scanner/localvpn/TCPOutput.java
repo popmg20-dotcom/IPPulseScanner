@@ -438,12 +438,59 @@ public class TCPOutput implements Runnable {
 
         synchronized (tcb) {
 
+            /*
+             * Physical TCP connect is still pending.
+             * Keep the TCB alive and update the peer sequence.
+             */
             if (tcb.status == TCBStatus.SYN_SENT) {
 
                 tcb.myAcknowledgementNum =
                         tcpHeader.sequenceNumber + 1;
 
-                ByteBufferPool.release(responseBuffer);
+                return;
+            }
+
+            /*
+             * The physical socket is connected and we already sent
+             * SYN-ACK, but the application may retransmit its SYN
+             * because the previous SYN-ACK was delayed/lost.
+             *
+             * Re-send SYN-ACK. Do NOT send RST.
+             */
+            if (tcb.status == TCBStatus.SYN_RECEIVED) {
+
+                tcb.myAcknowledgementNum =
+                        tcpHeader.sequenceNumber + 1;
+
+                tcb.referencePacket.updateTCPBuffer(
+                        responseBuffer,
+                        (byte) (
+                                TCPHeader.SYN
+                                        | TCPHeader.ACK
+                        ),
+                        tcb.mySequenceNum - 1,
+                        tcb.myAcknowledgementNum,
+                        0
+                );
+
+                vpnService.debug(
+                        "TCP DUPLICATE SYN -> RESEND SYN-ACK "
+                                + tcb.ipAndPort
+                );
+
+                outputQueue.offer(responseBuffer);
+                return;
+            }
+
+            /*
+             * Once established, an unexpected SYN must not tear down
+             * an otherwise valid connection from this path.
+             */
+            if (tcb.status == TCBStatus.ESTABLISHED) {
+                vpnService.debug(
+                        "TCP DUPLICATE SYN IGNORED ESTABLISHED "
+                                + tcb.ipAndPort
+                );
                 return;
             }
         }
@@ -642,7 +689,9 @@ public class TCPOutput implements Runnable {
             TCB tcb,
             ByteBuffer buffer) {
 
-        ByteBufferPool.release(buffer);
+        /*
+         * run() owns responseBuffer and releases it exactly once.
+         */
         TCB.closeTCB(tcb);
     }
 }
