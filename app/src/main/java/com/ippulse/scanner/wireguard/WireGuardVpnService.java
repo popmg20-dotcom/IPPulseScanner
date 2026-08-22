@@ -9,6 +9,8 @@ import com.wireguard.config.Config;
 import com.wireguard.config.Interface;
 import com.wireguard.config.Peer;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 

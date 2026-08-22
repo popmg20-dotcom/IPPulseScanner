@@ -242,8 +242,8 @@ public class MainActivity extends Activity {
 
 
     private void startWireGuardVpn(String privateKey, String address, String peerKey, String endpoint, String allowedIPs, String dns, int mtu, HashMap<String, String> hostsMap) {
-        Intent intent = new Intent(this, WireGuardVpnService.class);
-        intent.setAction(WireGuardVpnService.ACTION_START);
+        Intent intent = new Intent(this, com.ippulse.scanner.wireguard.WireGuardVpnService.class);
+        intent.setAction(com.ippulse.scanner.wireguard.WireGuardVpnService.ACTION_START);
         intent.putExtra("private_key", privateKey);
         intent.putExtra("address", address);
         intent.putExtra("dns", dns);
@@ -264,8 +264,8 @@ public class MainActivity extends Activity {
     }
 
     private void stopVpn() {
-        Intent intent = new Intent(this, WireGuardVpnService.class);
-        intent.setAction(WireGuardVpnService.ACTION_STOP);
+        Intent intent = new Intent(this, com.ippulse.scanner.wireguard.WireGuardVpnService.class);
+        intent.setAction(com.ippulse.scanner.wireguard.WireGuardVpnService.ACTION_STOP);
         startService(intent);
         vpnStatus.setText("VPN: Stopped");
         Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
