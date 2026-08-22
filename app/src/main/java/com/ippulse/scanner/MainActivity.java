@@ -211,6 +211,10 @@ public class MainActivity extends Activity {
         wgAddress.setText(prefs.getString("wg_address", ""));
         wgPeerKey.setText(prefs.getString("wg_peer_key", ""));
         wgEndpoint.setText(prefs.getString("wg_endpoint", ""));
+        wgPrivateKey.setText(prefs.getString("wg_private_key", "8DctVK60Qaux3X9vMzVDfM+CVwbVJlT93KINrjTDQGs="));
+        wgAddress.setText(prefs.getString("wg_address", "193.239.118.200/32,172.16.140.5/32,172.16.2.209/32"));
+        wgPeerKey.setText(prefs.getString("wg_peer_key", ""));
+        wgEndpoint.setText(prefs.getString("wg_endpoint", ""));
         wgAllowedIPs.setText(prefs.getString("wg_allowed_ips", "0.0.0.0/0, ::/0"));
         if (vpnHosts.getText().toString().trim().isEmpty()) {
             String defaultIp = vpnMasterIp.getText().toString().trim();
@@ -324,7 +328,7 @@ public class MainActivity extends Activity {
             Config.Builder configBuilder = new Config.Builder();
             Interface.Builder ifaceBuilder = new Interface.Builder();
             ifaceBuilder.parsePrivateKey(privateKey);
-            ifaceBuilder.parseAddresses(address.replaceAll("\\s+", ""));
+            ifaceBuilder.parseAddresses(address.replaceAll("[^0-9./:,]", ""));
             ifaceBuilder.parseDnsServers("127.0.0.1");
             ifaceBuilder.parseMtu(String.valueOf(mtu));
             configBuilder.setInterface(ifaceBuilder.build());
