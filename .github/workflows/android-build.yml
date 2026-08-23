@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - version-247-professional-evidence
   workflow_dispatch:
 
 permissions:
