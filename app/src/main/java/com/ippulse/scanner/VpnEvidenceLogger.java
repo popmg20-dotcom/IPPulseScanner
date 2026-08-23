@@ -41,8 +41,8 @@ public final class VpnEvidenceLogger {
             "TUN PACKET READER STOP",
             "TUN WRITER START",
             "TUN WRITER STOP",
+
             "TUN IPV6 DROPPED",
-            "TUN WRITE OK",
             "TUN INVALID",
             "TUN PACKET TOO LARGE",
 
@@ -58,9 +58,14 @@ public final class VpnEvidenceLogger {
             "TCP CONNECTED",
             "TCP SYN-ACK",
             "TCP NON-SYN WITHOUT TCB",
-            "RST",
 
-            "UDPOutput PACKET RECEIVED",
+            "RST",
+            "TIMEOUT",
+            "REFUSED",
+            "ERROR",
+            "FAILED",
+            "EXCEPTION",
+
             "UDP SOCKET CREATED",
             "UDP CONNECT START",
             "UDP CONNECT SUCCESS",
