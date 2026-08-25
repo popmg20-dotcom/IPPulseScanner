@@ -158,7 +158,6 @@ public class MainActivity extends Activity {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
                 MainActivity.this.m6lambda$onCreate$1$comippulsescannerMainActivity(view);
-        this.btnTab3.setOnClickListener(v -> switchTab(3));
             }
         });
         this.btnStart1.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda1
