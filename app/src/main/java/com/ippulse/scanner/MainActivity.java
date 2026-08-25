@@ -52,12 +52,7 @@ public class MainActivity extends Activity {
     private View tab1Container, tab2Container, tab3Container;
     private Button btnTab1, btnTab2, btnTab3, btnStart1, btnStop1, btnHistory, btnClearHistory;
     private Button btnStartVpn, btnStopVpn, btnApplyIp;
-    private Button btnStartVpn, btnStopVpn, btnApplyIp;
-    private Button btnStartVpn, btnStopVpn, btnApplyIp;
     private TextView vpnStatus;
-    private EditText vpnDns, vpnHosts, vpnMasterIp, vpnMtu;
-    private EditText vpnDns, vpnHosts, vpnMasterIp, vpnMtu;
-    private EditText vpnDns, vpnHosts, vpnMasterIp, vpnMtu;
     private EditText vpnDns, vpnHosts, vpnMasterIp, vpnMtu;
 
     private static final int FAST_FAIL_THRESHOLD = 3;
