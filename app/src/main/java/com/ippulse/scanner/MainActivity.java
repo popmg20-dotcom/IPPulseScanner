@@ -924,4 +924,15 @@ public class MainActivity extends Activity {
         }
         startDeepTestOn(ip);
     }
+    private void startVhostsService(int mtu, HashMap<String, String> hostsMap) {
+        Intent serviceIntent = new Intent(this, VhostsService.class);
+        serviceIntent.putExtra("mtu", mtu);
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : hostsMap.entrySet()) {
+            sb.append(entry.getValue()).append(" ").append(entry.getKey()).append("\n");
+        }
+        serviceIntent.putExtra("hosts", sb.toString());
+        startService(serviceIntent);
+    }
+
 }// debug trigger
