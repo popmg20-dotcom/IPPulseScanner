@@ -250,7 +250,7 @@ public class MainActivity extends Activity {
         if (intent != null) {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
-            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
+            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 247);
             VhostsServiceBridge.start(this, mtu, vpnHosts.getText().toString());
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
@@ -275,7 +275,7 @@ public class MainActivity extends Activity {
         if (requestCode == REQUEST_VPN && resultCode == RESULT_OK) {
             String dns = vpnDns.getText().toString().trim();
             HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
+            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 247);
             VhostsServiceBridge.start(this, mtu, vpnHosts.getText().toString());
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
