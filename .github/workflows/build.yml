@@ -2,7 +2,7 @@ name: Build APK
 
 on:
   push:
-    branches: [ 'integration/**', 'main' ]
+    branches: [ 'integration/**', 'main', 'final-apk-tab12-on-f9' ]
   workflow_dispatch:
 
 jobs:
