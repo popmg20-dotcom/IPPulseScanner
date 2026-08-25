@@ -30,11 +30,6 @@ import android.os.Build;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.widget.Toast;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import com.github.xfalcon.vhosts.NetworkReceiver;
-import com.github.xfalcon.vhosts.R;
-import com.github.xfalcon.vhosts.SettingsFragment;
-import com.github.xfalcon.vhosts.VhostsActivity;
 import com.github.xfalcon.vhosts.util.LogUtils;
 import org.xbill.DNS.Address;
 
@@ -77,7 +72,6 @@ public class VhostsService extends VpnService {
     private int mtu = 247;
     private ReentrantLock udpSelectorLock;
     private ReentrantLock tcpSelectorLock;
-    private NetworkReceiver netStateReceiver;
     private static boolean isOAndBoot = false;
 
 
@@ -92,7 +86,6 @@ public class VhostsService extends VpnService {
                 NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                 manager.createNotificationChannel(channel);
                 Notification notification = new Notification.Builder(this, "vhosts_channel_id")
-                        .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle("Virtual Hosts Running")
                         .build();
                 startForeground(1, notification);
@@ -122,7 +115,6 @@ public class VhostsService extends VpnService {
             executorService.submit(new TCPOutput(deviceToNetworkTCPQueue, networkToDeviceQueue, tcpSelector, tcpSelectorLock, this));
             executorService.submit(new VPNRunnable(vpnInterface.getFileDescriptor(),
                     deviceToNetworkUDPQueue, deviceToNetworkTCPQueue, networkToDeviceQueue));
-            LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(BROADCAST_VPN_STATE).putExtra("running", true));
             LogUtils.i(TAG, "Started");
         } catch (Exception e) {
             // TODO: Here and elsewhere, we should explicitly notify the user of any errors
@@ -134,13 +126,9 @@ public class VhostsService extends VpnService {
 
 
     private void setupHostFile() {
-        SharedPreferences settings = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
-        final boolean is_net = settings.getBoolean(SettingsFragment.IS_NET, false);
-        String uri_path = settings.getString(SettingsFragment.HOSTS_URI, null);
         try {
             final InputStream inputStream;
             if (is_net)
-                inputStream = openFileInput(SettingsFragment.NET_HOST_FILE);
             else
                 inputStream = getContentResolver().openInputStream(Uri.parse(uri_path));
             new Thread() {
@@ -148,9 +136,7 @@ public class VhostsService extends VpnService {
                     if (DnsChange.handle_hosts(inputStream) == 0) {
                         Looper.prepare();
                         if(is_net){
-                            Toast.makeText(getApplicationContext(), R.string.no_net_record, Toast.LENGTH_LONG).show();
                         }else{
-                            Toast.makeText(getApplicationContext(), R.string.no_local_record, Toast.LENGTH_LONG).show();
                         }
                         Looper.loop();
                     }
@@ -159,9 +145,7 @@ public class VhostsService extends VpnService {
 
         } catch (Exception e) {
             if(is_net){
-                Toast.makeText(getApplicationContext(), R.string.no_net_record, Toast.LENGTH_LONG).show();
             }else{
-                Toast.makeText(getApplicationContext(), R.string.no_local_record, Toast.LENGTH_LONG).show();
             }
             LogUtils.e(TAG, "error setup host file service", e);
         }
@@ -174,12 +158,8 @@ public class VhostsService extends VpnService {
             builder.addAddress(VPN_ADDRESS6, 128);
 
 
-            SharedPreferences settings = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
-            String VPN_DNS4_DEFAULT = getString(R.string.dns_server);
-            boolean is_cus_dns = settings.getBoolean(SettingsFragment.IS_CUS_DNS, false);
             String VPN_DNS4 = VPN_DNS4_DEFAULT;
             if (is_cus_dns) {
-                VPN_DNS4 = settings.getString(SettingsFragment.IPV4_DNS, VPN_DNS4_DEFAULT);
                 try {
                     Address.getByAddress(VPN_DNS4);
                 } catch (Exception e) {
@@ -207,7 +187,7 @@ public class VhostsService extends VpnService {
 
                 }
             }
-            vpnInterface = builder.setSession(getString(R.string.app_name)).setConfigureIntent(pendingIntent).establish();
+            vpnInterface = builder.setSession("IPPulseScanner VPN").setConfigureIntent(pendingIntent).establish();
         }
     }
 
@@ -217,15 +197,10 @@ public class VhostsService extends VpnService {
 //        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
 //        filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
 //        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-//        netStateReceiver = new NetworkReceiver();
-//        registerReceiver(netStateReceiver, filter);
 
     }
 
     private void unregisterNetReceiver() {
-//        if (netStateReceiver != null) {
-//            unregisterReceiver(netStateReceiver);
-//            netStateReceiver = null;
 //        }
     }
 

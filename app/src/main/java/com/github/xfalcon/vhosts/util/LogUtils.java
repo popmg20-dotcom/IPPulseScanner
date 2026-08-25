@@ -11,22 +11,27 @@ public class LogUtils {
     }
 
     public static void v(String tag, String msg) {
-        VpnEvidenceLogger.v(tag, msg);
-        if (DEBUG) {
-            Log.v(tag, msg);
-        }
+        if (DEBUG) Log.v(tag, msg);
     }
 
     public static void d(String tag, String msg) {
         VpnEvidenceLogger.d(tag, msg);
-        if (DEBUG) {
-            Log.d(tag, msg);
-        }
+        if (DEBUG) Log.d(tag, msg);
+    }
+
+    public static void d(String tag, String msg, Throwable tr) {
+        VpnEvidenceLogger.d(tag, msg + " : " + tr.toString());
+        if (DEBUG) Log.d(tag, msg, tr);
     }
 
     public static void i(String tag, String msg) {
         VpnEvidenceLogger.i(tag, msg);
         Log.i(tag, msg);
+    }
+
+    public static void i(String tag, String msg, Throwable tr) {
+        VpnEvidenceLogger.i(tag, msg + " : " + tr.toString());
+        Log.i(tag, msg, tr);
     }
 
     public static void w(String tag, String msg) {
@@ -35,7 +40,7 @@ public class LogUtils {
     }
 
     public static void w(String tag, String msg, Throwable tr) {
-        VpnEvidenceLogger.w(tag, msg, tr);
+        VpnEvidenceLogger.w(tag, msg + " : " + tr.toString());
         Log.w(tag, msg, tr);
     }
 
@@ -45,7 +50,7 @@ public class LogUtils {
     }
 
     public static void e(String tag, String msg, Throwable tr) {
-        VpnEvidenceLogger.e(tag, msg, tr);
+        VpnEvidenceLogger.e(tag, msg + " : " + tr.toString());
         Log.e(tag, msg, tr);
     }
 }
