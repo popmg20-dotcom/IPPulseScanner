@@ -1,0 +1,152 @@
+name: Build APK - 247 X-Falcon
+
+on:
+  push:
+    branches:
+      - 'integration/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Locate Android project
+        shell: bash
+        run: |
+          set -e
+
+          echo "PWD=$(pwd)"
+          echo "Repository contents:"
+          find . -maxdepth 3 -type f \
+            \( -name 'settings.gradle' \
+            -o -name 'settings.gradle.kts' \
+            -o -name 'build.gradle' \
+            -o -name 'build.gradle.kts' \) \
+            -print | sort
+
+          if [ -f "./settings.gradle" ] || [ -f "./settings.gradle.kts" ]; then
+            echo "PROJECT_ROOT=."
+            echo "PROJECT_ROOT=." >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          if [ -f "./IPPulseScanner/settings.gradle" ] || \
+             [ -f "./IPPulseScanner/settings.gradle.kts" ]; then
+            echo "PROJECT_ROOT=IPPulseScanner"
+            echo "PROJECT_ROOT=IPPulseScanner" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          echo "STOP: Android Gradle project not found"
+          exit 1
+
+      - name: Validate source
+        shell: bash
+        run: |
+          set -e
+          cd "$PROJECT_ROOT"
+
+          echo "Validation root: $(pwd)"
+
+          test -f app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java
+          test -f app/src/main/java/com/github/xfalcon/vhosts/vservice/DnsChange.java
+
+          grep -qE 'private[[:space:]]+int[[:space:]]+mtu[[:space:]]*=[[:space:]]*247' \
+            app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java
+
+          grep -qE 'setMtu[[:space:]]*\([[:space:]]*mtu[[:space:]]*\)' \
+            app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java
+
+          if grep -RniE \
+            '127\.0\.0\.1:8766|GamingVpnService|com\.ippulse\.scanner\.localvpn|wgPrivateKey|wgPeerKey|wgEndpoint|wgAllowedIPs|wgAddress|wgConfig' \
+            app/src/main \
+            --exclude='*.bak*' \
+            --exclude-dir='main.bak_' ; then
+            echo "STOP: forbidden reference found"
+            exit 1
+          fi
+
+          echo "SOURCE VALIDATION OK"
+
+      - name: Prepare Gradle
+        shell: bash
+        run: |
+          set -e
+          cd "$PROJECT_ROOT"
+
+          if [ -x "./gradlew" ]; then
+            echo "Gradle wrapper found"
+            chmod +x ./gradlew
+            echo "GRADLE_CMD=./gradlew" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          echo "No gradlew in repository."
+          echo "Using GitHub-hosted Gradle installation."
+
+          if command -v gradle >/dev/null 2>&1; then
+            echo "GRADLE_CMD=gradle" >> "$GITHUB_ENV"
+            gradle --version
+            exit 0
+          fi
+
+          echo "STOP: neither gradlew nor gradle exists"
+          exit 1
+
+      - name: Build APK
+        shell: bash
+        run: |
+          set -o pipefail
+          cd "$PROJECT_ROOT"
+
+          echo "Building from: $(pwd)"
+          echo "Command: $GRADLE_CMD :app:assembleDebug"
+
+          "$GRADLE_CMD" :app:assembleDebug \
+            --stacktrace \
+            --no-daemon \
+            2>&1 | tee build.log
+
+      - name: Verify APK
+        shell: bash
+        run: |
+          set -e
+          cd "$PROJECT_ROOT"
+
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+
+          test -f "$APK"
+          test -s "$APK"
+
+          echo "APK FOUND:"
+          ls -lh "$APK"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: IPPulseScanner-247-XFalcon-debug
+          path: ${{ env.PROJECT_ROOT }}/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IPPulseScanner-247-XFalcon-build-log
+          path: |
+            ${{ env.PROJECT_ROOT }}/build.log
