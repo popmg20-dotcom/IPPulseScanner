@@ -41,6 +41,9 @@ public class MainActivity extends Activity {
     private static final int REQUEST_VPN = 1001;
     private static final int REQUEST_NOTIFICATION = 1002;
     private static final int MAX_LOG_ITEMS = 50;
+    private static final int TAB1_BATCH_SIZE = 80;
+    private static final int TAB1_MAX_PACKETS = 500;
+    private static final int TAB1_DEFAULT_INTERVAL_MS = 50;
 
     private View tab1Container, tab2Container, tab3Container;
     private Button btnTab1, btnTab2, btnTab3, btnStart1, btnStop1, btnHistory, btnClearHistory;
@@ -97,6 +100,7 @@ public class MainActivity extends Activity {
         ipInput = findViewById(R.id.ipInput);
         inputPackets = findViewById(R.id.inputPackets);
         inputInterval = findViewById(R.id.inputInterval);
+        inputInterval.setText("50");
         inputTimeout = findViewById(R.id.inputTimeout);
         status1 = findViewById(R.id.status1);
         logLayout1 = findViewById(R.id.logLayout1);
@@ -335,52 +339,145 @@ public class MainActivity extends Activity {
         status2.setText("Deep test stopped.");
     }
 
-    private void startRangeScan() {
+private void startRangeScan() {
         String query = ipInput.getText().toString().trim();
+
         if (query.isEmpty()) {
             Toast.makeText(this, "Please enter a range or IP", Toast.LENGTH_SHORT).show();
             return;
         }
+
         List<String> ips = parseIPList(query);
+
         if (ips.isEmpty()) {
             Toast.makeText(this, "Invalid range", Toast.LENGTH_SHORT).show();
             return;
         }
 
         int pkts = parseNum(inputPackets, 100);
+        pkts = Math.max(1, Math.min(TAB1_MAX_PACKETS, pkts));
+
+        int intervalMs = parseNum(
+                inputInterval,
+                TAB1_DEFAULT_INTERVAL_MS
+        );
+        intervalMs = Math.max(1, intervalMs);
+
         int timeo = parseNum(inputTimeout, 1000);
 
         allResults.clear();
         logLayout1.removeAllViews();
         table1.removeAllViews();
         addTableHeader(table1, false);
+
         btnStart1.setEnabled(false);
         isCancelled = false;
         rangeScanFinished = false;
 
         saveHistory(query);
 
-        executor = Executors.newFixedThreadPool(3);
+        final int totalIps = ips.size();
         final int[] completed = {0};
-        status1.setText("Scanning " + ips.size() + " IPs concurrently...");
 
-        for (String ip : ips) {
-            executor.execute(() -> {
-                if (isCancelled) return;
-                ScanResult res = pingLogic(ip, pkts, timeo, false, null);
-                synchronized (allResults) {
-                    allResults.add(res);
-                    completed[0]++;
-                }
-                runOnUiThread(() -> {
-                    appendMainLog(res);
-                    status1.setText(completed[0] + " / " + ips.size() + " processed.");
-                    if (completed[0] >= ips.size() && !isCancelled && !rangeScanFinished) {
-                        finishRangeScan();
+        status1.setText(
+                "Scanning " + totalIps +
+                " IPs in batches of " + TAB1_BATCH_SIZE +
+                " @ " + intervalMs + "ms..."
+        );
+
+        executor = Executors.newSingleThreadExecutor();
+
+        executor.execute(() -> {
+            try {
+                for (int batchStart = 0;
+                     batchStart < totalIps && !isCancelled;
+                     batchStart += TAB1_BATCH_SIZE) {
+
+                    int batchEnd = Math.min(
+                            batchStart + TAB1_BATCH_SIZE,
+                            totalIps
+                    );
+
+                    List<String> batch =
+                            new ArrayList<>(
+                                    ips.subList(batchStart, batchEnd)
+                            );
+
+                    ExecutorService batchExecutor =
+                            Executors.newFixedThreadPool(batch.size());
+
+                    CountDownLatch latch =
+                            new CountDownLatch(batch.size());
+
+                    for (String ip : batch) {
+                        batchExecutor.execute(() -> {
+                            try {
+                                if (isCancelled) {
+                                    return;
+                                }
+
+                                ScanResult res =
+                                        pingLogic(
+                                                ip,
+                                                pkts,
+                                                timeo,
+                                                intervalMs,
+                                                false,
+                                                null
+                                        );
+
+                                synchronized (allResults) {
+                                    allResults.add(res);
+                                    completed[0]++;
+                                }
+
+                                runOnUiThread(() -> {
+                                    appendMainLog(res);
+
+                                    status1.setText(
+                                            completed[0] +
+                                            " / " +
+                                            totalIps +
+                                            " processed."
+                                    );
+
+                                    if (completed[0] >= totalIps &&
+                                            !isCancelled &&
+                                            !rangeScanFinished) {
+                                        finishRangeScan();
+                                    }
+                                });
+
+                            } finally {
+                                latch.countDown();
+                            }
+                        });
                     }
-                });
-            });
-        }
+
+                    latch.await();
+                    batchExecutor.shutdownNow();
+                }
+
+                if (!isCancelled && completed[0] >= totalIps) {
+                    runOnUiThread(() -> {
+                        if (!rangeScanFinished) {
+                            finishRangeScan();
+                        }
+                    });
+                }
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+
+            } finally {
+                ExecutorService current = executor;
+                executor = null;
+
+                if (current != null) {
+                    current.shutdownNow();
+                }
+            }
+        });
     }
 
     private void finishRangeScan() {
@@ -483,7 +580,14 @@ public class MainActivity extends Activity {
         int timeo = parseNum(inputTimeout, 1000);
         status2.setText("Deep Testing: " + ip);
         deepTestThread = new Thread(() -> {
-            pingLogic(ip, pkts, timeo, true, table2Live);
+            pingLogic(
+                    ip,
+                    pkts,
+                    timeo,
+                    TAB1_DEFAULT_INTERVAL_MS,
+                    true,
+                    table2Live
+            );
             runOnUiThread(() -> {
                 if (!isCancelled) status2.setText("Deep Test Finished: " + ip);
             });
@@ -492,11 +596,13 @@ public class MainActivity extends Activity {
     }
 
     // ✅ موتور جدید: استفاده از ping پیوسته با یک فرآیند
-    private ScanResult pingLogic(String ip, int totalPkts, int timeo, boolean isDeepLive, TableLayout liveTable) {
+    private ScanResult pingLogic(String ip, int totalPkts, int timeo,
+            int intervalMs, boolean isDeepLive, TableLayout liveTable) {
         List<Float> rttList = new ArrayList<>();
         int received = 0;
         int lost = 0;
         int sent = 0;
+        int consecutiveMisses = 0;
         int tSec = Math.max(1, timeo / 1000);
 
         TableRow liveRow = null;
@@ -531,7 +637,7 @@ public class MainActivity extends Activity {
         }
 
         try {
-            ProcessBuilder pb = new ProcessBuilder("ping", "-c", String.valueOf(totalPkts), "-i", "0.2", "-W", String.valueOf(tSec), ip);
+            ProcessBuilder pb = new ProcessBuilder("ping", "-c", String.valueOf(totalPkts), "-i", String.format(Locale.US, "%.3f", intervalMs / 1000.0), "-W", String.valueOf(tSec), ip);
             pb.redirectErrorStream(true);
             Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -583,6 +689,12 @@ public class MainActivity extends Activity {
                                 // اگر خط حاوی time= نبود، یعنی lost
                                 if (!line.contains("time=")) {
                                     lost++;
+                                    consecutiveMisses++;
+
+                                    if (consecutiveMisses >= 2) {
+                                        process.destroy();
+                                        break;
+                                    }
                                     if (isDeepLive && liveRow != null && (sent % 5 == 0 || sent == totalPkts)) {
                                         int curSent = sent;
                                         int curReceived = received;
