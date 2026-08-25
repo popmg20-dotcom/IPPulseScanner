@@ -9,6 +9,7 @@ import com.github.xfalcon.vhosts.util.LogUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
