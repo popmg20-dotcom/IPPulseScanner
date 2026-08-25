@@ -237,26 +237,6 @@ public class MainActivity extends Activity {
     }
 
     private void startVpn() {
-    saveVpnSettings();
-    String dns = vpnDns.getText().toString().trim();
-    HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-    int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
-
-    if (Build.VERSION.SDK_INT >= 33) {
-        if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQUEST_NOTIFICATION);
-            return;
-        }
-    }
-
-    Intent intent = VpnService.prepare(this);
-    if (intent != null) {
-        startActivityForResult(intent, REQUEST_VPN);
-    } else {
-        startVhostsService(mtu, hostsMap);
-        vpnStatus.setText("VPN: Connected");
-        Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
-    }
         saveVpnSettings();
         String dns = vpnDns.getText().toString().trim();
         HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
@@ -272,7 +252,6 @@ public class MainActivity extends Activity {
         if (intent != null) {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
-            startVhostsService(mtu, hostsMap);
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
@@ -291,24 +270,13 @@ public class MainActivity extends Activity {
         }
     }
 
-    @OverrideOverride
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_VPN && resultCode == RESULT_OK) {
             HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
             startVhostsService(mtu, hostsMap);
-            vpnStatus.setText("VPN: Connected");
-            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
-        } else if (requestCode == REQUEST_VPN) {
-            Toast.makeText(this, "VPN permission denied", Toast.LENGTH_SHORT).show();
-        }
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_VPN && resultCode == RESULT_OK) {
-            String dns = vpnDns.getText().toString().trim();
-            startVhostsService(mtu, hostsMap);
-            HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         } else if (requestCode == REQUEST_VPN) {
