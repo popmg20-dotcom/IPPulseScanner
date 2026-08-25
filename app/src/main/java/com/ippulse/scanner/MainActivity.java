@@ -1,4 +1,6 @@
 package com.ippulse.scanner;
+
+import com.ippulse.scanner.VpnEvidenceLogger;
 import java.util.Map;
 import com.github.xfalcon.vhosts.vservice.VhostsService;
 
@@ -83,6 +85,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        VpnEvidenceLogger.init(getApplicationContext());
 
 
         tab1Container = findViewById(R.id.tab1Container);
@@ -173,7 +176,7 @@ public class MainActivity extends Activity {
     private void loadVpnSettings() {
         SharedPreferences prefs = getSharedPreferences(VPN_PREFS, MODE_PRIVATE);
         vpnDns.setText(prefs.getString("dns", "8.8.8.8"));
-        vpnMtu.setText(prefs.getString("mtu", "1400"));
+        vpnMtu.setText(prefs.getString("mtu", "247"));
         vpnMasterIp.setText(prefs.getString("masterIp", "109.61.42.251"));
         vpnHosts.setText(prefs.getString("hosts", ""));
                                                                 if (vpnHosts.getText().toString().trim().isEmpty()) {
@@ -252,7 +255,7 @@ public class MainActivity extends Activity {
         if (intent != null) {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
-            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
+            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 247);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         }
@@ -275,7 +278,7 @@ public class MainActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_VPN && resultCode == RESULT_OK) {
             HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
+            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 247);
             startVhostsService(mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
