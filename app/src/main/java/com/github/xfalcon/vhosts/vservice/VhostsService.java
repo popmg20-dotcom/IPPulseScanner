@@ -95,12 +95,6 @@ public class VhostsService extends VpnService {
             }
             isOAndBoot = false;
         }
-        if (vpnInterface == null) {
-            LogUtils.d(TAG, "unknow error");
-            stopVService();
-            return;
-        }
-        isRunning = true;
         try {
             udpSelector = Selector.open();
             tcpSelector = Selector.open();
@@ -125,6 +119,32 @@ public class VhostsService extends VpnService {
         }
     }
 
+
+
+    private void ensureForeground() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager manager =
+                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+            NotificationChannel channel = new NotificationChannel(
+                    "ippulse_vpn_channel",
+                    "IPPulseScanner VPN",
+                    NotificationManager.IMPORTANCE_LOW
+            );
+
+            manager.createNotificationChannel(channel);
+
+            Notification notification =
+                    new Notification.Builder(this, "ippulse_vpn_channel")
+                            .setSmallIcon(android.R.drawable.stat_sys_warning)
+                            .setContentTitle("IPPulseScanner VPN")
+                            .setContentText("Falcon VPN is running")
+                            .setOngoing(true)
+                            .build();
+
+            startForeground(1, notification);
+        }
+    }
 
     private void setupHostFile() {
         // IPPulseScanner supplies hosts directly through Intent.
@@ -224,6 +244,7 @@ public class VhostsService extends VpnService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        ensureForeground();
         if (intent != null) {
             if (ACTION_DISCONNECT.equals(intent.getAction())) {
                 stopVService();
