@@ -1,302 +1,427 @@
-build	Build APK	﻿2026-08-25T15:30:16.6433158Z ##[group]Run gradle :app:assembleDebug --stacktrace --no-daemon
-build	Build APK	2026-08-25T15:30:16.6433686Z ^[[36;1mgradle :app:assembleDebug --stacktrace --no-daemon^[[0m
-build	Build APK	2026-08-25T15:30:16.6475485Z shell: /usr/bin/bash -e {0}
-build	Build APK	2026-08-25T15:30:16.6475761Z env:
-build	Build APK	2026-08-25T15:30:16.6476090Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-8/x64
-build	Build APK	2026-08-25T15:30:16.6476830Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-8/x64
-build	Build APK	2026-08-25T15:30:16.6477260Z   GRADLE_ACTION_ID: gradle/actions/setup-gradle
-build	Build APK	2026-08-25T15:30:16.6477594Z   GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
-build	Build APK	2026-08-25T15:30:16.6477916Z   GRADLE_BUILD_ACTION_CACHE_RESTORED: true
-build	Build APK	2026-08-25T15:30:16.6478366Z   DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
-build	Build APK	2026-08-25T15:30:16.6478869Z   DEVELOCITY_AUTO_INJECTION_CUSTOM_VALUE: gradle-actions
-build	Build APK	2026-08-25T15:30:16.6479210Z   GITHUB_DEPENDENCY_GRAPH_ENABLED: false
-build	Build APK	2026-08-25T15:30:16.6479719Z ##[endgroup]
-build	Build APK	2026-08-25T15:30:17.6303929Z 
-build	Build APK	2026-08-25T15:30:17.6305709Z Welcome to Gradle 8.7!
-build	Build APK	2026-08-25T15:30:17.6306050Z 
-build	Build APK	2026-08-25T15:30:17.6306489Z Here are the highlights of this release:
-build	Build APK	2026-08-25T15:30:17.6314658Z  - Compiling and testing with Java 22
-build	Build APK	2026-08-25T15:30:17.6320292Z  - Cacheable Groovy script compilation
-build	Build APK	2026-08-25T15:30:17.6321282Z  - New methods in lazy collection properties
-build	Build APK	2026-08-25T15:30:17.6321807Z 
-build	Build APK	2026-08-25T15:30:17.6322218Z For more details see https://docs.gradle.org/8.7/release-notes.html
-build	Build APK	2026-08-25T15:30:17.6322725Z 
-build	Build APK	2026-08-25T15:30:17.9243521Z To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.7/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
-build	Build APK	2026-08-25T15:30:20.6240697Z Daemon will be stopped at the end of the build 
-build	Build APK	2026-08-25T15:30:45.9251668Z 
-build	Build APK	2026-08-25T15:30:45.9270572Z > Configure project :app
-build	Build APK	2026-08-25T15:30:45.9281848Z Build was configured to prefer settings repositories over project repositories but repository 'Google' was added by build file 'app/build.gradle'
-build	Build APK	2026-08-25T15:30:45.9283941Z Build was configured to prefer settings repositories over project repositories but repository 'MavenRepo' was added by build file 'app/build.gradle'
-build	Build APK	2026-08-25T15:30:46.9240017Z WARNING: We recommend using a newer Android Gradle plugin to use compileSdk = 35
-build	Build APK	2026-08-25T15:30:46.9254833Z 
-build	Build APK	2026-08-25T15:30:46.9256774Z This Android Gradle plugin (8.5.2) was tested up to compileSdk = 34.
-build	Build APK	2026-08-25T15:30:46.9257501Z 
-build	Build APK	2026-08-25T15:30:46.9258022Z You are strongly encouraged to update your project to use a newer
-build	Build APK	2026-08-25T15:30:46.9258962Z Android Gradle plugin that has been tested with compileSdk = 35.
-build	Build APK	2026-08-25T15:30:46.9259804Z 
-build	Build APK	2026-08-25T15:30:46.9260345Z If you are already using the latest version of the Android Gradle plugin,
-build	Build APK	2026-08-25T15:30:46.9261472Z you may need to wait until a newer version with support for compileSdk = 35 is available.
-build	Build APK	2026-08-25T15:30:46.9262244Z 
-build	Build APK	2026-08-25T15:30:46.9262711Z For more information refer to the compatibility table:
-build	Build APK	2026-08-25T15:30:46.9263589Z https://d.android.com/r/tools/api-level-support
-build	Build APK	2026-08-25T15:30:46.9264177Z 
-build	Build APK	2026-08-25T15:30:46.9264704Z To suppress this warning, add/update
-build	Build APK	2026-08-25T15:30:46.9267863Z     android.suppressUnsupportedCompileSdk=35
-build	Build APK	2026-08-25T15:30:46.9293959Z to this project's gradle.properties.
-build	Build APK	2026-08-25T15:30:47.1242264Z 
-build	Build APK	2026-08-25T15:30:47.1247260Z > Task :app:preBuild UP-TO-DATE
-build	Build APK	2026-08-25T15:30:47.1248125Z > Task :app:preDebugBuild UP-TO-DATE
-build	Build APK	2026-08-25T15:30:47.2276494Z > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
-build	Build APK	2026-08-25T15:30:47.3238592Z > Task :app:javaPreCompileDebug
-build	Build APK	2026-08-25T15:30:56.6239021Z > Task :app:generateDebugResValues
-build	Build APK	2026-08-25T15:30:56.6240315Z > Task :app:checkDebugAarMetadata
-build	Build APK	2026-08-25T15:30:56.6241385Z > Task :app:mapDebugSourceSetPaths
-build	Build APK	2026-08-25T15:30:56.6242186Z > Task :app:generateDebugResources
-build	Build APK	2026-08-25T15:30:56.7258391Z > Task :app:packageDebugResources
-build	Build APK	2026-08-25T15:30:56.9239787Z > Task :app:mergeDebugResources
-build	Build APK	2026-08-25T15:30:57.8240093Z > Task :app:createDebugCompatibleScreenManifests
-build	Build APK	2026-08-25T15:30:57.8241466Z > Task :app:extractDeepLinksDebug
-build	Build APK	2026-08-25T15:30:57.8257875Z > Task :app:parseDebugLocalResources
-build	Build APK	2026-08-25T15:30:57.9237692Z > Task :app:processDebugMainManifest
-build	Build APK	2026-08-25T15:30:58.2250933Z > Task :app:processDebugManifest
-build	Build APK	2026-08-25T15:30:58.2252077Z > Task :app:mergeDebugShaders
-build	Build APK	2026-08-25T15:30:58.2256049Z > Task :app:compileDebugShaders NO-SOURCE
-build	Build APK	2026-08-25T15:30:58.2256873Z > Task :app:generateDebugAssets UP-TO-DATE
-build	Build APK	2026-08-25T15:30:58.2257567Z > Task :app:mergeDebugAssets
-build	Build APK	2026-08-25T15:30:58.3239942Z > Task :app:processDebugJavaRes NO-SOURCE
-build	Build APK	2026-08-25T15:30:58.3252110Z > Task :app:compressDebugAssets
-build	Build APK	2026-08-25T15:30:58.4273183Z > Task :app:desugarDebugFileDependencies
-build	Build APK	2026-08-25T15:30:58.4320161Z > Task :app:processDebugManifestForPackage
-build	Build APK	2026-08-25T15:30:58.4350699Z > Task :app:checkDebugDuplicateClasses
-build	Build APK	2026-08-25T15:30:58.5238251Z > Task :app:mergeDebugJavaResource
-build	Build APK	2026-08-25T15:31:07.9253396Z > Task :app:mergeDebugStartupProfile
-build	Build APK	2026-08-25T15:31:08.1250640Z > Task :app:processDebugResources
-build	Build APK	2026-08-25T15:31:12.6240511Z > Task :app:mergeExtDexDebug
-build	Build APK	2026-08-25T15:31:14.1251386Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:135: error: cannot find symbol
-build	Build APK	2026-08-25T15:31:14.1252514Z 
-build	Build APK	2026-08-25T15:31:14.1260324Z             String VPN_DNS4 = VPN_DNS4_DEFAULT;
-build	Build APK	2026-08-25T15:31:14.1260892Z > Task :app:compileDebugJavaWithJavac
-build	Build APK	2026-08-25T15:31:14.1287436Z                               ^
-build	Build APK	2026-08-25T15:31:14.1310155Z   symbol:   variable VPN_DNS4_DEFAULT
-build	Build APK	2026-08-25T15:31:14.1332284Z   location: class VhostsService
-build	Build APK	2026-08-25T15:31:14.1337361Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:136: error: cannot find symbol
-build	Build APK	2026-08-25T15:31:14.1338836Z             if (is_cus_dns) {
-build	Build APK	2026-08-25T15:31:14.1339761Z                 ^
-build	Build APK	2026-08-25T15:31:14.1340377Z   symbol:   variable is_cus_dns
-build	Build APK	2026-08-25T15:31:14.1342653Z   location: class VhostsService
-build	Build APK	2026-08-25T15:31:14.1344041Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:140: error: cannot find symbol
-build	Build APK	2026-08-25T15:31:14.1345494Z                     VPN_DNS4 = VPN_DNS4_DEFAULT;
-build	Build APK	2026-08-25T15:31:14.1350775Z                                ^
-build	Build APK	2026-08-25T15:31:14.1351980Z   symbol:   variable VPN_DNS4_DEFAULT
-build	Build APK	2026-08-25T15:31:14.1352679Z   location: class VhostsService
-build	Build APK	2026-08-25T15:31:14.3239098Z Note: /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/LRUCache.java uses unchecked or unsafe operations.
-build	Build APK	2026-08-25T15:31:14.3254937Z Note: Recompile with -Xlint:unchecked for details.
-build	Build APK	2026-08-25T15:31:14.3255372Z 
-build	Build APK	2026-08-25T15:31:14.3255951Z > Task :app:compileDebugJavaWithJavac FAILED
-build	Build APK	2026-08-25T15:31:14.3268824Z 3 errors
-build	Build APK	2026-08-25T15:31:14.4237449Z 
-build	Build APK	2026-08-25T15:31:14.4238113Z FAILURE: Build failed with an exception.
-build	Build APK	2026-08-25T15:31:14.4238838Z 
-build	Build APK	2026-08-25T15:31:14.4239206Z * What went wrong:
-build	Build APK	2026-08-25T15:31:14.4260124Z Execution failed for task ':app:compileDebugJavaWithJavac'.
-build	Build APK	2026-08-25T15:31:14.4270184Z > Compilation failed; see the compiler error output for details.
-build	Build APK	2026-08-25T15:31:14.4320063Z 
-build	Build APK	2026-08-25T15:31:14.4320733Z 23 actionable tasks: 23 executed
-build	Build APK	2026-08-25T15:31:14.4325684Z * Try:
-build	Build APK	2026-08-25T15:31:14.4326318Z > Run with --info option to get more log output.
-build	Build APK	2026-08-25T15:31:14.4327345Z > Run with --scan to get full insights.
-build	Build APK	2026-08-25T15:31:14.4327920Z 
-build	Build APK	2026-08-25T15:31:14.4328255Z * Exception is:
-build	Build APK	2026-08-25T15:31:14.4329212Z org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugJavaWithJavac'.
-build	Build APK	2026-08-25T15:31:14.4331513Z 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
-build	Build APK	2026-08-25T15:31:14.4333017Z 	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:282)
-build	Build APK	2026-08-25T15:31:14.4334923Z 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
-build	Build APK	2026-08-25T15:31:14.4336792Z 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
-build	Build APK	2026-08-25T15:31:14.4338969Z 	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
-build	Build APK	2026-08-25T15:31:14.4341121Z 	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
-build	Build APK	2026-08-25T15:31:14.4343002Z 	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
-build	Build APK	2026-08-25T15:31:14.4344705Z 	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
-build	Build APK	2026-08-25T15:31:14.4346357Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
-build	Build APK	2026-08-25T15:31:14.4348060Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
-build	Build APK	2026-08-25T15:31:14.4349836Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
-build	Build APK	2026-08-25T15:31:14.4351406Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
-build	Build APK	2026-08-25T15:31:14.4353277Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:200)
-build	Build APK	2026-08-25T15:31:14.4355176Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:195)
-build	Build APK	2026-08-25T15:31:14.4356944Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-build	Build APK	2026-08-25T15:31:14.4358664Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-build	Build APK	2026-08-25T15:31:14.4360526Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
-build	Build APK	2026-08-25T15:31:14.4362235Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-build	Build APK	2026-08-25T15:31:14.4366779Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-build	Build APK	2026-08-25T15:31:14.4390779Z 	at org.gradle.internal.operations.DefaultBuildOperationExecutor.call(DefaultBuildOperationExecutor.java:73)
-build	Build APK	2026-08-25T15:31:14.4395766Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
-build	Build APK	2026-08-25T15:31:14.4397331Z 	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
-build	Build APK	2026-08-25T15:31:14.4399006Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
-build	Build APK	2026-08-25T15:31:14.4401362Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
-build	Build APK	2026-08-25T15:31:14.4403534Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
-build	Build APK	2026-08-25T15:31:14.4405365Z 	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:80)
-build	Build APK	2026-08-25T15:31:14.4407130Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
-build	Build APK	2026-08-25T15:31:14.4411251Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
-build	Build APK	2026-08-25T15:31:14.4413074Z 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:463)
-build	Build APK	2026-08-25T15:31:14.4414421Z 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:380)
-build	Build APK	2026-08-25T15:31:14.4416275Z 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
-build	Build APK	2026-08-25T15:31:14.4417727Z 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
-build	Build APK	2026-08-25T15:31:14.4419809Z Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Compilation failed; see the compiler error output for details.
-build	Build APK	2026-08-25T15:31:14.4421594Z 	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:61)
-build	Build APK	2026-08-25T15:31:14.4422965Z 	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:41)
-build	Build APK	2026-08-25T15:31:14.4424885Z 	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.delegateAndHandleErrors(NormalizingJavaCompiler.java:98)
-build	Build APK	2026-08-25T15:31:14.4426809Z 	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.execute(NormalizingJavaCompiler.java:52)
-build	Build APK	2026-08-25T15:31:14.4428482Z 	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.execute(NormalizingJavaCompiler.java:38)
-build	Build APK	2026-08-25T15:31:14.4430680Z 	at org.gradle.api.internal.tasks.compile.AnnotationProcessorDiscoveringCompiler.execute(AnnotationProcessorDiscoveringCompiler.java:52)
-build	Build APK	2026-08-25T15:31:14.4432920Z 	at org.gradle.api.internal.tasks.compile.AnnotationProcessorDiscoveringCompiler.execute(AnnotationProcessorDiscoveringCompiler.java:38)
-build	Build APK	2026-08-25T15:31:14.4435083Z 	at org.gradle.api.internal.tasks.compile.ModuleApplicationNameWritingCompiler.execute(ModuleApplicationNameWritingCompiler.java:46)
-build	Build APK	2026-08-25T15:31:14.4437227Z 	at org.gradle.api.internal.tasks.compile.ModuleApplicationNameWritingCompiler.execute(ModuleApplicationNameWritingCompiler.java:36)
-build	Build APK	2026-08-25T15:31:14.4439124Z 	at org.gradle.jvm.toolchain.internal.DefaultToolchainJavaCompiler.execute(DefaultToolchainJavaCompiler.java:57)
-build	Build APK	2026-08-25T15:31:14.4441164Z 	at org.gradle.api.tasks.compile.JavaCompile.lambda$createToolchainCompiler$3(JavaCompile.java:202)
-build	Build APK	2026-08-25T15:31:14.4442645Z 	at org.gradle.api.internal.tasks.compile.CleaningJavaCompiler.execute(CleaningJavaCompiler.java:53)
-build	Build APK	2026-08-25T15:31:14.4444542Z 	at org.gradle.api.internal.tasks.compile.incremental.IncrementalCompilerFactory.lambda$createRebuildAllCompiler$0(IncrementalCompilerFactory.java:52)
-build	Build APK	2026-08-25T15:31:14.4447404Z 	at org.gradle.api.internal.tasks.compile.incremental.SelectiveCompiler.execute(SelectiveCompiler.java:70)
-build	Build APK	2026-08-25T15:31:14.4449081Z 	at org.gradle.api.internal.tasks.compile.incremental.SelectiveCompiler.execute(SelectiveCompiler.java:44)
-build	Build APK	2026-08-25T15:31:14.4451260Z 	at org.gradle.api.internal.tasks.compile.incremental.IncrementalResultStoringCompiler.execute(IncrementalResultStoringCompiler.java:66)
-build	Build APK	2026-08-25T15:31:14.4460099Z 	at org.gradle.api.internal.tasks.compile.incremental.IncrementalResultStoringCompiler.execute(IncrementalResultStoringCompiler.java:52)
-build	Build APK	2026-08-25T15:31:14.4462595Z 	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler$1.call(CompileJavaBuildOperationReportingCompiler.java:64)
-build	Build APK	2026-08-25T15:31:14.4475611Z 	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler$1.call(CompileJavaBuildOperationReportingCompiler.java:48)
-build	Build APK	2026-08-25T15:31:14.4491971Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:200)
-build	Build APK	2026-08-25T15:31:14.4500641Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:195)
-build	Build APK	2026-08-25T15:31:14.4502577Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-build	Build APK	2026-08-25T15:31:14.4506399Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-build	Build APK	2026-08-25T15:31:14.4508140Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
-build	Build APK	2026-08-25T15:31:14.4510027Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-build	Build APK	2026-08-25T15:31:14.4511998Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-build	Build APK	2026-08-25T15:31:14.4513629Z 	at org.gradle.internal.operations.DefaultBuildOperationExecutor.call(DefaultBuildOperationExecutor.java:73)
-build	Build APK	2026-08-25T15:31:14.4515849Z 	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler.execute(CompileJavaBuildOperationReportingCompiler.java:48)
-build	Build APK	2026-08-25T15:31:14.4517787Z 	at org.gradle.api.tasks.compile.JavaCompile.performCompilation(JavaCompile.java:220)
-build	Build APK	2026-08-25T15:31:14.4519131Z 	at org.gradle.api.tasks.compile.JavaCompile.performIncrementalCompilation(JavaCompile.java:161)
-build	Build APK	2026-08-25T15:31:14.4520525Z 	at org.gradle.api.tasks.compile.JavaCompile.compile(JavaCompile.java:146)
-build	Build APK	2026-08-25T15:31:14.4521639Z 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-build	Build APK	2026-08-25T15:31:14.4522944Z 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
-build	Build APK	2026-08-25T15:31:14.4524444Z 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-build	Build APK	2026-08-25T15:31:14.4526389Z 	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
-build	Build APK	2026-08-25T15:31:14.4528197Z 	at org.gradle.api.internal.project.taskfactory.IncrementalTaskAction.doExecute(IncrementalTaskAction.java:45)
-build	Build APK	2026-08-25T15:31:14.4530072Z 	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:51)
-build	Build APK	2026-08-25T15:31:14.4532075Z 	at org.gradle.api.internal.project.taskfactory.IncrementalTaskAction.execute(IncrementalTaskAction.java:26)
-build	Build APK	2026-08-25T15:31:14.4533580Z 	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:29)
-build	Build APK	2026-08-25T15:31:14.4534994Z 	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:244)
-build	Build APK	2026-08-25T15:31:14.4536474Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
-build	Build APK	2026-08-25T15:31:14.4538133Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
-build	Build APK	2026-08-25T15:31:14.4539916Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-build	Build APK	2026-08-25T15:31:14.4541555Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-build	Build APK	2026-08-25T15:31:14.4544307Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
-build	Build APK	2026-08-25T15:31:14.4547534Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-build	Build APK	2026-08-25T15:31:14.4556577Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
-build	Build APK	2026-08-25T15:31:14.4558214Z 	at org.gradle.internal.operations.DefaultBuildOperationExecutor.run(DefaultBuildOperationExecutor.java:68)
-build	Build APK	2026-08-25T15:31:14.4559935Z 	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:229)
-build	Build APK	2026-08-25T15:31:14.4561348Z 	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:212)
-build	Build APK	2026-08-25T15:31:14.4562924Z 	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:195)
-build	Build APK	2026-08-25T15:31:14.4564470Z 	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:162)
-build	Build APK	2026-08-25T15:31:14.4565764Z 	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
-build	Build APK	2026-08-25T15:31:14.4567026Z 	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
-build	Build APK	2026-08-25T15:31:14.4568209Z 	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
-build	Build APK	2026-08-25T15:31:14.4569340Z 	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
-build	Build APK	2026-08-25T15:31:14.4571471Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:200)
-build	Build APK	2026-08-25T15:31:14.4573471Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:195)
-build	Build APK	2026-08-25T15:31:14.4575492Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-build	Build APK	2026-08-25T15:31:14.4577105Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-build	Build APK	2026-08-25T15:31:14.4578670Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
-build	Build APK	2026-08-25T15:31:14.4620932Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-build	Build APK	2026-08-25T15:31:14.4663498Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-build	Build APK	2026-08-25T15:31:14.4717199Z 	at org.gradle.internal.operations.DefaultBuildOperationExecutor.call(DefaultBuildOperationExecutor.java:73)
-build	Build APK	2026-08-25T15:31:14.4740436Z 	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
-build	Build APK	2026-08-25T15:31:14.4756371Z 	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
-build	Build APK	2026-08-25T15:31:14.4757751Z 	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:41)
-build	Build APK	2026-08-25T15:31:14.4759223Z 	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:74)
-build	Build APK	2026-08-25T15:31:14.4760732Z 	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
-build	Build APK	2026-08-25T15:31:14.4762132Z 	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:50)
-build	Build APK	2026-08-25T15:31:14.4763757Z 	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:28)
-build	Build APK	2026-08-25T15:31:14.4765420Z 	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:67)
-build	Build APK	2026-08-25T15:31:14.4766991Z 	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:37)
-build	Build APK	2026-08-25T15:31:14.4768597Z 	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:61)
-build	Build APK	2026-08-25T15:31:14.4770498Z 	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
-build	Build APK	2026-08-25T15:31:14.4772441Z 	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:67)
-build	Build APK	2026-08-25T15:31:14.4774296Z 	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:45)
-build	Build APK	2026-08-25T15:31:14.4775992Z 	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:40)
-build	Build APK	2026-08-25T15:31:14.4777506Z 	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:29)
-build	Build APK	2026-08-25T15:31:14.4778997Z 	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
-build	Build APK	2026-08-25T15:31:14.4780587Z 	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$1(BuildCacheStep.java:75)
-build	Build APK	2026-08-25T15:31:14.4781640Z 	at org.gradle.internal.Either$Right.fold(Either.java:175)
-build	Build APK	2026-08-25T15:31:14.4782582Z 	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
-build	Build APK	2026-08-25T15:31:14.4783712Z 	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:73)
-build	Build APK	2026-08-25T15:31:14.4784925Z 	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:48)
-build	Build APK	2026-08-25T15:31:14.4786275Z 	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:46)
-build	Build APK	2026-08-25T15:31:14.4787801Z 	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:35)
-build	Build APK	2026-08-25T15:31:14.4790123Z 	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:76)
-build	Build APK	2026-08-25T15:31:14.4791610Z 	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:54)
-build	Build APK	2026-08-25T15:31:14.4793515Z 	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:54)
-build	Build APK	2026-08-25T15:31:14.4794828Z 	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:36)
-build	Build APK	2026-08-25T15:31:14.4796543Z 	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
-build	Build APK	2026-08-25T15:31:14.4798535Z 	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
-build	Build APK	2026-08-25T15:31:14.4802546Z 	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:49)
-build	Build APK	2026-08-25T15:31:14.4804618Z 	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:27)
-build	Build APK	2026-08-25T15:31:14.4806613Z 	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:71)
-build	Build APK	2026-08-25T15:31:14.4808409Z 	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:39)
-build	Build APK	2026-08-25T15:31:14.4810186Z 	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:65)
-build	Build APK	2026-08-25T15:31:14.4811558Z 	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:36)
-build	Build APK	2026-08-25T15:31:14.4812843Z 	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:106)
-build	Build APK	2026-08-25T15:31:14.4814005Z 	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:55)
-build	Build APK	2026-08-25T15:31:14.4815640Z 	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
-build	Build APK	2026-08-25T15:31:14.4817787Z 	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
-build	Build APK	2026-08-25T15:31:14.4819992Z 	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.executeWithNonEmptySources(AbstractSkipEmptyWorkStep.java:125)
-build	Build APK	2026-08-25T15:31:14.4821830Z 	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:61)
-build	Build APK	2026-08-25T15:31:14.4823417Z 	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:36)
-build	Build APK	2026-08-25T15:31:14.4825172Z 	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
-build	Build APK	2026-08-25T15:31:14.4827028Z 	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:36)
-build	Build APK	2026-08-25T15:31:14.4828817Z 	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:23)
-build	Build APK	2026-08-25T15:31:14.4830626Z 	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:75)
-build	Build APK	2026-08-25T15:31:14.4832059Z 	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:41)
-build	Build APK	2026-08-25T15:31:14.4833604Z 	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$execute$0(AssignMutableWorkspaceStep.java:35)
-build	Build APK	2026-08-25T15:31:14.4835086Z 	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:289)
-build	Build APK	2026-08-25T15:31:14.4836652Z 	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:31)
-build	Build APK	2026-08-25T15:31:14.4838268Z 	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:22)
-build	Build APK	2026-08-25T15:31:14.4839965Z 	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
-build	Build APK	2026-08-25T15:31:14.4841647Z 	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
-build	Build APK	2026-08-25T15:31:14.4843354Z 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
-build	Build APK	2026-08-25T15:31:14.4845613Z 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
-build	Build APK	2026-08-25T15:31:14.4847571Z 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
-build	Build APK	2026-08-25T15:31:14.4849205Z 	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
-build	Build APK	2026-08-25T15:31:14.4850680Z 	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
-build	Build APK	2026-08-25T15:31:14.4851940Z 	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
-build	Build APK	2026-08-25T15:31:14.4853095Z 	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
-build	Build APK	2026-08-25T15:31:14.4854411Z 	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:61)
-build	Build APK	2026-08-25T15:31:14.4856064Z 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:127)
-build	Build APK	2026-08-25T15:31:14.4857824Z 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
-build	Build APK	2026-08-25T15:31:14.4859772Z 	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
-build	Build APK	2026-08-25T15:31:14.4861644Z 	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
-build	Build APK	2026-08-25T15:31:14.4863501Z 	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
-build	Build APK	2026-08-25T15:31:14.4865175Z 	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
-build	Build APK	2026-08-25T15:31:14.4866846Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
-build	Build APK	2026-08-25T15:31:14.4868498Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
-build	Build APK	2026-08-25T15:31:14.4870237Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
-build	Build APK	2026-08-25T15:31:14.4872975Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
-build	Build APK	2026-08-25T15:31:14.4874795Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:200)
-build	Build APK	2026-08-25T15:31:14.4876790Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:195)
-build	Build APK	2026-08-25T15:31:14.4878575Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-build	Build APK	2026-08-25T15:31:14.4880315Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-build	Build APK	2026-08-25T15:31:14.4881881Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
-build	Build APK	2026-08-25T15:31:14.4883374Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-build	Build APK	2026-08-25T15:31:14.4884873Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-build	Build APK	2026-08-25T15:31:14.4886348Z 	at org.gradle.internal.operations.DefaultBuildOperationExecutor.call(DefaultBuildOperationExecutor.java:73)
-build	Build APK	2026-08-25T15:31:14.4887813Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
-build	Build APK	2026-08-25T15:31:14.4889207Z 	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
-build	Build APK	2026-08-25T15:31:14.4891318Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
-build	Build APK	2026-08-25T15:31:14.4893283Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
-build	Build APK	2026-08-25T15:31:14.4895622Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
-build	Build APK	2026-08-25T15:31:14.4897467Z 	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:80)
-build	Build APK	2026-08-25T15:31:14.4899346Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
-build	Build APK	2026-08-25T15:31:14.4901653Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
-build	Build APK	2026-08-25T15:31:14.4903409Z 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:463)
-build	Build APK	2026-08-25T15:31:14.4904792Z 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:380)
-build	Build APK	2026-08-25T15:31:14.4906181Z 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
-build	Build APK	2026-08-25T15:31:14.4907595Z 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
-build	Build APK	2026-08-25T15:31:14.4908431Z 
-build	Build APK	2026-08-25T15:31:14.4908537Z 
-build	Build APK	2026-08-25T15:31:14.4908779Z BUILD FAILED in 57s
-build	Build APK	2026-08-25T15:31:14.8413383Z ##[error]Process completed with exit code 1.
+build	Build APK	﻿2026-08-25T15:36:24.3735779Z ##[group]Run gradle :app:assembleDebug --stacktrace --no-daemon
+build	Build APK	2026-08-25T15:36:24.3736330Z ^[[36;1mgradle :app:assembleDebug --stacktrace --no-daemon^[[0m
+build	Build APK	2026-08-25T15:36:24.3775005Z shell: /usr/bin/bash -e {0}
+build	Build APK	2026-08-25T15:36:24.3775300Z env:
+build	Build APK	2026-08-25T15:36:24.3775645Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-8/x64
+build	Build APK	2026-08-25T15:36:24.3776407Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-8/x64
+build	Build APK	2026-08-25T15:36:24.3776886Z   GRADLE_ACTION_ID: gradle/actions/setup-gradle
+build	Build APK	2026-08-25T15:36:24.3777260Z   GRADLE_BUILD_ACTION_SETUP_COMPLETED: true
+build	Build APK	2026-08-25T15:36:24.3777599Z   GRADLE_BUILD_ACTION_CACHE_RESTORED: true
+build	Build APK	2026-08-25T15:36:24.3778109Z   DEVELOCITY_INJECTION_INIT_SCRIPT_NAME: gradle-actions.inject-develocity.init.gradle
+build	Build APK	2026-08-25T15:36:24.3778674Z   DEVELOCITY_AUTO_INJECTION_CUSTOM_VALUE: gradle-actions
+build	Build APK	2026-08-25T15:36:24.3779052Z   GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+build	Build APK	2026-08-25T15:36:24.3779616Z ##[endgroup]
+build	Build APK	2026-08-25T15:36:25.0561313Z 
+build	Build APK	2026-08-25T15:36:25.0563327Z Welcome to Gradle 8.7!
+build	Build APK	2026-08-25T15:36:25.0563978Z 
+build	Build APK	2026-08-25T15:36:25.0564479Z Here are the highlights of this release:
+build	Build APK	2026-08-25T15:36:25.0565305Z  - Compiling and testing with Java 22
+build	Build APK	2026-08-25T15:36:25.0566193Z  - Cacheable Groovy script compilation
+build	Build APK	2026-08-25T15:36:25.0567148Z  - New methods in lazy collection properties
+build	Build APK	2026-08-25T15:36:25.0568016Z 
+build	Build APK	2026-08-25T15:36:25.0568642Z For more details see https://docs.gradle.org/8.7/release-notes.html
+build	Build APK	2026-08-25T15:36:25.0569787Z 
+build	Build APK	2026-08-25T15:36:25.1551796Z To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.7/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+build	Build APK	2026-08-25T15:36:26.5516407Z Daemon will be stopped at the end of the build 
+build	Build APK	2026-08-25T15:36:53.3514435Z 
+build	Build APK	2026-08-25T15:36:53.3564123Z > Configure project :app
+build	Build APK	2026-08-25T15:36:53.3565693Z Build was configured to prefer settings repositories over project repositories but repository 'Google' was added by build file 'app/build.gradle'
+build	Build APK	2026-08-25T15:36:53.3593283Z Build was configured to prefer settings repositories over project repositories but repository 'MavenRepo' was added by build file 'app/build.gradle'
+build	Build APK	2026-08-25T15:36:54.3534078Z WARNING: We recommend using a newer Android Gradle plugin to use compileSdk = 35
+build	Build APK	2026-08-25T15:36:54.3536392Z 
+build	Build APK	2026-08-25T15:36:54.3537216Z This Android Gradle plugin (8.5.2) was tested up to compileSdk = 34.
+build	Build APK	2026-08-25T15:36:54.3538020Z 
+build	Build APK	2026-08-25T15:36:54.3542505Z You are strongly encouraged to update your project to use a newer
+build	Build APK	2026-08-25T15:36:54.3543531Z Android Gradle plugin that has been tested with compileSdk = 35.
+build	Build APK	2026-08-25T15:36:54.3544185Z 
+build	Build APK	2026-08-25T15:36:54.3544695Z If you are already using the latest version of the Android Gradle plugin,
+build	Build APK	2026-08-25T15:36:54.3545757Z you may need to wait until a newer version with support for compileSdk = 35 is available.
+build	Build APK	2026-08-25T15:36:54.3546635Z 
+build	Build APK	2026-08-25T15:36:54.3547959Z For more information refer to the compatibility table:
+build	Build APK	2026-08-25T15:36:54.3548845Z https://d.android.com/r/tools/api-level-support
+build	Build APK	2026-08-25T15:36:54.3549689Z 
+build	Build APK	2026-08-25T15:36:54.3550175Z To suppress this warning, add/update
+build	Build APK	2026-08-25T15:36:54.3580058Z     android.suppressUnsupportedCompileSdk=35
+build	Build APK	2026-08-25T15:36:54.3584088Z to this project's gradle.properties.
+build	Build APK	2026-08-25T15:36:54.6514385Z 
+build	Build APK	2026-08-25T15:36:54.6519621Z > Task :app:preBuild UP-TO-DATE
+build	Build APK	2026-08-25T15:36:54.6520519Z > Task :app:preDebugBuild UP-TO-DATE
+build	Build APK	2026-08-25T15:36:54.6521356Z > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+build	Build APK	2026-08-25T15:36:54.7514470Z > Task :app:javaPreCompileDebug
+build	Build APK	2026-08-25T15:37:04.1527060Z > Task :app:generateDebugResValues
+build	Build APK	2026-08-25T15:37:04.1527536Z > Task :app:checkDebugAarMetadata
+build	Build APK	2026-08-25T15:37:04.1527891Z > Task :app:mapDebugSourceSetPaths
+build	Build APK	2026-08-25T15:37:04.1528332Z > Task :app:generateDebugResources
+build	Build APK	2026-08-25T15:37:04.3520428Z > Task :app:packageDebugResources
+build	Build APK	2026-08-25T15:37:04.4515232Z > Task :app:mergeDebugResources
+build	Build APK	2026-08-25T15:37:05.6550679Z > Task :app:createDebugCompatibleScreenManifests
+build	Build APK	2026-08-25T15:37:05.6580142Z > Task :app:extractDeepLinksDebug
+build	Build APK	2026-08-25T15:37:05.7540809Z > Task :app:parseDebugLocalResources
+build	Build APK	2026-08-25T15:37:05.7541543Z > Task :app:processDebugMainManifest
+build	Build APK	2026-08-25T15:37:06.1515435Z > Task :app:processDebugManifest
+build	Build APK	2026-08-25T15:37:06.1516278Z > Task :app:mergeDebugShaders
+build	Build APK	2026-08-25T15:37:06.1516778Z > Task :app:processDebugManifestForPackage
+build	Build APK	2026-08-25T15:37:15.6535900Z > Task :app:compileDebugShaders NO-SOURCE
+build	Build APK	2026-08-25T15:37:15.6560306Z > Task :app:generateDebugAssets UP-TO-DATE
+build	Build APK	2026-08-25T15:37:15.6620417Z > Task :app:mergeDebugAssets
+build	Build APK	2026-08-25T15:37:15.7514988Z > Task :app:processDebugJavaRes NO-SOURCE
+build	Build APK	2026-08-25T15:37:15.8519086Z > Task :app:compressDebugAssets
+build	Build APK	2026-08-25T15:37:15.8550115Z > Task :app:processDebugResources
+build	Build APK	2026-08-25T15:37:15.9530432Z > Task :app:checkDebugDuplicateClasses
+build	Build APK	2026-08-25T15:37:16.0524448Z > Task :app:mergeDebugJavaResource
+build	Build APK	2026-08-25T15:37:17.6520163Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:157: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6559081Z     private void registerNetReceiver() {
+build	Build APK	2026-08-25T15:37:17.6559813Z 
+build	Build APK	2026-08-25T15:37:17.6586388Z > Task :app:compileDebugJavaWithJavac FAILED
+build	Build APK	2026-08-25T15:37:17.6609734Z             ^
+build	Build APK	2026-08-25T15:37:17.6663919Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:171: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6699074Z     public int onStartCommand(Intent intent, int flags, int startId) {
+build	Build APK	2026-08-25T15:37:17.6700254Z            ^
+build	Build APK	2026-08-25T15:37:17.6701643Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:174: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6703362Z             String hostsText = intent.getStringExtra("hosts");
+build	Build APK	2026-08-25T15:37:17.6704237Z             ^
+build	Build APK	2026-08-25T15:37:17.6710283Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:175: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6711945Z             if (hostsText != null) {
+build	Build APK	2026-08-25T15:37:17.6712623Z             ^
+build	Build APK	2026-08-25T15:37:17.6714038Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:178: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6716755Z                     DnsChange.handle_hosts(is);
+build	Build APK	2026-08-25T15:37:17.6717468Z                     ^
+build	Build APK	2026-08-25T15:37:17.6740691Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:179: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6765222Z                 } catch (Exception e) {
+build	Build APK	2026-08-25T15:37:17.6789603Z                 ^
+build	Build APK	2026-08-25T15:37:17.6830810Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:181: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6859849Z                 }
+build	Build APK	2026-08-25T15:37:17.6860269Z 20 actionable tasks: 20 executed
+build	Build APK	2026-08-25T15:37:17.6888794Z                 ^
+build	Build APK	2026-08-25T15:37:17.6892655Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:187: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6900110Z                 return START_NOT_STICKY;
+build	Build APK	2026-08-25T15:37:17.6900747Z                 ^
+build	Build APK	2026-08-25T15:37:17.6902106Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:188: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6903633Z             }
+build	Build APK	2026-08-25T15:37:17.6904133Z             ^
+build	Build APK	2026-08-25T15:37:17.6905489Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:191: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6907542Z     }
+build	Build APK	2026-08-25T15:37:17.6908046Z     ^
+build	Build APK	2026-08-25T15:37:17.6909620Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:193: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6911603Z     public static boolean isRunning() {
+build	Build APK	2026-08-25T15:37:17.6912248Z                   ^
+build	Build APK	2026-08-25T15:37:17.6913646Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:196: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6915153Z     }
+build	Build APK	2026-08-25T15:37:17.6915642Z     ^
+build	Build APK	2026-08-25T15:37:17.6916975Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:198: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6918677Z     public static void startVService(Context context, int method) {
+build	Build APK	2026-08-25T15:37:17.6919718Z                   ^
+build	Build APK	2026-08-25T15:37:17.6920871Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:200: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6922139Z         if (intent != null) {
+build	Build APK	2026-08-25T15:37:17.6922540Z         ^
+build	Build APK	2026-08-25T15:37:17.6923189Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:202: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6923938Z             context.startActivity(intent);
+build	Build APK	2026-08-25T15:37:17.6924203Z             ^
+build	Build APK	2026-08-25T15:37:17.6924840Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:203: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6925581Z             LogUtils.e(TAG, "Run Fail On Boot");
+build	Build APK	2026-08-25T15:37:17.6925853Z             ^
+build	Build APK	2026-08-25T15:37:17.6926484Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:204: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6927182Z         }
+build	Build APK	2026-08-25T15:37:17.6927352Z         ^
+build	Build APK	2026-08-25T15:37:17.6927966Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:208: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6928911Z                 context.startForegroundService(new Intent(context, VhostsService.class).setAction(ACTION_CONNECT));
+build	Build APK	2026-08-25T15:37:17.6929750Z                 ^
+build	Build APK	2026-08-25T15:37:17.6930800Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:208: error: <identifier> expected
+build	Build APK	2026-08-25T15:37:17.6932326Z                 context.startForegroundService(new Intent(context, VhostsService.class).setAction(ACTION_CONNECT));
+build	Build APK	2026-08-25T15:37:17.6933252Z                                                                                       ^
+build	Build APK	2026-08-25T15:37:17.6953828Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:209: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6955025Z             } else {
+build	Build APK	2026-08-25T15:37:17.6955351Z             ^
+build	Build APK	2026-08-25T15:37:17.6956371Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:211: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6957868Z                 context.startService(new Intent(context, VhostsService.class).setAction(ACTION_CONNECT));
+build	Build APK	2026-08-25T15:37:17.6958589Z                 ^
+build	Build APK	2026-08-25T15:37:17.6960317Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:211: error: <identifier> expected
+build	Build APK	2026-08-25T15:37:17.6962086Z                 context.startService(new Intent(context, VhostsService.class).setAction(ACTION_CONNECT));
+build	Build APK	2026-08-25T15:37:17.6963419Z                                                                             ^
+build	Build APK	2026-08-25T15:37:17.6964645Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:212: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6966004Z             }
+build	Build APK	2026-08-25T15:37:17.6966287Z             ^
+build	Build APK	2026-08-25T15:37:17.6967259Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:215: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6968166Z         }
+build	Build APK	2026-08-25T15:37:17.6968362Z         ^
+build	Build APK	2026-08-25T15:37:17.6968986Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:218: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6970553Z     public static void stopVService(Context context) {
+build	Build APK	2026-08-25T15:37:17.6971131Z                   ^
+build	Build APK	2026-08-25T15:37:17.6971816Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:219: error: <identifier> expected
+build	Build APK	2026-08-25T15:37:17.6972727Z         context.startService(new Intent(context, VhostsService.class).setAction(VhostsService.ACTION_DISCONNECT));
+build	Build APK	2026-08-25T15:37:17.6973262Z                                                                     ^
+build	Build APK	2026-08-25T15:37:17.6974672Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:220: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6975932Z     }
+build	Build APK	2026-08-25T15:37:17.6976172Z     ^
+build	Build APK	2026-08-25T15:37:17.6976811Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:225: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6977600Z         if (executorService != null) executorService.shutdownNow();
+build	Build APK	2026-08-25T15:37:17.6977935Z         ^
+build	Build APK	2026-08-25T15:37:17.6978570Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:226: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6979594Z         isRunning = false;
+build	Build APK	2026-08-25T15:37:17.6979879Z         ^
+build	Build APK	2026-08-25T15:37:17.6980514Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:227: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6981224Z         cleanup();
+build	Build APK	2026-08-25T15:37:17.6981425Z         ^
+build	Build APK	2026-08-25T15:37:17.6982042Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:228: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6982726Z         stopSelf();
+build	Build APK	2026-08-25T15:37:17.6982918Z         ^
+build	Build APK	2026-08-25T15:37:17.6983533Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:229: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6984248Z         LogUtils.d(TAG, "Stopping");
+build	Build APK	2026-08-25T15:37:17.6984494Z         ^
+build	Build APK	2026-08-25T15:37:17.6985100Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:230: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6985786Z     }
+build	Build APK	2026-08-25T15:37:17.6985959Z     ^
+build	Build APK	2026-08-25T15:37:17.6986565Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:233: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6987265Z     public void onRevoke() {
+build	Build APK	2026-08-25T15:37:17.6987490Z            ^
+build	Build APK	2026-08-25T15:37:17.6988135Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:235: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6990119Z         super.onRevoke();
+build	Build APK	2026-08-25T15:37:17.6990557Z         ^
+build	Build APK	2026-08-25T15:37:17.6991743Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:236: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6993172Z     }
+build	Build APK	2026-08-25T15:37:17.6994716Z     ^
+build	Build APK	2026-08-25T15:37:17.6995806Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:239: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.6997488Z     public void onDestroy() {
+build	Build APK	2026-08-25T15:37:17.6997962Z            ^
+build	Build APK	2026-08-25T15:37:17.6999481Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:241: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.7000919Z         super.onDestroy();
+build	Build APK	2026-08-25T15:37:17.7001337Z         ^
+build	Build APK	2026-08-25T15:37:17.7002598Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:242: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.7004039Z     }
+build	Build APK	2026-08-25T15:37:17.7004381Z     ^
+build	Build APK	2026-08-25T15:37:17.7005604Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:246: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.7006977Z         tcpSelectorLock = null;
+build	Build APK	2026-08-25T15:37:17.7007476Z         ^
+build	Build APK	2026-08-25T15:37:17.7008712Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:247: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.7010402Z         deviceToNetworkTCPQueue = null;
+build	Build APK	2026-08-25T15:37:17.7011208Z         ^
+build	Build APK	2026-08-25T15:37:17.7012227Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:248: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.7013011Z         deviceToNetworkUDPQueue = null;
+build	Build APK	2026-08-25T15:37:17.7013401Z         ^
+build	Build APK	2026-08-25T15:37:17.7014059Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:249: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.7014948Z         networkToDeviceQueue = null;
+build	Build APK	2026-08-25T15:37:17.7015200Z         ^
+build	Build APK	2026-08-25T15:37:17.7016108Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:250: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.7017076Z         ByteBufferPool.clear();
+build	Build APK	2026-08-25T15:37:17.7017326Z         ^
+build	Build APK	2026-08-25T15:37:17.7018039Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:251: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.7018910Z         closeResources(udpSelector, tcpSelector, vpnInterface);
+build	Build APK	2026-08-25T15:37:17.7019462Z         ^
+build	Build APK	2026-08-25T15:37:17.7020106Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:252: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.7021229Z     }
+build	Build APK	2026-08-25T15:37:17.7021408Z     ^
+build	Build APK	2026-08-25T15:37:17.7022110Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:259: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.7022912Z             } catch (Exception e) {
+build	Build APK	2026-08-25T15:37:17.7023160Z             ^
+build	Build APK	2026-08-25T15:37:17.7023931Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:261: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.7024752Z             }
+build	Build APK	2026-08-25T15:37:17.7024927Z             ^
+build	Build APK	2026-08-25T15:37:17.7025605Z /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java:348: error: class, interface, or enum expected
+build	Build APK	2026-08-25T15:37:17.7026368Z }
+build	Build APK	2026-08-25T15:37:17.7026530Z ^
+build	Build APK	2026-08-25T15:37:17.7026732Z 49 errors
+build	Build APK	2026-08-25T15:37:17.7026916Z 
+build	Build APK	2026-08-25T15:37:17.7027041Z FAILURE: Build failed with an exception.
+build	Build APK	2026-08-25T15:37:17.7027472Z 
+build	Build APK	2026-08-25T15:37:17.7027552Z * What went wrong:
+build	Build APK	2026-08-25T15:37:17.7027833Z Execution failed for task ':app:compileDebugJavaWithJavac'.
+build	Build APK	2026-08-25T15:37:17.7028431Z > Compilation failed; see the compiler error output for details.
+build	Build APK	2026-08-25T15:37:17.7028844Z 
+build	Build APK	2026-08-25T15:37:17.7028920Z * Try:
+build	Build APK	2026-08-25T15:37:17.7029365Z > Run with --info option to get more log output.
+build	Build APK	2026-08-25T15:37:17.7029761Z > Run with --scan to get full insights.
+build	Build APK	2026-08-25T15:37:17.7029976Z 
+build	Build APK	2026-08-25T15:37:17.7030062Z * Exception is:
+build	Build APK	2026-08-25T15:37:17.7030784Z org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugJavaWithJavac'.
+build	Build APK	2026-08-25T15:37:17.7031782Z 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
+build	Build APK	2026-08-25T15:37:17.7032676Z 	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:282)
+build	Build APK	2026-08-25T15:37:17.7033529Z 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
+build	Build APK	2026-08-25T15:37:17.7034708Z 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+build	Build APK	2026-08-25T15:37:17.7036196Z 	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+build	Build APK	2026-08-25T15:37:17.7037754Z 	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+build	Build APK	2026-08-25T15:37:17.7039645Z 	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+build	Build APK	2026-08-25T15:37:17.7041207Z 	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+build	Build APK	2026-08-25T15:37:17.7042744Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+build	Build APK	2026-08-25T15:37:17.7044314Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+build	Build APK	2026-08-25T15:37:17.7045829Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+build	Build APK	2026-08-25T15:37:17.7047258Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+build	Build APK	2026-08-25T15:37:17.7048930Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:200)
+build	Build APK	2026-08-25T15:37:17.7051110Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:195)
+build	Build APK	2026-08-25T15:37:17.7052821Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+build	Build APK	2026-08-25T15:37:17.7054295Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+build	Build APK	2026-08-25T15:37:17.7055804Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
+build	Build APK	2026-08-25T15:37:17.7057262Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+build	Build APK	2026-08-25T15:37:17.7058727Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+build	Build APK	2026-08-25T15:37:17.7060457Z 	at org.gradle.internal.operations.DefaultBuildOperationExecutor.call(DefaultBuildOperationExecutor.java:73)
+build	Build APK	2026-08-25T15:37:17.7061895Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+build	Build APK	2026-08-25T15:37:17.7063259Z 	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+build	Build APK	2026-08-25T15:37:17.7064848Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+build	Build APK	2026-08-25T15:37:17.7066723Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+build	Build APK	2026-08-25T15:37:17.7069555Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+build	Build APK	2026-08-25T15:37:17.7071346Z 	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:80)
+build	Build APK	2026-08-25T15:37:17.7073353Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+build	Build APK	2026-08-25T15:37:17.7075388Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+build	Build APK	2026-08-25T15:37:17.7077169Z 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:463)
+build	Build APK	2026-08-25T15:37:17.7078553Z 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:380)
+build	Build APK	2026-08-25T15:37:17.7080212Z 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+build	Build APK	2026-08-25T15:37:17.7081641Z 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
+build	Build APK	2026-08-25T15:37:17.7083282Z Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Compilation failed; see the compiler error output for details.
+build	Build APK	2026-08-25T15:37:17.7084886Z 	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:61)
+build	Build APK	2026-08-25T15:37:17.7086207Z 	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:41)
+build	Build APK	2026-08-25T15:37:17.7087771Z 	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.delegateAndHandleErrors(NormalizingJavaCompiler.java:98)
+build	Build APK	2026-08-25T15:37:17.7093153Z 	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.execute(NormalizingJavaCompiler.java:52)
+build	Build APK	2026-08-25T15:37:17.7094784Z 	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.execute(NormalizingJavaCompiler.java:38)
+build	Build APK	2026-08-25T15:37:17.7096807Z 	at org.gradle.api.internal.tasks.compile.AnnotationProcessorDiscoveringCompiler.execute(AnnotationProcessorDiscoveringCompiler.java:52)
+build	Build APK	2026-08-25T15:37:17.7098920Z 	at org.gradle.api.internal.tasks.compile.AnnotationProcessorDiscoveringCompiler.execute(AnnotationProcessorDiscoveringCompiler.java:38)
+build	Build APK	2026-08-25T15:37:17.7101148Z 	at org.gradle.api.internal.tasks.compile.ModuleApplicationNameWritingCompiler.execute(ModuleApplicationNameWritingCompiler.java:46)
+build	Build APK	2026-08-25T15:37:17.7103194Z 	at org.gradle.api.internal.tasks.compile.ModuleApplicationNameWritingCompiler.execute(ModuleApplicationNameWritingCompiler.java:36)
+build	Build APK	2026-08-25T15:37:17.7105025Z 	at org.gradle.jvm.toolchain.internal.DefaultToolchainJavaCompiler.execute(DefaultToolchainJavaCompiler.java:57)
+build	Build APK	2026-08-25T15:37:17.7106536Z 	at org.gradle.api.tasks.compile.JavaCompile.lambda$createToolchainCompiler$3(JavaCompile.java:202)
+build	Build APK	2026-08-25T15:37:17.7107899Z 	at org.gradle.api.internal.tasks.compile.CleaningJavaCompiler.execute(CleaningJavaCompiler.java:53)
+build	Build APK	2026-08-25T15:37:17.7109888Z 	at org.gradle.api.internal.tasks.compile.incremental.IncrementalCompilerFactory.lambda$createRebuildAllCompiler$0(IncrementalCompilerFactory.java:52)
+build	Build APK	2026-08-25T15:37:17.7111995Z 	at org.gradle.api.internal.tasks.compile.incremental.SelectiveCompiler.execute(SelectiveCompiler.java:70)
+build	Build APK	2026-08-25T15:37:17.7113599Z 	at org.gradle.api.internal.tasks.compile.incremental.SelectiveCompiler.execute(SelectiveCompiler.java:44)
+build	Build APK	2026-08-25T15:37:17.7115414Z 	at org.gradle.api.internal.tasks.compile.incremental.IncrementalResultStoringCompiler.execute(IncrementalResultStoringCompiler.java:66)
+build	Build APK	2026-08-25T15:37:17.7117502Z 	at org.gradle.api.internal.tasks.compile.incremental.IncrementalResultStoringCompiler.execute(IncrementalResultStoringCompiler.java:52)
+build	Build APK	2026-08-25T15:37:17.7122285Z 	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler$1.call(CompileJavaBuildOperationReportingCompiler.java:64)
+build	Build APK	2026-08-25T15:37:17.7124992Z 	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler$1.call(CompileJavaBuildOperationReportingCompiler.java:48)
+build	Build APK	2026-08-25T15:37:17.7126970Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:200)
+build	Build APK	2026-08-25T15:37:17.7129524Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:195)
+build	Build APK	2026-08-25T15:37:17.7131335Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+build	Build APK	2026-08-25T15:37:17.7132860Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+build	Build APK	2026-08-25T15:37:17.7134386Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
+build	Build APK	2026-08-25T15:37:17.7135950Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+build	Build APK	2026-08-25T15:37:17.7137516Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+build	Build APK	2026-08-25T15:37:17.7139063Z 	at org.gradle.internal.operations.DefaultBuildOperationExecutor.call(DefaultBuildOperationExecutor.java:73)
+build	Build APK	2026-08-25T15:37:17.7141250Z 	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler.execute(CompileJavaBuildOperationReportingCompiler.java:48)
+build	Build APK	2026-08-25T15:37:17.7142958Z 	at org.gradle.api.tasks.compile.JavaCompile.performCompilation(JavaCompile.java:220)
+build	Build APK	2026-08-25T15:37:17.7144221Z 	at org.gradle.api.tasks.compile.JavaCompile.performIncrementalCompilation(JavaCompile.java:161)
+build	Build APK	2026-08-25T15:37:17.7145402Z 	at org.gradle.api.tasks.compile.JavaCompile.compile(JavaCompile.java:146)
+build	Build APK	2026-08-25T15:37:17.7146443Z 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+build	Build APK	2026-08-25T15:37:17.7148233Z 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+build	Build APK	2026-08-25T15:37:17.7149858Z 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+build	Build APK	2026-08-25T15:37:17.7151060Z 	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
+build	Build APK	2026-08-25T15:37:17.7152316Z 	at org.gradle.api.internal.project.taskfactory.IncrementalTaskAction.doExecute(IncrementalTaskAction.java:45)
+build	Build APK	2026-08-25T15:37:17.7153797Z 	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:51)
+build	Build APK	2026-08-25T15:37:17.7155647Z 	at org.gradle.api.internal.project.taskfactory.IncrementalTaskAction.execute(IncrementalTaskAction.java:26)
+build	Build APK	2026-08-25T15:37:17.7157088Z 	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:29)
+build	Build APK	2026-08-25T15:37:17.7159442Z 	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:244)
+build	Build APK	2026-08-25T15:37:17.7160789Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+build	Build APK	2026-08-25T15:37:17.7162301Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+build	Build APK	2026-08-25T15:37:17.7163769Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+build	Build APK	2026-08-25T15:37:17.7165239Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+build	Build APK	2026-08-25T15:37:17.7166741Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
+build	Build APK	2026-08-25T15:37:17.7168099Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+build	Build APK	2026-08-25T15:37:17.7169777Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+build	Build APK	2026-08-25T15:37:17.7171237Z 	at org.gradle.internal.operations.DefaultBuildOperationExecutor.run(DefaultBuildOperationExecutor.java:68)
+build	Build APK	2026-08-25T15:37:17.7172935Z 	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:229)
+build	Build APK	2026-08-25T15:37:17.7174143Z 	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:212)
+build	Build APK	2026-08-25T15:37:17.7175669Z 	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:195)
+build	Build APK	2026-08-25T15:37:17.7177400Z 	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:162)
+build	Build APK	2026-08-25T15:37:17.7178619Z 	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
+build	Build APK	2026-08-25T15:37:17.7180067Z 	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
+build	Build APK	2026-08-25T15:37:17.7181160Z 	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
+build	Build APK	2026-08-25T15:37:17.7182195Z 	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
+build	Build APK	2026-08-25T15:37:17.7183710Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:200)
+build	Build APK	2026-08-25T15:37:17.7185626Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:195)
+build	Build APK	2026-08-25T15:37:17.7190627Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+build	Build APK	2026-08-25T15:37:17.7192236Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+build	Build APK	2026-08-25T15:37:17.7193750Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
+build	Build APK	2026-08-25T15:37:17.7195313Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+build	Build APK	2026-08-25T15:37:17.7196828Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+build	Build APK	2026-08-25T15:37:17.7198361Z 	at org.gradle.internal.operations.DefaultBuildOperationExecutor.call(DefaultBuildOperationExecutor.java:73)
+build	Build APK	2026-08-25T15:37:17.7200093Z 	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
+build	Build APK	2026-08-25T15:37:17.7201200Z 	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
+build	Build APK	2026-08-25T15:37:17.7202421Z 	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:41)
+build	Build APK	2026-08-25T15:37:17.7203766Z 	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:74)
+build	Build APK	2026-08-25T15:37:17.7204971Z 	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+build	Build APK	2026-08-25T15:37:17.7206304Z 	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:50)
+build	Build APK	2026-08-25T15:37:17.7207929Z 	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:28)
+build	Build APK	2026-08-25T15:37:17.7209780Z 	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:67)
+build	Build APK	2026-08-25T15:37:17.7211468Z 	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:37)
+build	Build APK	2026-08-25T15:37:17.7213093Z 	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:61)
+build	Build APK	2026-08-25T15:37:17.7214783Z 	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
+build	Build APK	2026-08-25T15:37:17.7216516Z 	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:67)
+build	Build APK	2026-08-25T15:37:17.7218346Z 	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:45)
+build	Build APK	2026-08-25T15:37:17.7220329Z 	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:40)
+build	Build APK	2026-08-25T15:37:17.7221852Z 	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:29)
+build	Build APK	2026-08-25T15:37:17.7223662Z 	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
+build	Build APK	2026-08-25T15:37:17.7225021Z 	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$1(BuildCacheStep.java:75)
+build	Build APK	2026-08-25T15:37:17.7225904Z 	at org.gradle.internal.Either$Right.fold(Either.java:175)
+build	Build APK	2026-08-25T15:37:17.7226923Z 	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
+build	Build APK	2026-08-25T15:37:17.7227915Z 	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:73)
+build	Build APK	2026-08-25T15:37:17.7229083Z 	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:48)
+build	Build APK	2026-08-25T15:37:17.7230665Z 	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:46)
+build	Build APK	2026-08-25T15:37:17.7232117Z 	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:35)
+build	Build APK	2026-08-25T15:37:17.7233521Z 	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:76)
+build	Build APK	2026-08-25T15:37:17.7234824Z 	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:54)
+build	Build APK	2026-08-25T15:37:17.7236110Z 	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:54)
+build	Build APK	2026-08-25T15:37:17.7237344Z 	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:36)
+build	Build APK	2026-08-25T15:37:17.7238977Z 	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+build	Build APK	2026-08-25T15:37:17.7241519Z 	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+build	Build APK	2026-08-25T15:37:17.7243581Z 	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:49)
+build	Build APK	2026-08-25T15:37:17.7245679Z 	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:27)
+build	Build APK	2026-08-25T15:37:17.7247640Z 	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:71)
+build	Build APK	2026-08-25T15:37:17.7249736Z 	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:39)
+build	Build APK	2026-08-25T15:37:17.7251277Z 	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:65)
+build	Build APK	2026-08-25T15:37:17.7252480Z 	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:36)
+build	Build APK	2026-08-25T15:37:17.7253554Z 	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:106)
+build	Build APK	2026-08-25T15:37:17.7254558Z 	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:55)
+build	Build APK	2026-08-25T15:37:17.7256374Z 	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
+build	Build APK	2026-08-25T15:37:17.7258342Z 	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
+build	Build APK	2026-08-25T15:37:17.7260413Z 	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.executeWithNonEmptySources(AbstractSkipEmptyWorkStep.java:125)
+build	Build APK	2026-08-25T15:37:17.7262061Z 	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:61)
+build	Build APK	2026-08-25T15:37:17.7263523Z 	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:36)
+build	Build APK	2026-08-25T15:37:17.7265015Z 	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+build	Build APK	2026-08-25T15:37:17.7266566Z 	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:36)
+build	Build APK	2026-08-25T15:37:17.7268015Z 	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:23)
+build	Build APK	2026-08-25T15:37:17.7269851Z 	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:75)
+build	Build APK	2026-08-25T15:37:17.7271088Z 	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:41)
+build	Build APK	2026-08-25T15:37:17.7272608Z 	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$execute$0(AssignMutableWorkspaceStep.java:35)
+build	Build APK	2026-08-25T15:37:17.7274017Z 	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:289)
+build	Build APK	2026-08-25T15:37:17.7275360Z 	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:31)
+build	Build APK	2026-08-25T15:37:17.7276813Z 	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:22)
+build	Build APK	2026-08-25T15:37:17.7278204Z 	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
+build	Build APK	2026-08-25T15:37:17.7279648Z 	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+build	Build APK	2026-08-25T15:37:17.7281305Z 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+build	Build APK	2026-08-25T15:37:17.7283185Z 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+build	Build APK	2026-08-25T15:37:17.7285021Z 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+build	Build APK	2026-08-25T15:37:17.7286585Z 	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+build	Build APK	2026-08-25T15:37:17.7287787Z 	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+build	Build APK	2026-08-25T15:37:17.7288923Z 	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
+build	Build APK	2026-08-25T15:37:17.7290214Z 	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
+build	Build APK	2026-08-25T15:37:17.7291428Z 	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:61)
+build	Build APK	2026-08-25T15:37:17.7292955Z 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:127)
+build	Build APK	2026-08-25T15:37:17.7294567Z 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+build	Build APK	2026-08-25T15:37:17.7296179Z 	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+build	Build APK	2026-08-25T15:37:17.7297950Z 	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+build	Build APK	2026-08-25T15:37:17.7300058Z 	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+build	Build APK	2026-08-25T15:37:17.7301647Z 	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+build	Build APK	2026-08-25T15:37:17.7303169Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+build	Build APK	2026-08-25T15:37:17.7304692Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+build	Build APK	2026-08-25T15:37:17.7306126Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+build	Build APK	2026-08-25T15:37:17.7307538Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+build	Build APK	2026-08-25T15:37:17.7309434Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:200)
+build	Build APK	2026-08-25T15:37:17.7311565Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:195)
+build	Build APK	2026-08-25T15:37:17.7313265Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+build	Build APK	2026-08-25T15:37:17.7315002Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+build	Build APK	2026-08-25T15:37:17.7316470Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
+build	Build APK	2026-08-25T15:37:17.7318150Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+build	Build APK	2026-08-25T15:37:17.7319824Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+build	Build APK	2026-08-25T15:37:17.7321284Z 	at org.gradle.internal.operations.DefaultBuildOperationExecutor.call(DefaultBuildOperationExecutor.java:73)
+build	Build APK	2026-08-25T15:37:17.7322765Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+build	Build APK	2026-08-25T15:37:17.7324073Z 	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+build	Build APK	2026-08-25T15:37:17.7325571Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+build	Build APK	2026-08-25T15:37:17.7327372Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+build	Build APK	2026-08-25T15:37:17.7329490Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+build	Build APK	2026-08-25T15:37:17.7331238Z 	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:80)
+build	Build APK	2026-08-25T15:37:17.7332824Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+build	Build APK	2026-08-25T15:37:17.7334693Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+build	Build APK	2026-08-25T15:37:17.7336355Z 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:463)
+build	Build APK	2026-08-25T15:37:17.7337692Z 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:380)
+build	Build APK	2026-08-25T15:37:17.7339041Z 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+build	Build APK	2026-08-25T15:37:17.7340770Z 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
+build	Build APK	2026-08-25T15:37:17.7341533Z 
+build	Build APK	2026-08-25T15:37:17.7341549Z 
+build	Build APK	2026-08-25T15:37:17.7341699Z BUILD FAILED in 53s
+build	Build APK	2026-08-25T15:37:18.1358044Z ##[error]Process completed with exit code 1.
