@@ -146,8 +146,10 @@ public class VhostsService extends VpnService {
 
         Builder builder = new Builder();
 
+        LogUtils.i(TAG, "VPN DIAG: IPV4_ONLY");
         builder.addAddress(VPN_ADDRESS, 32);
-        builder.addAddress(VPN_ADDRESS6, 128);
+        // IPv6 TUN address temporarily disabled for establish() diagnosis.
+        // No Falcon packet/network core is modified.
 
         String dns4 = configuredDns;
 
