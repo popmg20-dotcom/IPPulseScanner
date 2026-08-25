@@ -79,46 +79,18 @@ public class VhostsService extends VpnService {
 
     @Override
     public void onCreate() {
-//        registerNetReceiver();
         super.onCreate();
-        if (isOAndBoot) {
-            //android 8.0 boot
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                NotificationChannel channel = new NotificationChannel("vhosts_channel_id", "System", NotificationManager.IMPORTANCE_NONE);
-                NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                manager.createNotificationChannel(channel);
-                Notification notification = new Notification.Builder(this, "vhosts_channel_id")
-                        .setSmallIcon(android.R.drawable.stat_sys_warning)
-                        .setContentTitle("Virtual Hosts Running")
-                        .build();
-                startForeground(1, notification);
-            }
-            isOAndBoot = false;
-        }
-        try {
-            udpSelector = Selector.open();
-            tcpSelector = Selector.open();
-            deviceToNetworkUDPQueue = new ConcurrentLinkedQueue<>();
-            deviceToNetworkTCPQueue = new ConcurrentLinkedQueue<>();
-            networkToDeviceQueue = new ConcurrentLinkedQueue<>();
-            udpSelectorLock = new ReentrantLock();
-            tcpSelectorLock = new ReentrantLock();
-            executorService = Executors.newFixedThreadPool(5);
-            executorService.submit(new UDPInput(networkToDeviceQueue, udpSelector, udpSelectorLock));
-            executorService.submit(new UDPOutput(deviceToNetworkUDPQueue, networkToDeviceQueue, udpSelector, udpSelectorLock, this));
-            executorService.submit(new TCPInput(networkToDeviceQueue, tcpSelector, tcpSelectorLock));
-            executorService.submit(new TCPOutput(deviceToNetworkTCPQueue, networkToDeviceQueue, tcpSelector, tcpSelectorLock, this));
-            executorService.submit(new VPNRunnable(vpnInterface.getFileDescriptor(),
-                    deviceToNetworkUDPQueue, deviceToNetworkTCPQueue, networkToDeviceQueue));
-            LogUtils.i(TAG, "VPN TRACE: workers OK");
-                LogUtils.i(TAG, "Started");
-        } catch (Exception e) {
-            // TODO: Here and elsewhere, we should explicitly notify the user of any errors
-            // and suggest that they stop the service, since we can't do it ourselves
-            LogUtils.e(TAG, "Error starting service", e);
-            stopVService();
-        }
+
+        LogUtils.i(TAG, "VPN START: onCreate");
+
+        /*
+         * Falcon workers must NOT start from onCreate().
+         * The TUN interface is established in onStartCommand()
+         * after MTU/DNS/hosts are received.
+         */
     }
+
+
 
 
 
