@@ -205,38 +205,27 @@
                 android:textColor="#FFFFFF" android:background="#18181B"
                 android:padding="8dp" android:layout_marginBottom="12dp"/>
 
-            <!-- WireGuard Fields -->
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="WireGuard Private Key:" android:textColor="#38BDF8" android:textSize="12sp"/>
-            <EditText android:id="@+id/wgPrivateKey" android:layout_width="match_parent"
                 android:layout_height="45dp" android:hint="Private Key"
                 android:textColor="#FFFFFF" android:background="#18181B"
                 android:padding="8dp" android:layout_marginBottom="12dp" android:inputType="text"/>
 
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="WireGuard Address (comma separated):" android:textColor="#38BDF8" android:textSize="12sp"/>
-            <EditText android:id="@+id/wgAddress" android:layout_width="match_parent"
                 android:layout_height="45dp" android:hint="10.0.0.2/32"
                 android:textColor="#FFFFFF" android:background="#18181B"
                 android:padding="8dp" android:layout_marginBottom="12dp" android:inputType="text"/>
 
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="WireGuard Peer Public Key:" android:textColor="#38BDF8" android:textSize="12sp"/>
-            <EditText android:id="@+id/wgPeerKey" android:layout_width="match_parent"
                 android:layout_height="45dp" android:hint="Peer Public Key"
                 android:textColor="#FFFFFF" android:background="#18181B"
                 android:padding="8dp" android:layout_marginBottom="12dp" android:inputType="text"/>
 
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="WireGuard Endpoint (IP:port):" android:textColor="#38BDF8" android:textSize="12sp"/>
-            <EditText android:id="@+id/wgEndpoint" android:layout_width="match_parent"
                 android:layout_height="45dp" android:hint="server.com:51820"
                 android:textColor="#FFFFFF" android:background="#18181B"
                 android:padding="8dp" android:layout_marginBottom="12dp" android:inputType="text"/>
 
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="WireGuard Allowed IPs (comma separated):" android:textColor="#38BDF8" android:textSize="12sp"/>
-            <EditText android:id="@+id/wgAllowedIPs" android:layout_width="match_parent"
                 android:layout_height="45dp" android:hint="0.0.0.0/0, ::/0"
                 android:textColor="#FFFFFF" android:background="#18181B"
                 android:padding="8dp" android:layout_marginBottom="12dp" android:inputType="text"/>

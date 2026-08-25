@@ -14,7 +14,7 @@
 ** limitations under the License.
 */
 
-package com.ippulse.scanner.localvpn;
+package com.github.xfalcon.vhosts.vservice;
 
 import java.util.LinkedHashMap;
 

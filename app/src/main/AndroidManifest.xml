@@ -20,7 +20,6 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".GamingVpnService"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false"
             android:process=":vpn"
@@ -29,5 +28,14 @@
                 <action android:name="android.net.VpnService" />
             </intent-filter>
         </service>
+    <service
+        android:name="com.github.xfalcon.vhosts.vservice.VhostsService"
+        android:permission="android.permission.BIND_VPN_SERVICE"
+        android:exported="true"
+        android:foregroundServiceType="specialUse">
+        <intent-filter>
+            <action android:name="android.net.VpnService" />
+        </intent-filter>
+    </service>
 </application>
 </manifest>

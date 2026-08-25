@@ -14,7 +14,7 @@
 ** limitations under the License.
 */
 
-package com.ippulse.scanner.localvpn;
+package com.github.xfalcon.vhosts.vservice;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -49,7 +49,7 @@ public class TCB
     public boolean waitingForNetworkData;
     public SelectionKey selectionKey;
 
-    private static final int MAX_CACHE_SIZE = 512; // XXX: Is this ideal?
+    private static final int MAX_CACHE_SIZE = 50; // XXX: Is this ideal?
     private static LRUCache<String, TCB> tcbCache =
             new LRUCache<>(MAX_CACHE_SIZE, new LRUCache.CleanupCallback<String, TCB>()
             {
@@ -92,23 +92,10 @@ public class TCB
 
     public static void closeTCB(TCB tcb)
     {
-        if (tcb == null)
-            return;
-
         tcb.closeChannel();
-
         synchronized (tcbCache)
         {
-            /*
-             * Never allow an old connection to delete a newer TCB
-             * that has reused the same ip:port:sourcePort key.
-             */
-            TCB current = tcbCache.get(tcb.ipAndPort);
-
-            if (current == tcb)
-            {
-                tcbCache.remove(tcb.ipAndPort);
-            }
+            tcbCache.remove(tcb.ipAndPort);
         }
     }
 

@@ -14,11 +14,10 @@
 ** limitations under the License.
 */
 
-package com.ippulse.scanner.localvpn;
+package com.github.xfalcon.vhosts.vservice;
 
-import com.ippulse.scanner.GamingVpnService;
 
-import android.util.Log;
+import com.github.xfalcon.vhosts.util.LogUtils;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -30,14 +29,19 @@ import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class UDPOutput implements Runnable
 {
     private static final String TAG = UDPOutput.class.getSimpleName();
 
-    private GamingVpnService vpnService;
+    private VhostsService vpnService;
     private ConcurrentLinkedQueue<Packet> inputQueue;
+    private ConcurrentLinkedQueue<ByteBuffer> outputQueue;
     private Selector selector;
+    private ReentrantLock udpSelectorLock;
+    private StringBuilder stringBuild;
+
 
     private static final int MAX_CACHE_SIZE = 50;
     private LRUCache<String, DatagramChannel> channelCache =
@@ -50,74 +54,61 @@ public class UDPOutput implements Runnable
                 }
             });
 
-    public UDPOutput(ConcurrentLinkedQueue<Packet> inputQueue, Selector selector, GamingVpnService vpnService)
+    public UDPOutput(ConcurrentLinkedQueue<Packet> inputQueue,ConcurrentLinkedQueue<ByteBuffer> outputQueue, Selector selector,ReentrantLock udpSelectorLock, VhostsService vpnService)
     {
         this.inputQueue = inputQueue;
         this.selector = selector;
         this.vpnService = vpnService;
+        this.outputQueue=outputQueue;
+        this.udpSelectorLock=udpSelectorLock;
+        this.stringBuild=new StringBuilder(32);
     }
 
     @Override
-    public void run()
-    {
-        Log.i(TAG, "Started");
-        try
-        {
+    public void run() {
+        LogUtils.i(TAG, "Started");
+        try {
 
-            Thread currentThread = Thread.currentThread();
-            while (true)
-            {
-                Packet currentPacket;
-                // TODO: Block when not connected
-                do
-                {
-                    currentPacket = inputQueue.poll();
-                    if (currentPacket != null)
-                        break;
-                    Thread.sleep(10);
-                } while (!currentThread.isInterrupted());
+            while (!Thread.interrupted()) {
 
-                if (currentThread.isInterrupted())
-                    break;
-
-                vpnService.debug("UDPOutput PACKET RECEIVED");
-
-                InetAddress destinationAddress = currentPacket.ip4Header.destinationAddress;
+                Packet currentPacket = inputQueue.poll();
+                if (currentPacket == null){
+                    Thread.sleep(11);
+                    continue;
+                }
+                // hook dns packet
+                if(currentPacket.udpHeader.destinationPort==53){
+                    ByteBuffer packet_buffer= DnsChange.handle_dns_packet(currentPacket);
+                    if(packet_buffer!=null){
+                        this.outputQueue.offer(packet_buffer);
+                        continue;
+                    }
+                }
+                InetAddress destinationAddress = currentPacket.ipHeader.destinationAddress;
                 int destinationPort = currentPacket.udpHeader.destinationPort;
                 int sourcePort = currentPacket.udpHeader.sourcePort;
-
-                String ipAndPort = destinationAddress.getHostAddress() + ":" + destinationPort + ":" + sourcePort;
+                String ipAndPort= String.format("%s:%s:%s",destinationAddress.getHostAddress(),destinationPort,sourcePort);
                 DatagramChannel outputChannel = channelCache.get(ipAndPort);
                 if (outputChannel == null) {
                     outputChannel = DatagramChannel.open();
-                    vpnService.debug("UDP SOCKET CREATED");
-
-                    if (!vpnService.protectOrBind(outputChannel.socket())) {
-                        closeChannel(outputChannel);
-                        ByteBufferPool.release(currentPacket.backingBuffer);
-                        continue;
-                    }
+                    vpnService.protect(outputChannel.socket());
                     try
                     {
-                        vpnService.debug("UDP CONNECT START "
-                                + destinationAddress.getHostAddress() + ":" + destinationPort);
                         outputChannel.connect(new InetSocketAddress(destinationAddress, destinationPort));
-                        vpnService.debug("UDP CONNECT SUCCESS");
                     }
                     catch (IOException e)
                     {
-                        Log.e(TAG, "Connection error: " + ipAndPort, e);
-                        vpnService.debug("UDP CONNECT ERROR " + ipAndPort + " " + e);
+                        LogUtils.e(TAG, "Connection error: " + ipAndPort, e);
                         closeChannel(outputChannel);
                         ByteBufferPool.release(currentPacket.backingBuffer);
                         continue;
                     }
                     outputChannel.configureBlocking(false);
                     currentPacket.swapSourceAndDestination();
-
+                    udpSelectorLock.lock();
                     selector.wakeup();
                     outputChannel.register(selector, SelectionKey.OP_READ, currentPacket);
-
+                    udpSelectorLock.unlock();
                     channelCache.put(ipAndPort, outputChannel);
                 }
 
@@ -129,7 +120,7 @@ public class UDPOutput implements Runnable
                 }
                 catch (IOException e)
                 {
-                    Log.e(TAG, "Network write error: " + ipAndPort, e);
+                    LogUtils.e(TAG, "Network write error: " + ipAndPort, e);
                     channelCache.remove(ipAndPort);
                     closeChannel(outputChannel);
                 }
@@ -138,11 +129,11 @@ public class UDPOutput implements Runnable
         }
         catch (InterruptedException e)
         {
-            Log.i(TAG, "Stopping");
+            LogUtils.i(TAG, "Stopping");
         }
         catch (IOException e)
         {
-            Log.i(TAG, e.toString(), e);
+            LogUtils.i(TAG, e.toString(), e);
         }
         finally
         {
@@ -171,4 +162,5 @@ public class UDPOutput implements Runnable
             // Ignore
         }
     }
+
 }

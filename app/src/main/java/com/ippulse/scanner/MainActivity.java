@@ -229,7 +229,6 @@ public class MainActivity extends Activity {
 
 
     private void stopVpn() {
-        GamingVpnService.stop(this);
         vpnStatus.setText("VPN: Stopped");
         Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
     }
@@ -251,7 +250,6 @@ public class MainActivity extends Activity {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
-            GamingVpnService.start(this, dns, mtu, hostsMap, ((android.widget.EditText)findViewById(R.id.wgAddress)).getText().toString());
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         }
@@ -276,8 +274,6 @@ public class MainActivity extends Activity {
             String dns = vpnDns.getText().toString().trim();
             HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
-            String wgAddressStr = ((android.widget.EditText)findViewById(R.id.wgAddress)).getText().toString();
-            GamingVpnService.start(this, dns, mtu, hostsMap, wgAddressStr);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         } else if (requestCode == REQUEST_VPN) {
