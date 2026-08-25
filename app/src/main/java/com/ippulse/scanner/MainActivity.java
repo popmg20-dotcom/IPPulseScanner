@@ -1,6 +1,6 @@
+package com.ippulse.scanner;
 import java.util.Map;
 import com.github.xfalcon.vhosts.vservice.VhostsService;
-package com.ippulse.scanner;
 
 import android.app.Activity;
 import android.app.AlertDialog;
