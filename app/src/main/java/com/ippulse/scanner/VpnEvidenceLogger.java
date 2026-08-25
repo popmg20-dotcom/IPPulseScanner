@@ -69,7 +69,10 @@ public final class VpnEvidenceLogger {
             "DNS HOST",
             "DNS UPSTREAM",
 
-            "ICMP "
+            "ICMP ",
+            "VPN TRACE:",
+            "FALCON_DIAG:",
+            "EVIDENCE:",
     };
 
     private VpnEvidenceLogger() {
@@ -94,16 +97,23 @@ public final class VpnEvidenceLogger {
                     ContentResolver resolver =
                             context.getContentResolver();
 
-                    /*
-                     * Remove previous evidence file.
-                     */
+                    Uri collection =
+                            MediaStore.Downloads.getContentUri(
+                                    MediaStore.VOLUME_EXTERNAL_PRIMARY
+                            );
+
                     try {
                         resolver.delete(
-                                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                                collection,
                                 MediaStore.Downloads.DISPLAY_NAME + "=?",
                                 new String[]{FILE_NAME}
                         );
-                    } catch (Throwable ignored) {
+                    } catch (Throwable e) {
+                        Log.e(
+                                "IPV_EVIDENCE",
+                                "delete previous evidence failed",
+                                e
+                        );
                     }
 
                     ContentValues values = new ContentValues();
@@ -123,9 +133,25 @@ public final class VpnEvidenceLogger {
                             Environment.DIRECTORY_DOWNLOADS
                     );
 
+                    values.put(
+                            MediaStore.Downloads.IS_PENDING,
+                            1
+                    );
+
                     mediaUri = resolver.insert(
-                            MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                            collection,
                             values
+                    );
+
+                    if (mediaUri == null) {
+                        throw new IllegalStateException(
+                                "MediaStore.Downloads.insert returned null"
+                        );
+                    }
+
+                    Log.i(
+                            "IPV_EVIDENCE",
+                            "MediaStore evidence URI=" + mediaUri
                     );
 
                 } else {
@@ -149,7 +175,35 @@ public final class VpnEvidenceLogger {
                                 + "\n"
                 );
 
+                if (android.os.Build.VERSION.SDK_INT >= 29
+                        && mediaUri != null
+                        && context != null) {
+
+                    ContentValues ready =
+                            new ContentValues();
+
+                    ready.put(
+                            MediaStore.Downloads.IS_PENDING,
+                            0
+                    );
+
+                    context.getContentResolver().update(
+                            mediaUri,
+                            ready,
+                            null,
+                            null
+                    );
+                }
+
             } catch (Throwable e) {
+
+                Log.e(
+                        "IPV_EVIDENCE",
+                        "init failed; mediaUri="
+                                + mediaUri
+                        ,
+                        e
+                );
                 Log.e("IPV_EVIDENCE", "init failed", e);
             }
         }
@@ -291,7 +345,15 @@ public final class VpnEvidenceLogger {
                 }
             }
 
-        } catch (Throwable ignored) {
+        } catch (Throwable e) {
+            Log.e(
+                    "IPV_EVIDENCE",
+                    "writeRaw failed: uri="
+                            + mediaUri
+                            + " legacy="
+                            + legacyFile,
+                    e
+            );
         }
     }
 
