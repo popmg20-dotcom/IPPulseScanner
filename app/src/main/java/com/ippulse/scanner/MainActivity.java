@@ -256,6 +256,7 @@ public class MainActivity extends Activity {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 247);
+            startVhostsService(mtu, hostsMap);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
         }
@@ -927,15 +928,42 @@ public class MainActivity extends Activity {
         }
         startDeepTestOn(ip);
     }
-    private void startVhostsService(int mtu, HashMap<String, String> hostsMap) {
-        Intent serviceIntent = new Intent(this, VhostsService.class);
-        serviceIntent.putExtra("mtu", mtu);
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : hostsMap.entrySet()) {
-            sb.append(entry.getValue()).append(" ").append(entry.getKey()).append("\n");
-        }
-        serviceIntent.putExtra("hosts", sb.toString());
+    private void startVhostsService(
+        int mtu,
+        HashMap<String, String> hostsMap
+) {
+    Intent serviceIntent = new Intent(this, VhostsService.class);
+
+    serviceIntent.setAction(VhostsService.ACTION_CONNECT);
+
+    serviceIntent.putExtra("mtu", mtu);
+
+    serviceIntent.putExtra(
+        "dns",
+        vpnDns.getText().toString().trim()
+    );
+
+    StringBuilder hostsText = new StringBuilder();
+
+    for (Map.Entry<String, String> entry : hostsMap.entrySet()) {
+        hostsText
+            .append(entry.getValue())
+            .append(" ")
+            .append(entry.getKey())
+            .append("\n");
+    }
+
+    serviceIntent.putExtra(
+        "hosts",
+        hostsText.toString()
+    );
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        startForegroundService(serviceIntent);
+    } else {
         startService(serviceIntent);
     }
+}
+
 
 }// debug trigger
