@@ -165,7 +165,9 @@ public class VhostsService extends VpnService {
     }
 
     private void setupVPN() {
+        LogUtils.i(TAG, "FALCON_DIAG:setupVPN:BEGIN mtu=" + mtu + " dns=" + configuredDns);
         if (vpnInterface != null) {
+            LogUtils.i(TAG, "FALCON_DIAG:setupVPN:ALREADY_ESTABLISHED");
             return;
         }
 
@@ -190,13 +192,25 @@ public class VhostsService extends VpnService {
         LogUtils.i(TAG, "VPN DNS=" + dns4);
         LogUtils.i(TAG, "VPN MTU=" + mtu);
 
+        LogUtils.i(TAG, "FALCON_DIAG:route4:BEGIN " + dns4 + "/32");
         builder.addRoute(dns4, 32);
+        LogUtils.i(TAG, "FALCON_DIAG:route4:OK");
+        LogUtils.i(TAG, "FALCON_DIAG:route6:BEGIN " + VPN_DNS6 + "/128");
         builder.addRoute(VPN_DNS6, 128);
+        LogUtils.i(TAG, "FALCON_DIAG:route6:OK");
 
+        LogUtils.i(TAG, "FALCON_DIAG:dns4:BEGIN " + dns4);
         builder.addDnsServer(dns4);
+        LogUtils.i(TAG, "FALCON_DIAG:dns4:OK");
+        LogUtils.i(TAG, "FALCON_DIAG:dns6:BEGIN " + VPN_DNS6);
         builder.addDnsServer(VPN_DNS6);
+        LogUtils.i(TAG, "FALCON_DIAG:dns6:OK");
 
+        LogUtils.i(TAG, "FALCON_DIAG:mtu:BEGIN " + mtu);
         builder.setMtu(mtu);
+        LogUtils.i(TAG, "FALCON_DIAG:mtu:OK " + mtu);
+
+        LogUtils.i(TAG, "FALCON_DIAG:disallowed:BEGIN");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             String[] whiteList = {
@@ -216,13 +230,23 @@ public class VhostsService extends VpnService {
             }
         }
 
+        LogUtils.i(TAG, "FALCON_DIAG:disallowed:OK");
+        LogUtils.i(TAG, "FALCON_DIAG:establish:BEGIN");
+
         vpnInterface = builder
             .setSession(getApplicationInfo().loadLabel(getPackageManager()).toString())
             .establish();
 
+        if (vpnInterface != null) {
+            LogUtils.i(TAG, "FALCON_DIAG:establish:SUCCESS");
+        }
+
         if (vpnInterface == null) {
+            LogUtils.e(TAG, "FALCON_DIAG:establish:RETURNED_NULL");
             throw new IllegalStateException("VpnService.Builder.establish() returned null");
         }
+
+        LogUtils.i(TAG, "FALCON_DIAG:setupVPN:SUCCESS");
     }
 
     private void registerNetReceiver() {
@@ -285,6 +309,7 @@ public class VhostsService extends VpnService {
             }
 
             if (!isRunning) {
+                LogUtils.i(TAG, "FALCON_DIAG:workers:BEGIN");
                 isRunning = true;
 
                 udpSelector = Selector.open();
@@ -344,10 +369,12 @@ public class VhostsService extends VpnService {
                     )
                 );
 
+                LogUtils.i(TAG, "FALCON_DIAG:workers:SUCCESS");
                 LogUtils.i(TAG, "Started");
             }
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            LogUtils.e(TAG, "FALCON_DIAG:START_FAILURE", e);
             LogUtils.e(TAG, "Error starting service", e);
             stopVService();
         }
