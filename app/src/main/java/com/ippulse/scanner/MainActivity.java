@@ -354,16 +354,17 @@ private void startRangeScan() {
             return;
         }
 
-        int pkts = parseNum(inputPackets, 100);
-        pkts = Math.max(1, Math.min(TAB1_MAX_PACKETS, pkts));
+        int parsedPkts = parseNum(inputPackets, 100);
+        final int pkts =
+                Math.max(1, Math.min(TAB1_MAX_PACKETS, parsedPkts));
 
-        int intervalMs = parseNum(
+        int parsedIntervalMs = parseNum(
                 inputInterval,
                 TAB1_DEFAULT_INTERVAL_MS
         );
-        intervalMs = Math.max(1, intervalMs);
+        final int intervalMs = Math.max(1, parsedIntervalMs);
 
-        int timeo = parseNum(inputTimeout, 1000);
+        final int timeo = parseNum(inputTimeout, 1000);
 
         allResults.clear();
         logLayout1.removeAllViews();
