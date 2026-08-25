@@ -1,22 +1,9 @@
-266:build	Build APK	2026-08-25T14:53:23.1453934Z > Task :app:mergeDebugResources FAILED
-269:build	Build APK	2026-08-25T14:53:25.3467960Z > Task :app:parseDebugLocalResources FAILED
-271:build	Build APK	2026-08-25T14:53:25.4453035Z FAILURE: Build completed with 2 failures.
-276:build	Build APK	2026-08-25T14:53:25.4561670Z Execution failed for task ':app:mergeDebugResources'.
-279:build	Build APK	2026-08-25T14:53:25.4564301Z    > Resource compilation failed (Failed to compile resource file: /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/res/layout/activity_main.xml: . Cause: javax.xml.stream.XMLStreamException: ParseError at [row,col]:[211,100]
-287:build	Build APK	2026-08-25T14:53:25.4568006Z * Exception is:
-288:build	Build APK	2026-08-25T14:53:25.4568347Z org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:mergeDebugResources'.
-297:build	Build APK	2026-08-25T14:53:25.4577922Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
-321:build	Build APK	2026-08-25T14:53:25.4606649Z Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing com.android.build.gradle.internal.res.ResourceCompilerRunnable
-424:build	Build APK	2026-08-25T14:53:25.4724971Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
-448:build	Build APK	2026-08-25T14:53:25.4750783Z Caused by: com.android.aaptcompiler.ResourceCompilationException: Resource compilation failed (Failed to compile resource file: /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/res/layout/activity_main.xml: . Cause: javax.xml.stream.XMLStreamException: ParseError at [row,col]:[211,100]
-482:build	Build APK	2026-08-25T14:53:25.4787092Z Caused by: com.android.aaptcompiler.ResourceCompilationException: Failed to compile resource file: /home/runner/work/IPPulseScanner/IPPulseScanner/app/src/main/res/layout/activity_main.xml: 
-489:build	Build APK	2026-08-25T14:53:25.4792726Z Caused by: javax.xml.stream.XMLStreamException: ParseError at [row,col]:[211,100]
-508:build	Build APK	2026-08-25T14:53:25.4803963Z Execution failed for task ':app:parseDebugLocalResources'.
-517:build	Build APK	2026-08-25T14:53:25.4808633Z * Exception is:
-518:build	Build APK	2026-08-25T14:53:25.4809214Z org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:parseDebugLocalResources'.
-527:build	Build APK	2026-08-25T14:53:25.4819747Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
-554:build	Build APK	2026-08-25T14:53:25.4849223Z Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing com.android.build.gradle.internal.res.ParseLibraryResourcesTask$ParseResourcesRunnable
-659:build	Build APK	2026-08-25T14:53:25.4957925Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
-686:build	Build APK	2026-08-25T14:53:25.4979881Z Caused by: com.android.ide.common.symbols.ResourceDirectoryParseException: Failed to parse XML file '/home/runner/work/IPPulseScanner/IPPulseScanner/app/build/intermediates/packaged_res/debug/packageDebugResources/layout/activity_main.xml'
-724:build	Build APK	2026-08-25T14:53:25.5016105Z Caused by: org.xml.sax.SAXParseException; systemId: file:/home/runner/work/IPPulseScanner/IPPulseScanner/app/build/intermediates/packaged_res/debug/packageDebugResources/layout/activity_main.xml; lineNumber: 209; columnNumber: 45; Attribute "android:layout_height" was already specified for element "TextView".
-733:build	Build APK	2026-08-25T14:53:25.5022110Z BUILD FAILED in 35s
+270:build	Build APK	2026-08-25T15:05:00.9223385Z > Task :app:processDebugMainManifest FAILED
+281:build	Build APK	2026-08-25T15:05:01.0215174Z FAILURE: Build failed with an exception.
+284:build	Build APK	2026-08-25T15:05:01.0219694Z Execution failed for task ':app:processDebugMainManifest'.
+292:build	Build APK	2026-08-25T15:05:01.0223329Z * Exception is:
+293:build	Build APK	2026-08-25T15:05:01.0224178Z org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:processDebugMainManifest'.
+302:build	Build APK	2026-08-25T15:05:01.0261568Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+326:build	Build APK	2026-08-25T15:05:01.0314932Z Caused by: java.lang.RuntimeException: Manifest merger failed with multiple errors, see logs
+433:build	Build APK	2026-08-25T15:05:01.0756967Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+459:build	Build APK	2026-08-25T15:05:01.0797393Z BUILD FAILED in 49s
