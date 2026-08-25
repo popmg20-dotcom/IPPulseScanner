@@ -234,8 +234,15 @@ public class MainActivity extends Activity {
 
 
     private void stopVpn() {
+        vpnStatus.setText("VPN: Stopping");
+
+        Intent intent =
+                new Intent(this, VhostsService.class)
+                        .setAction(VhostsService.ACTION_DISCONNECT);
+
+        startService(intent);
+
         vpnStatus.setText("VPN: Stopped");
-        stopService(new Intent(this, VhostsService.class));
         Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
     }
 
