@@ -1,3 +1,4 @@
+import com.github.xfalcon.vhosts.vservice.VhostsService;
 package com.ippulse.scanner;
 
 import android.app.Activity;
@@ -228,6 +229,7 @@ public class MainActivity extends Activity {
 
 
 
+        stopService(new Intent(this, VhostsService.class));
     private void stopVpn() {
         vpnStatus.setText("VPN: Stopped");
         Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
@@ -249,6 +251,7 @@ public class MainActivity extends Activity {
         if (intent != null) {
             startActivityForResult(intent, REQUEST_VPN);
         } else {
+            startVhostsService(mtu, hostsMap);
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
             vpnStatus.setText("VPN: Connected");
             Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
@@ -272,6 +275,7 @@ public class MainActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_VPN && resultCode == RESULT_OK) {
             String dns = vpnDns.getText().toString().trim();
+            startVhostsService(mtu, hostsMap);
             HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
             int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 1400);
             vpnStatus.setText("VPN: Connected");
