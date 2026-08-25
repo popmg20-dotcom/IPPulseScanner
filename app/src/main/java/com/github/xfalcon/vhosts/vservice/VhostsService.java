@@ -110,7 +110,8 @@ public class VhostsService extends VpnService {
             executorService.submit(new TCPOutput(deviceToNetworkTCPQueue, networkToDeviceQueue, tcpSelector, tcpSelectorLock, this));
             executorService.submit(new VPNRunnable(vpnInterface.getFileDescriptor(),
                     deviceToNetworkUDPQueue, deviceToNetworkTCPQueue, networkToDeviceQueue));
-            LogUtils.i(TAG, "Started");
+            LogUtils.i(TAG, "VPN TRACE: workers OK");
+                LogUtils.i(TAG, "Started");
         } catch (Exception e) {
             // TODO: Here and elsewhere, we should explicitly notify the user of any errors
             // and suggest that they stop the service, since we can't do it ourselves
@@ -193,21 +194,31 @@ public class VhostsService extends VpnService {
         LogUtils.i(TAG, "VPN MTU=" + mtu);
 
         LogUtils.i(TAG, "FALCON_DIAG:route4:BEGIN " + dns4 + "/32");
+        LogUtils.i(TAG, "VPN TRACE: route4 BEGIN " + dns4 + "/32");
         builder.addRoute(dns4, 32);
+        LogUtils.i(TAG, "VPN TRACE: route4 OK");
         LogUtils.i(TAG, "FALCON_DIAG:route4:OK");
         LogUtils.i(TAG, "FALCON_DIAG:route6:BEGIN " + VPN_DNS6 + "/128");
+        LogUtils.i(TAG, "VPN TRACE: route6 BEGIN " + VPN_DNS6 + "/128");
         builder.addRoute(VPN_DNS6, 128);
+        LogUtils.i(TAG, "VPN TRACE: route6 OK");
         LogUtils.i(TAG, "FALCON_DIAG:route6:OK");
 
         LogUtils.i(TAG, "FALCON_DIAG:dns4:BEGIN " + dns4);
+        LogUtils.i(TAG, "VPN TRACE: dns4 BEGIN " + dns4);
         builder.addDnsServer(dns4);
+        LogUtils.i(TAG, "VPN TRACE: dns4 OK");
         LogUtils.i(TAG, "FALCON_DIAG:dns4:OK");
         LogUtils.i(TAG, "FALCON_DIAG:dns6:BEGIN " + VPN_DNS6);
+        LogUtils.i(TAG, "VPN TRACE: dns6 BEGIN " + VPN_DNS6);
         builder.addDnsServer(VPN_DNS6);
+        LogUtils.i(TAG, "VPN TRACE: dns6 OK");
         LogUtils.i(TAG, "FALCON_DIAG:dns6:OK");
 
         LogUtils.i(TAG, "FALCON_DIAG:mtu:BEGIN " + mtu);
+        LogUtils.i(TAG, "VPN TRACE: mtu BEGIN " + mtu);
         builder.setMtu(mtu);
+        LogUtils.i(TAG, "VPN TRACE: mtu OK " + mtu);
         LogUtils.i(TAG, "FALCON_DIAG:mtu:OK " + mtu);
 
         LogUtils.i(TAG, "FALCON_DIAG:disallowed:BEGIN");
@@ -233,9 +244,11 @@ public class VhostsService extends VpnService {
         LogUtils.i(TAG, "FALCON_DIAG:disallowed:OK");
         LogUtils.i(TAG, "FALCON_DIAG:establish:BEGIN");
 
+        LogUtils.i(TAG, "VPN TRACE: establish BEGIN");
         vpnInterface = builder
             .setSession(getApplicationInfo().loadLabel(getPackageManager()).toString())
             .establish();
+        LogUtils.i(TAG, "VPN TRACE: establish RETURN " + (vpnInterface != null));
 
         if (vpnInterface != null) {
             LogUtils.i(TAG, "FALCON_DIAG:establish:SUCCESS");
@@ -309,6 +322,7 @@ public class VhostsService extends VpnService {
             }
 
             if (!isRunning) {
+                LogUtils.i(TAG, "VPN TRACE: workers BEGIN");
                 LogUtils.i(TAG, "FALCON_DIAG:workers:BEGIN");
                 isRunning = true;
 
