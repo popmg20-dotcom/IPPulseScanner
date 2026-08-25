@@ -1,341 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:background="#09090b"
-    android:paddingLeft="12dp"
-    android:paddingTop="28dp"
-    android:paddingRight="12dp"
-    android:paddingBottom="12dp"
-    android:fitsSystemWindows="true"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layoutDirection="ltr">
-<LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="12dp">
-        <Button
-            android:textStyle="bold"
-            android:textColor="#ffffff"
-            android:id="@+id/btnTab1"
-            android:layout_width="0dp"
-            android:layout_height="45dp"
-            android:text="Range Scan"
-            android:layout_weight="1"
-            android:backgroundTint="#2563eb"/>
-        <Space
-            android:layout_width="8dp"
-            android:layout_height="wrap_content"/>
-        <Button
-            android:textStyle="bold"
-            android:textColor="#94a3b8"
-            android:id="@+id/btnTab2"
-            android:layout_width="0dp"
-            android:layout_height="45dp"
-            android:text="Deep Test (Top 5)"
-            android:layout_weight="1"
-            android:backgroundTint="#1e293b"/>
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="#09090B"
+    android:paddingLeft="12dp" android:paddingRight="12dp"
+    android:paddingBottom="12dp" android:paddingTop="28dp"
+    android:fitsSystemWindows="true" android:layoutDirection="ltr">
+
+    <!-- TAB BUTTONS -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="12dp" android:layout_marginTop="8dp">
+        <Button android:id="@+id/btnTab1" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="45dp" android:text="Range Scan" android:textColor="#FFFFFF"
+            android:textStyle="bold" android:backgroundTint="#2563EB" />
+        <Space android:layout_width="4dp" android:layout_height="wrap_content" />
+        <Button android:id="@+id/btnTab2" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="45dp" android:text="Deep Test" android:textColor="#94A3B8"
+            android:textStyle="bold" android:backgroundTint="#1E293B" />
+        <Space android:layout_width="4dp" android:layout_height="wrap_content" />
+        <Button android:id="@+id/btnTab3" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="45dp" android:text="Network Lab" android:textColor="#94A3B8"
+            android:textStyle="bold" android:backgroundTint="#1E293B" />
     </LinearLayout>
-    <ScrollView
-        android:id="@+id/tab1Container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true">
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-            <EditText
-                android:textSize="14sp"
-                android:textColor="#ffffff"
-                android:textColorHint="#64748b"
-                android:gravity="top|left"
-                android:id="@+id/ipInput"
-                android:background="#18181b"
-                android:padding="10dp"
-                android:layout_width="match_parent"
-                android:layout_height="75dp"
-                android:layout_marginBottom="6dp"
-                android:text="3.122.114.0 - 3.122.114.255"
-                android:hint="e.g. 109.61.0.0 - 109.61.40.255 or 109.61.42.0/24"/>
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp">
-                <Button
-                    android:textStyle="bold"
-                    android:textColor="#ffffff"
-                    android:id="@+id/btnHistory"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:text="History"
-                    android:layout_weight="1"
-                    android:backgroundTint="#1e293b"/>
-                <Space
-                    android:layout_width="8dp"
-                    android:layout_height="wrap_content"/>
-                <Button
-                    android:textStyle="bold"
-                    android:textColor="#ffffff"
-                    android:id="@+id/btnClearHistory"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:text="Clear History"
-                    android:layout_weight="1"
-                    android:backgroundTint="#b91c1c"/>
+
+    <!-- TAB 1: RANGE SCAN -->
+    <ScrollView android:id="@+id/tab1Container" android:layout_width="match_parent"
+        android:layout_height="match_parent" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <EditText android:id="@+id/ipInput" android:layout_width="match_parent"
+                android:layout_height="75dp" android:text="3.122.114.0 - 3.122.114.255"
+                android:hint="e.g. 109.61.0.0 - 109.61.40.255 or 109.61.42.0/24"
+                android:textColor="#FFFFFF" android:textColorHint="#64748B"
+                android:background="#18181B" android:padding="10dp"
+                android:gravity="top|left" android:textSize="14sp" android:layout_marginBottom="6dp"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginBottom="12dp">
+                <Button android:id="@+id/btnHistory" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="40dp" android:text="History" android:textColor="#FFFFFF"
+                    android:textStyle="bold" android:backgroundTint="#1E293B" />
+                <Space android:layout_width="8dp" android:layout_height="wrap_content" />
+                <Button android:id="@+id/btnClearHistory" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="40dp" android:text="Clear History" android:textColor="#FFFFFF"
+                    android:textStyle="bold" android:backgroundTint="#B91C1C" />
             </LinearLayout>
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp">
-                <LinearLayout
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1">
-                    <TextView
-                        android:textSize="12sp"
-                        android:textColor="#38bdf8"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Packets"/>
-                    <EditText
-                        android:textColor="#ffffff"
-                        android:gravity="center"
-                        android:id="@+id/inputPackets"
-                        android:background="#18181b"
-                        android:layout_width="match_parent"
-                        android:layout_height="45dp"
-                        android:layout_marginTop="4dp"
-                        android:text="100"
-                        android:inputType="number"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginBottom="12dp">
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Packets" android:textColor="#38BDF8" android:textSize="12sp"/>
+                    <EditText android:id="@+id/inputPackets" android:layout_width="match_parent"
+                        android:layout_height="45dp" android:text="100" android:inputType="number"
+                        android:textColor="#FFFFFF" android:gravity="center"
+                        android:background="#18181B" android:layout_marginTop="4dp"/>
                 </LinearLayout>
-                <Space
-                    android:layout_width="8dp"
-                    android:layout_height="wrap_content"/>
-                <LinearLayout
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1">
-                    <TextView
-                        android:textSize="12sp"
-                        android:textColor="#38bdf8"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Interval (ms)"/>
-                    <EditText
-                        android:textColor="#ffffff"
-                        android:gravity="center"
-                        android:id="@+id/inputInterval"
-                        android:background="#18181b"
-                        android:layout_width="match_parent"
-                        android:layout_height="45dp"
-                        android:layout_marginTop="4dp"
-                        android:text="1"
-                        android:inputType="number"/>
+                <Space android:layout_width="8dp" android:layout_height="wrap_content"/>
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Interval (ms)" android:textColor="#38BDF8" android:textSize="12sp"/>
+                    <EditText android:id="@+id/inputInterval" android:layout_width="match_parent"
+                        android:layout_height="45dp" android:text="1" android:inputType="number"
+                        android:textColor="#FFFFFF" android:gravity="center"
+                        android:background="#18181B" android:layout_marginTop="4dp"/>
                 </LinearLayout>
-                <Space
-                    android:layout_width="8dp"
-                    android:layout_height="wrap_content"/>
-                <LinearLayout
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1">
-                    <TextView
-                        android:textSize="12sp"
-                        android:textColor="#38bdf8"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Timeout (ms)"/>
-                    <EditText
-                        android:textColor="#ffffff"
-                        android:gravity="center"
-                        android:id="@+id/inputTimeout"
-                        android:background="#18181b"
-                        android:layout_width="match_parent"
-                        android:layout_height="45dp"
-                        android:layout_marginTop="4dp"
-                        android:text="1000"
-                        android:inputType="number"/>
+                <Space android:layout_width="8dp" android:layout_height="wrap_content"/>
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Timeout (ms)" android:textColor="#38BDF8" android:textSize="12sp"/>
+                    <EditText android:id="@+id/inputTimeout" android:layout_width="match_parent"
+                        android:layout_height="45dp" android:text="1000" android:inputType="number"
+                        android:textColor="#FFFFFF" android:gravity="center"
+                        android:background="#18181B" android:layout_marginTop="4dp"/>
                 </LinearLayout>
             </LinearLayout>
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp">
-                <Button
-                    android:textStyle="bold"
-                    android:textColor="#ffffff"
-                    android:id="@+id/btnStart1"
-                    android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:text="START SCAN"
-                    android:layout_weight="1"
-                    android:backgroundTint="#059669"/>
-                <Space
-                    android:layout_width="12dp"
-                    android:layout_height="wrap_content"/>
-                <Button
-                    android:textStyle="bold"
-                    android:textColor="#ffffff"
-                    android:id="@+id/btnStop1"
-                    android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:text="STOP"
-                    android:layout_weight="1"
-                    android:backgroundTint="#dc2626"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginBottom="12dp">
+                <Button android:id="@+id/btnStart1" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="48dp" android:text="START SCAN" android:textColor="#FFFFFF"
+                    android:textStyle="bold" android:backgroundTint="#059669"/>
+                <Space android:layout_width="12dp" android:layout_height="wrap_content"/>
+                <Button android:id="@+id/btnStop1" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="48dp" android:text="STOP" android:textColor="#FFFFFF"
+                    android:textStyle="bold" android:backgroundTint="#DC2626"/>
             </LinearLayout>
-            <TextView
-                android:textSize="12sp"
-                android:textColor="#94a3b8"
-                android:gravity="center"
-                android:id="@+id/status1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="Ready for Range Scan"/>
-            <ScrollView
-                android:id="@+id/logScroll1"
-                android:background="#000000"
-                android:padding="8dp"
-                android:layout_width="match_parent"
-                android:layout_height="160dp"
+            <TextView android:id="@+id/status1" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="Ready for Range Scan"
+                android:textColor="#94A3B8" android:gravity="center" android:textSize="12sp"
+                android:layout_marginBottom="8dp"/>
+            <ScrollView android:id="@+id/logScroll1" android:layout_width="match_parent"
+                android:layout_height="160dp" android:background="#000000" android:padding="8dp"
                 android:layout_marginBottom="12dp">
-                <LinearLayout
-                    android:orientation="vertical"
-                    android:id="@+id/logLayout1"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                <LinearLayout android:id="@+id/logLayout1" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"/>
             </ScrollView>
-            <LinearLayout
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
                 android:layout_marginBottom="8dp">
-                <TextView
-                    android:textSize="13sp"
-                    android:textColor="#38bdf8"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Sort by:"
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Sort by:" android:textColor="#38BDF8" android:textSize="13sp"
                     android:layout_marginEnd="8dp"/>
-                <Spinner
-                    android:id="@+id/spinnerSort"
-                    android:background="#18181b"
-                    android:padding="4dp"
-                    android:layout_width="0dp"
+                <Spinner android:id="@+id/spinnerSort"
+                    android:layout_width="0dp" android:layout_weight="1"
                     android:layout_height="40dp"
-                    android:layout_weight="1"
-                    android:spinnerMode="dropdown"/>
+                    android:background="#18181B"
+                    android:padding="4dp"
+                    android:spinnerMode="dropdown" />
             </LinearLayout>
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <TableLayout
-                    android:id="@+id/table1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:stretchColumns="*"/>
-            </HorizontalScrollView>
-        </LinearLayout>
-    </ScrollView>
-    <ScrollView
-        android:id="@+id/tab2Container"
-        android:visibility="gone"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true">
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-            <TextView
-                android:textStyle="bold"
-                android:textColor="#fbbf24"
-                android:gravity="center"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:text="Select an IP to start Live Deep Test:"/>
-            <LinearLayout
-                android:orientation="vertical"
-                android:id="@+id/top5Container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp">
-                <TextView
-                    android:textColor="#64748b"
-                    android:gravity="center"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Run Range Scan first to populate Top 5."/>
-            </LinearLayout>
-            <Button
-                android:textStyle="bold"
-                android:textColor="#ffffff"
-                android:id="@+id/btnStop2"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginBottom="12dp"
-                android:text="STOP DEEP TEST"
-                android:backgroundTint="#dc2626"/>
-            <TextView
-                android:textSize="12sp"
-                android:textColor="#38bdf8"
-                android:gravity="center"
-                android:id="@+id/status2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="Waiting..."/>
-            <TextView
-                android:textColor="#ffffff"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:text="�� Live Log:"/>
-            <ScrollView
-                android:id="@+id/logScroll2"
-                android:background="#000000"
-                android:padding="8dp"
-                android:layout_width="match_parent"
-                android:layout_height="140dp"
-                android:layout_marginBottom="12dp">
-                <LinearLayout
-                    android:orientation="vertical"
-                    android:id="@+id/logLayout2"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
-            </ScrollView>
-            <TextView
-                android:textColor="#ffffff"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:text="�� Live Table (Gaming Parameters):"/>
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <TableLayout
-                    android:id="@+id/table2Live"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:stretchColumns="*"/>
+            <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
+                <TableLayout android:id="@+id/table1" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:stretchColumns="*"/>
             </HorizontalScrollView>
         </LinearLayout>
     </ScrollView>
 
-<!-- TAB 3: NETWORK LAB -->
+    <!-- TAB 2: DEEP TEST -->
+    <ScrollView android:id="@+id/tab2Container" android:layout_width="match_parent"
+        android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Select an IP to start Live Deep Test:" android:textColor="#FBBF24"
+                android:textStyle="bold" android:gravity="center" android:layout_marginBottom="12dp"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <EditText
+                    android:id="@+id/manualIpInput"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="45dp"
+                    android:hint="Enter IP manually"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#64748B"
+                    android:background="#18181B"
+                    android:padding="8dp"
+                    android:inputType="text" />
+                <Button
+                    android:id="@+id/btnManualDeepTest"
+                    android:layout_width="wrap_content"
+                    android:layout_height="45dp"
+                    android:text="Start"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:backgroundTint="#2563EB"
+                    android:layout_marginStart="8dp" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/top5Container" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical"
+                android:layout_marginBottom="12dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Run Range Scan first to populate Top 5." android:textColor="#64748B"
+                    android:gravity="center"/>
+            </LinearLayout>
+            <Button android:id="@+id/btnStop2" android:layout_width="match_parent"
+                android:layout_height="48dp" android:text="STOP DEEP TEST" android:textColor="#FFFFFF"
+                android:textStyle="bold" android:backgroundTint="#DC2626"
+                android:layout_marginBottom="12dp"/>
+            <TextView android:id="@+id/status2" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="Waiting..." android:textColor="#38BDF8"
+                android:gravity="center" android:textSize="12sp" android:layout_marginBottom="8dp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="🔴 Live Log:" android:textColor="#FFFFFF" android:layout_marginBottom="4dp"/>
+            <ScrollView android:id="@+id/logScroll2" android:layout_width="match_parent"
+                android:layout_height="140dp" android:background="#000000" android:padding="8dp"
+                android:layout_marginBottom="12dp">
+                <LinearLayout android:id="@+id/logLayout2" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"/>
+            </ScrollView>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="📊 Live Table (Gaming Parameters):" android:textColor="#FFFFFF"
+                android:layout_marginBottom="4dp"/>
+            <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
+                <TableLayout android:id="@+id/table2Live" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:stretchColumns="*"/>
+            </HorizontalScrollView>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- TAB 3: NETWORK LAB -->
     <ScrollView android:id="@+id/tab3Container" android:layout_width="match_parent"
         android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -400,4 +247,5 @@
                 android:layout_marginBottom="8dp"/>
         </LinearLayout>
     </ScrollView>
+
 </LinearLayout>

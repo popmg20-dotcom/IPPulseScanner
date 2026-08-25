@@ -11,6 +11,7 @@ import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -76,6 +78,7 @@ public class MainActivity extends Activity {
     private Button btnStop2;
     private Button btnTab1;
     private Button btnTab2;
+    private Button btnTab3;
     private Thread deepTestThread;
     private ExecutorService executor;
     private EditText inputInterval;
@@ -104,30 +107,31 @@ public class MainActivity extends Activity {
     @Override // android.app.Activity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(C0001R.layout.activity_main);
-        this.tab1Container = findViewById(C0001R.id.tab1Container);
-        this.btnTab1 = (Button) findViewById(C0001R.id.btnTab1);
-        this.btnTab2 = (Button) findViewById(C0001R.id.btnTab2);
-        this.btnStart1 = (Button) findViewById(C0001R.id.btnStart1);
-        this.btnStop1 = (Button) findViewById(C0001R.id.btnStop1);
-        this.ipInput = (EditText) findViewById(C0001R.id.ipInput);
-        this.inputPackets = (EditText) findViewById(C0001R.id.inputPackets);
-        this.inputInterval = (EditText) findViewById(C0001R.id.inputInterval);
-        this.inputTimeout = (EditText) findViewById(C0001R.id.inputTimeout);
-        this.status1 = (TextView) findViewById(C0001R.id.status1);
-        this.logLayout1 = (LinearLayout) findViewById(C0001R.id.logLayout1);
-        this.logScroll1 = (ScrollView) findViewById(C0001R.id.logScroll1);
-        this.table1 = (TableLayout) findViewById(C0001R.id.table1);
-        this.spinnerSort = (Spinner) findViewById(C0001R.id.spinnerSort);
-        this.tab2Container = findViewById(C0001R.id.tab2Container);
-        this.top5Container = (LinearLayout) findViewById(C0001R.id.top5Container);
-        this.status2 = (TextView) findViewById(C0001R.id.status2);
-        this.logLayout2 = (LinearLayout) findViewById(C0001R.id.logLayout2);
-        this.logScroll2 = (ScrollView) findViewById(C0001R.id.logScroll2);
-        this.table2Live = (TableLayout) findViewById(C0001R.id.table2Live);
-        this.btnStop2 = (Button) findViewById(C0001R.id.btnStop2);
-        this.btnHistory = (Button) findViewById(C0001R.id.btnHistory);
-        this.btnClearHistory = (Button) findViewById(C0001R.id.btnClearHistory);
+        setContentView(R.layout.activity_main);
+        this.tab1Container = findViewById(R.id.tab1Container);
+        this.btnTab1 = (Button) findViewById(R.id.btnTab1);
+        this.btnTab2 = (Button) findViewById(R.id.btnTab2);
+        this.btnTab3 = (Button) findViewById(R.id.btnTab3);
+        this.btnStart1 = (Button) findViewById(R.id.btnStart1);
+        this.btnStop1 = (Button) findViewById(R.id.btnStop1);
+        this.ipInput = (EditText) findViewById(R.id.ipInput);
+        this.inputPackets = (EditText) findViewById(R.id.inputPackets);
+        this.inputInterval = (EditText) findViewById(R.id.inputInterval);
+        this.inputTimeout = (EditText) findViewById(R.id.inputTimeout);
+        this.status1 = (TextView) findViewById(R.id.status1);
+        this.logLayout1 = (LinearLayout) findViewById(R.id.logLayout1);
+        this.logScroll1 = (ScrollView) findViewById(R.id.logScroll1);
+        this.table1 = (TableLayout) findViewById(R.id.table1);
+        this.spinnerSort = (Spinner) findViewById(R.id.spinnerSort);
+        this.tab2Container = findViewById(R.id.tab2Container);
+        this.top5Container = (LinearLayout) findViewById(R.id.top5Container);
+        this.status2 = (TextView) findViewById(R.id.status2);
+        this.logLayout2 = (LinearLayout) findViewById(R.id.logLayout2);
+        this.logScroll2 = (ScrollView) findViewById(R.id.logScroll2);
+        this.table2Live = (TableLayout) findViewById(R.id.table2Live);
+        this.btnStop2 = (Button) findViewById(R.id.btnStop2);
+        this.btnHistory = (Button) findViewById(R.id.btnHistory);
+        this.btnClearHistory = (Button) findViewById(R.id.btnClearHistory);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, this.sortOptions);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         this.spinnerSort.setAdapter((SpinnerAdapter) adapter);
@@ -154,6 +158,7 @@ public class MainActivity extends Activity {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
                 MainActivity.this.m6lambda$onCreate$1$comippulsescannerMainActivity(view);
+        this.btnTab3.setOnClickListener(v -> switchTab(3));
             }
         });
         this.btnStart1.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda1
