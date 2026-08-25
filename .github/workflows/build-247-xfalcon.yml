@@ -1,0 +1,70 @@
+name: IPPulseScanner 247 X-Falcon
+
+on:
+  push:
+    branches:
+      - "integration/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Architecture validation
+        run: |
+          set -e
+
+          test -f app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java
+          test -f app/src/main/java/com/github/xfalcon/vhosts/vservice/DnsChange.java
+
+          grep -qE \
+            'private[[:space:]]+int[[:space:]]+mtu[[:space:]]*=[[:space:]]*247' \
+            app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java
+
+          grep -qE \
+            'builder\.setMtu[[:space:]]*\([[:space:]]*mtu[[:space:]]*\)' \
+            app/src/main/java/com/github/xfalcon/vhosts/vservice/VhostsService.java
+
+          if grep -RniE \
+            'GamingVpnService|com\.ippulse\.scanner\.localvpn|WireGuard|wireguard|wgPrivateKey|wgAddress|wgPeerKey|wgEndpoint|wgAllowedIPs|wgConfig' \
+            app/src/main
+          then
+            exit 1
+          fi
+
+      - name: Build APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:assembleDebug --stacktrace --no-daemon 2>&1 | tee build.log
+
+      - name: Verify APK
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: IPPulseScanner-247-XFalcon-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IPPulseScanner-247-XFalcon-build-log
+          path: build.log
+          if-no-files-found: warn
