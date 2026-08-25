@@ -129,18 +129,7 @@ public class VhostsService extends VpnService {
         if (vpnInterface == null) {
             Builder builder = new Builder();
             builder.addAddress(VPN_ADDRESS, 32);
-            builder.addAddress(VPN_ADDRESS6, 128);
-
-
-            String VPN_DNS4 = VPN_DNS4_DEFAULT;
-            if (is_cus_dns) {
-                try {
-                    Address.getByAddress(VPN_DNS4);
-                } catch (Exception e) {
-                    VPN_DNS4 = VPN_DNS4_DEFAULT;
-                    LogUtils.e(TAG, e.getMessage(), e);
-                }
-            }
+            builder.addAddress(VPN_ADDRESS6, 128);            }
 
             LogUtils.d(TAG, "use dns:" + VPN_DNS4);
             builder.addRoute(VPN_DNS4, 32);
