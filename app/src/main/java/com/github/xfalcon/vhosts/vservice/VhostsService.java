@@ -92,7 +92,6 @@ public class VhostsService extends VpnService {
             }
             isOAndBoot = false;
         }
-        setupHostFile();
         setupVPN();
         if (vpnInterface == null) {
             LogUtils.d(TAG, "unknow error");
@@ -125,31 +124,6 @@ public class VhostsService extends VpnService {
     }
 
 
-    private void setupHostFile() {
-        try {
-            final InputStream inputStream;
-            if (is_net)
-            else
-                inputStream = getContentResolver().openInputStream(Uri.parse(uri_path));
-            new Thread() {
-                public void run() {
-                    if (DnsChange.handle_hosts(inputStream) == 0) {
-                        Looper.prepare();
-                        if(is_net){
-                        }else{
-                        }
-                        Looper.loop();
-                    }
-                }
-            }.start();
-
-        } catch (Exception e) {
-            if(is_net){
-            }else{
-            }
-            LogUtils.e(TAG, "error setup host file service", e);
-        }
-    }
 
     private void setupVPN() {
         if (vpnInterface == null) {
