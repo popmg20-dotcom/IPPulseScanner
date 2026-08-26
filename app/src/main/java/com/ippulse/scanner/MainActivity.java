@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.VpnService;
@@ -360,11 +361,28 @@ private void startRangeScan() {
         final int[] completed = {0};
         this.status1.setText("Scanning " + ips.size() + " IPs concurrently...");
         for (final String ip : ips) {
-            this.executor.execute(new Runnable() {
-                @Override // java.lang.Runnable
-                public final void run() {
-                    MainActivity.this.m17lambda$startRangeScan$9$comippulsescannerMainActivity(ip, pkts, timeo, completed, ips);
+            this.executor.execute(() -> {
+                if (isCancelled) return;
+
+                ScanResult res = pingLogic(ip, pkts, timeo, false, null);
+
+                synchronized (allResults) {
+                    allResults.add(res);
+                    completed[0]++;
                 }
+
+                runOnUiThread(() -> {
+                    appendMainLog(res);
+                    status1.setText(
+                        completed[0] + " / " + ips.size() + " processed."
+                    );
+
+                    if (completed[0] >= ips.size()
+                            && !isCancelled
+                            && !rangeScanFinished) {
+                        finishRangeScan();
+                    }
+                });
             });
         }
     }
@@ -387,7 +405,14 @@ public void applySortAndRefreshTable() {
                 Collections.sort(aliveResults, new Comparator() {
                     @Override // java.util.Comparator
                     public final int compare(Object obj, Object obj2) {
-                        return MainActivity.lambda$applySortAndRefreshTable$10((MainActivity.ScanResult) obj, (MainActivity.ScanResult) obj2);
+                        ScanResult a = (ScanResult) obj;
+                        ScanResult b = (ScanResult) obj2;
+                        if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
+                        if (Math.abs(a.jitter - b.jitter) > 0.1f) {
+                            return Float.compare(a.jitter, b.jitter);
+                        }
+                        if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
+                        return Float.compare(a.max, b.max);
                     }
                 });
                 break;
@@ -436,11 +461,11 @@ public void applySortAndRefreshTable() {
         addTableHeader(this.table1, false);
         this.top5IPs.clear();
         for (int i = 0; i < Math.min(5, aliveResults.size()); i++) {
-            this.top5IPs.add(aliveResults.get(i).f0ip);
+            this.top5IPs.add(aliveResults.get(i).ip);
         }
         int rank = 1;
         for (ScanResult res2 : aliveResults) {
-            boolean isTop5 = this.top5IPs.contains(res2.f0ip);
+            boolean isTop5 = this.top5IPs.contains(res2.ip);
             addTableRow(this.table1, res2, rank, false, isTop5);
             rank++;
         }
@@ -454,7 +479,7 @@ private void populateTab2() {
             TextView tv = new TextView(this);
             tv.setText("No alive IPs found.");
             tv.setTextColor(Color.parseColor("#EF4444"));
-            tv.setGravity(17);
+            tv.setGravity(Gravity.CENTER);
             this.top5Container.addView(tv);
             return;
         }
@@ -469,12 +494,7 @@ private void populateTab2() {
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
             params.setMargins(0, 0, 0, 8);
             btn.setLayoutParams(params);
-            btn.setOnClickListener(new View.OnClickListener() {
-                @Override // android.view.View.OnClickListener
-                public final void onClick(View view) {
-                    MainActivity.this.m12lambda$populateTab2$16$comippulsescannerMainActivity(ip, view);
-                }
-            });
+            btn.setOnClickListener(v -> startDeepTestOn(ip));
             this.top5Container.addView(btn);
         }
     }
@@ -491,11 +511,14 @@ private void startDeepTestOn(final String ip) {
         final int pkts = parseNum(this.inputPackets, 100);
         final int timeo = parseNum(this.inputTimeout, 1000);
         this.status2.setText("Deep Testing: " + ip);
-        this.deepTestThread = new Thread(new Runnable() {
-            @Override // java.lang.Runnable
-            public final void run() {
-                MainActivity.this.m15lambda$startDeepTestOn$18$comippulsescannerMainActivity(ip, pkts, timeo);
-            }
+        this.deepTestThread = new Thread(() -> {
+            pingLogic(ip, pkts, timeo, true, table2Live);
+
+            runOnUiThread(() -> {
+                if (!isCancelled) {
+                    status2.setText("Deep Test Finished: " + ip);
+                }
+            });
         });
         this.deepTestThread.start();
     }
@@ -520,18 +543,23 @@ private ScanResult pingLogic(final String ip, int totalPkts, int timeo, boolean 
             for (int i2 = 8; i < i2; i2 = 8) {
                 TextView tv = new TextView(this);
                 tv.setPadding(10, 10, 10, 10);
-                tv.setGravity(17);
+                tv.setGravity(Gravity.CENTER);
                 tv.setTextSize(11.0f);
                 tv.setTextColor(-1);
                 liveCells[i] = tv;
                 liveRow2.addView(tv);
                 i++;
             }
-            runOnUiThread(new Runnable() {
-                @Override // java.lang.Runnable
-                public final void run() {
-                    MainActivity.lambda$pingLogic$19(liveTable, liveRow2, liveCells, ip);
-                }
+            runOnUiThread(() -> {
+                liveTable.addView(liveRow2);
+                liveCells[0].setText(ip);
+                liveCells[1].setText("0");
+                liveCells[2].setText("0");
+                liveCells[3].setText("0");
+                liveCells[4].setText("0");
+                liveCells[5].setText("0");
+                liveCells[6].setText("0%");
+                liveCells[7].setText("TESTING");
             });
             liveRow = liveRow2;
         } else {
@@ -612,11 +640,14 @@ private ScanResult pingLogic(final String ip, int totalPkts, int timeo, boolean 
                 final int seq = i3;
                 float finalRtt = rtt;
                 lost2 = consecutiveLost;
-                runOnUiThread(new Runnable() {
-                    @Override // java.lang.Runnable
-                    public final void run() {
-                        MainActivity.lambda$pingLogic$20(liveCells, seq, curAvg, curMin, curMax, curJitter, curLoss, curReceived);
-                    }
+                runOnUiThread(() -> {
+                    liveCells[1].setText(String.valueOf(seq));
+                    liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
+                    liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
+                    liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
+                    liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
+                    liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
+                    liveCells[7].setText("ALIVE");
                 });
                 appendDeepLog(ip + " seq=" + seq + "/" + totalPkts + " rtt=" + (finalRtt >= 0.0f ? finalRtt + "ms" : "lost"));
             }
@@ -703,25 +734,32 @@ private float jitter(List<Float> list) {
 
 private void appendMainLog(ScanResult res) {
         TextView tv = new TextView(this);
-        tv.setText(String.format(Locale.US, "%s | Sent:%d | Avg:%.1f | Min:%.1f | Max:%.1f | Jit:%.2f | Loss:%.0f%%", res.f0ip, Integer.valueOf(res.sent), Float.valueOf(res.avg), Float.valueOf(res.min), Float.valueOf(res.max), Float.valueOf(res.jitter), Float.valueOf(res.loss)));
+        tv.setText(String.format(Locale.US, "%s | Sent:%d | Avg:%.1f | Min:%.1f | Max:%.1f | Jit:%.2f | Loss:%.0f%%", res.ip, Integer.valueOf(res.sent), Float.valueOf(res.avg), Float.valueOf(res.min), Float.valueOf(res.max), Float.valueOf(res.jitter), Float.valueOf(res.loss)));
         tv.setTextColor(res.alive ? -16711936 : -65536);
         tv.setTextSize(11.0f);
         tv.setPadding(0, 4, 0, 4);
         this.logLayout1.addView(tv);
-        this.logScroll1.post(new Runnable() {
-            @Override // java.lang.Runnable
-            public final void run() {
-                MainActivity.this.m3lambda$appendMainLog$21$comippulsescannerMainActivity();
-            }
-        });
+        this.logScroll1.post(() ->
+            this.logScroll1.fullScroll(View.FOCUS_DOWN)
+        );
     }
 
 private void appendDeepLog(final String msg) {
-        runOnUiThread(new Runnable() {
-            @Override // java.lang.Runnable
-            public final void run() {
-                MainActivity.this.m2lambda$appendDeepLog$23$comippulsescannerMainActivity(msg);
+        runOnUiThread(() -> {
+            if (logLayout2.getChildCount() >= MAX_LOG_ITEMS) {
+                logLayout2.removeViewAt(0);
             }
+
+            TextView tv = new TextView(this);
+            tv.setText(msg);
+            tv.setTextColor(Color.GREEN);
+            tv.setTextSize(11f);
+            tv.setPadding(0, 2, 0, 2);
+            logLayout2.addView(tv);
+
+            logScroll2.post(() ->
+                logScroll2.fullScroll(View.FOCUS_DOWN)
+            );
         });
     }
 
@@ -733,7 +771,7 @@ private void addTableHeader(TableLayout tableLayout, boolean isLive) {
             TextView tv = new TextView(this);
             tv.setText(h);
             tv.setTextColor(-1);
-            tv.setGravity(17);
+            tv.setGravity(Gravity.CENTER);
             tv.setPadding(10, 10, 10, 10);
             tv.setTextSize(11.0f);
             tv.setTypeface(null, 1);
@@ -750,12 +788,15 @@ private void addTableRow(TableLayout tableLayout, final ScanResult scanResult, i
         tableRow.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                MainActivity.this.m0lambda$addTableRow$24$comippulsescannerMainActivity(scanResult, view);
+                fetchFlag(
+                (TextView) tableRow.getChildAt(!z ? 1 : 0),
+                scanResult.ip
+        );
             }
         });
         if (z) {
             String[] strArr2 = new String[8];
-            strArr2[0] = scanResult.f0ip;
+            strArr2[0] = scanResult.ip;
             strArr2[1] = String.valueOf(scanResult.sent);
             strArr2[2] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.avg));
             strArr2[FAST_FAIL_THRESHOLD] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.min));
@@ -767,7 +808,7 @@ private void addTableRow(TableLayout tableLayout, final ScanResult scanResult, i
         } else {
             String[] strArr3 = new String[9];
             strArr3[0] = String.valueOf(i);
-            strArr3[1] = scanResult.f0ip;
+            strArr3[1] = scanResult.ip;
             strArr3[2] = String.valueOf(scanResult.sent);
             strArr3[FAST_FAIL_THRESHOLD] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.avg));
             strArr3[4] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.min));
@@ -787,7 +828,7 @@ private void addTableRow(TableLayout tableLayout, final ScanResult scanResult, i
             tableRow.addView(textView);
         }
         tableLayout.addView(tableRow);
-        fetchFlag((TextView) tableRow.getChildAt(!z ? 1 : 0), scanResult.f0ip);
+        fetchFlag((TextView) tableRow.getChildAt(!z ? 1 : 0), scanResult.ip);
     }
 
     private void fetchFlag(TextView textView, String ip) {
