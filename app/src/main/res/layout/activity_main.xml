@@ -36,6 +36,18 @@
             android:text="Deep Test (Top 5)"
             android:layout_weight="1"
             android:backgroundTint="#1e293b"/>
+        <Space
+            android:layout_width="8dp"
+            android:layout_height="wrap_content"/>
+        <Button
+            android:textStyle="bold"
+            android:textColor="#94a3b8"
+            android:id="@+id/btnTab3"
+            android:layout_width="0dp"
+            android:layout_height="45dp"
+            android:text="Network Lab"
+            android:layout_weight="1"
+            android:backgroundTint="#1e293b"/>
     </LinearLayout>
     <ScrollView
         android:id="@+id/tab1Container"
