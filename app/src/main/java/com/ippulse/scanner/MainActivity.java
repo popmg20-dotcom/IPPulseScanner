@@ -335,410 +335,459 @@ public class MainActivity extends Activity {
         status2.setText("Deep test stopped.");
     }
 
-    private void startRangeScan() {
-        String query = ipInput.getText().toString().trim();
+private void startRangeScan() {
+        String query = this.ipInput.getText().toString().trim();
         if (query.isEmpty()) {
-            Toast.makeText(this, "Please enter a range or IP", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please enter a range or IP", 0).show();
             return;
         }
-        List<String> ips = parseIPList(query);
+        final List<String> ips = parseIPList(query);
         if (ips.isEmpty()) {
-            Toast.makeText(this, "Invalid range", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid range", 0).show();
             return;
         }
-
-        int pkts = parseNum(inputPackets, 100);
-        int timeo = parseNum(inputTimeout, 1000);
-
-        allResults.clear();
-        logLayout1.removeAllViews();
-        table1.removeAllViews();
-        addTableHeader(table1, false);
-        btnStart1.setEnabled(false);
-        isCancelled = false;
-        rangeScanFinished = false;
-
+        final int pkts = parseNum(this.inputPackets, 100);
+        final int timeo = parseNum(this.inputTimeout, 1000);
+        this.allResults.clear();
+        this.logLayout1.removeAllViews();
+        this.table1.removeAllViews();
+        addTableHeader(this.table1, false);
+        this.btnStart1.setEnabled(false);
+        this.isCancelled = false;
+        this.rangeScanFinished = false;
         saveHistory(query);
-
-        executor = Executors.newFixedThreadPool(3);
+        this.executor = Executors.newFixedThreadPool(80);
         final int[] completed = {0};
-        status1.setText("Scanning " + ips.size() + " IPs concurrently...");
-
-        for (String ip : ips) {
-            executor.execute(() -> {
-                if (isCancelled) return;
-                ScanResult res = pingLogic(ip, pkts, timeo, false, null);
-                synchronized (allResults) {
-                    allResults.add(res);
-                    completed[0]++;
+        this.status1.setText("Scanning " + ips.size() + " IPs concurrently...");
+        for (final String ip : ips) {
+            this.executor.execute(new Runnable() {
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.m17lambda$startRangeScan$9$comippulsescannerMainActivity(ip, pkts, timeo, completed, ips);
                 }
-                runOnUiThread(() -> {
-                    appendMainLog(res);
-                    status1.setText(completed[0] + " / " + ips.size() + " processed.");
-                    if (completed[0] >= ips.size() && !isCancelled && !rangeScanFinished) {
-                        finishRangeScan();
-                    }
-                });
             });
         }
     }
 
-    private void finishRangeScan() {
-        rangeScanFinished = true;
-        btnStart1.setEnabled(true);
+private void finishRangeScan() {
+        this.rangeScanFinished = true;
+        this.btnStart1.setEnabled(true);
         applySortAndRefreshTable();
     }
 
-    private void applySortAndRefreshTable() {
+public void applySortAndRefreshTable() {
         List<ScanResult> aliveResults = new ArrayList<>();
-        for (ScanResult res : allResults) {
-            if (res.alive) aliveResults.add(res);
+        for (ScanResult res : this.allResults) {
+            if (res.alive) {
+                aliveResults.add(res);
+            }
         }
-
-        if (aliveResults.size() > 100) {
-            aliveResults = new ArrayList<>(aliveResults.subList(0, 100));
-        }
-
-        switch (currentSortIndex) {
+        switch (this.currentSortIndex) {
             case 0:
-                Collections.sort(aliveResults, (a, b) -> {
-                    if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
-                    if (Math.abs(a.jitter - b.jitter) > 0.1f) return Float.compare(a.jitter, b.jitter);
-                    if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
-                    return Float.compare(a.max, b.max);
+                Collections.sort(aliveResults, new Comparator() {
+                    @Override // java.util.Comparator
+                    public final int compare(Object obj, Object obj2) {
+                        return MainActivity.lambda$applySortAndRefreshTable$10((MainActivity.ScanResult) obj, (MainActivity.ScanResult) obj2);
+                    }
                 });
                 break;
             case 1:
-                Collections.sort(aliveResults, (a, b) -> Float.compare(a.loss, b.loss));
+                Collections.sort(aliveResults, new Comparator() {
+                    @Override // java.util.Comparator
+                    public final int compare(Object obj, Object obj2) {
+                        return Float.compare(((MainActivity.ScanResult) obj).loss, ((MainActivity.ScanResult) obj2).loss);
+                    }
+                });
                 break;
             case 2:
-                Collections.sort(aliveResults, (a, b) -> Float.compare(a.jitter, b.jitter));
+                Collections.sort(aliveResults, new Comparator() {
+                    @Override // java.util.Comparator
+                    public final int compare(Object obj, Object obj2) {
+                        return Float.compare(((MainActivity.ScanResult) obj).jitter, ((MainActivity.ScanResult) obj2).jitter);
+                    }
+                });
                 break;
-            case 3:
-                Collections.sort(aliveResults, (a, b) -> Float.compare(a.avg, b.avg));
+            case FAST_FAIL_THRESHOLD /* 3 */:
+                Collections.sort(aliveResults, new Comparator() {
+                    @Override // java.util.Comparator
+                    public final int compare(Object obj, Object obj2) {
+                        return Float.compare(((MainActivity.ScanResult) obj).avg, ((MainActivity.ScanResult) obj2).avg);
+                    }
+                });
                 break;
             case 4:
-                Collections.sort(aliveResults, (a, b) -> Float.compare(a.min, b.min));
+                Collections.sort(aliveResults, new Comparator() {
+                    @Override // java.util.Comparator
+                    public final int compare(Object obj, Object obj2) {
+                        return Float.compare(((MainActivity.ScanResult) obj).min, ((MainActivity.ScanResult) obj2).min);
+                    }
+                });
                 break;
             case 5:
-                Collections.sort(aliveResults, (a, b) -> Float.compare(a.max, b.max));
+                Collections.sort(aliveResults, new Comparator() {
+                    @Override // java.util.Comparator
+                    public final int compare(Object obj, Object obj2) {
+                        return Float.compare(((MainActivity.ScanResult) obj).max, ((MainActivity.ScanResult) obj2).max);
+                    }
+                });
                 break;
         }
-
-        table1.removeAllViews();
-        addTableHeader(table1, false);
-        top5IPs.clear();
+        this.table1.removeAllViews();
+        addTableHeader(this.table1, false);
+        this.top5IPs.clear();
         for (int i = 0; i < Math.min(5, aliveResults.size()); i++) {
-            top5IPs.add(aliveResults.get(i).ip);
+            this.top5IPs.add(aliveResults.get(i).f0ip);
         }
-
         int rank = 1;
-        for (ScanResult res : aliveResults) {
-            boolean isTop5 = top5IPs.contains(res.ip);
-            addTableRow(table1, res, rank, false, isTop5);
+        for (ScanResult res2 : aliveResults) {
+            boolean isTop5 = this.top5IPs.contains(res2.f0ip);
+            addTableRow(this.table1, res2, rank, false, isTop5);
             rank++;
         }
-
         populateTab2();
-        status1.setText("Sorted by: " + sortOptions[currentSortIndex]);
+        this.status1.setText("Sorted by: " + this.sortOptions[this.currentSortIndex]);
     }
 
-    private void populateTab2() {
-        top5Container.removeAllViews();
-        if (top5IPs.isEmpty()) {
+private void populateTab2() {
+        this.top5Container.removeAllViews();
+        if (this.top5IPs.isEmpty()) {
             TextView tv = new TextView(this);
             tv.setText("No alive IPs found.");
             tv.setTextColor(Color.parseColor("#EF4444"));
-            tv.setGravity(Gravity.CENTER);
-            top5Container.addView(tv);
+            tv.setGravity(17);
+            this.top5Container.addView(tv);
             return;
         }
-        for (int i = 0; i < top5IPs.size(); i++) {
-            String ip = top5IPs.get(i);
+        for (int i = 0; i < this.top5IPs.size(); i++) {
+            final String ip = this.top5IPs.get(i);
             Button btn = new Button(this);
             btn.setText("🥇 Start Deep Test: " + ip);
-            btn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#FFD700")));
-            btn.setTextColor(Color.BLACK);
+            btn.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FFD700")));
+            btn.setTextColor(-16777216);
             btn.setAllCaps(false);
             btn.setPadding(0, 8, 0, 8);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
             params.setMargins(0, 0, 0, 8);
             btn.setLayoutParams(params);
-            btn.setOnClickListener(v -> startDeepTestOn(ip));
-            top5Container.addView(btn);
+            btn.setOnClickListener(new View.OnClickListener() {
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.m12lambda$populateTab2$16$comippulsescannerMainActivity(ip, view);
+                }
+            });
+            this.top5Container.addView(btn);
         }
     }
 
-    private void startDeepTestOn(String ip) {
-        if (deepTestThread != null && deepTestThread.isAlive()) {
-            isCancelled = true;
-            deepTestThread.interrupt();
+private void startDeepTestOn(final String ip) {
+        if (this.deepTestThread != null && this.deepTestThread.isAlive()) {
+            this.isCancelled = true;
+            this.deepTestThread.interrupt();
         }
-        isCancelled = false;
-        logLayout2.removeAllViews();
-        table2Live.removeAllViews();
-        addTableHeader(table2Live, true);
-        int pkts = parseNum(inputPackets, 100);
-        int timeo = parseNum(inputTimeout, 1000);
-        status2.setText("Deep Testing: " + ip);
-        deepTestThread = new Thread(() -> {
-            pingLogic(ip, pkts, timeo, true, table2Live);
-            runOnUiThread(() -> {
-                if (!isCancelled) status2.setText("Deep Test Finished: " + ip);
-            });
+        this.isCancelled = false;
+        this.logLayout2.removeAllViews();
+        this.table2Live.removeAllViews();
+        addTableHeader(this.table2Live, true);
+        final int pkts = parseNum(this.inputPackets, 100);
+        final int timeo = parseNum(this.inputTimeout, 1000);
+        this.status2.setText("Deep Testing: " + ip);
+        this.deepTestThread = new Thread(new Runnable() {
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.m15lambda$startDeepTestOn$18$comippulsescannerMainActivity(ip, pkts, timeo);
+            }
         });
-        deepTestThread.start();
+        this.deepTestThread.start();
     }
 
     // ✅ موتور جدید: استفاده از ping پیوسته با یک فرآیند
-    private ScanResult pingLogic(String ip, int totalPkts, int timeo, boolean isDeepLive, TableLayout liveTable) {
+private ScanResult pingLogic(final String ip, int totalPkts, int timeo, boolean isDeepLive, final TableLayout liveTable) {
+        TableRow liveRow;
+        int lost;
+        float f;
+        float f2;
+        String str;
+        int attempted;
+        int lost2;
+        String str2 = "time=";
         List<Float> rttList = new ArrayList<>();
-        int received = 0;
-        int lost = 0;
-        int sent = 0;
         int tSec = Math.max(1, timeo / 1000);
-
-        TableRow liveRow = null;
-        TextView[] liveCells = new TextView[8];
-
+        final TextView[] liveCells = new TextView[8];
         if (isDeepLive) {
-            liveRow = new TableRow(this);
-            liveRow.setBackgroundColor(Color.parseColor("#18181B"));
-            for (int i = 0; i < 8; i++) {
+            final TableRow liveRow2 = new TableRow(this);
+            liveRow2.setBackgroundColor(Color.parseColor("#18181B"));
+            int i = 0;
+            for (int i2 = 8; i < i2; i2 = 8) {
                 TextView tv = new TextView(this);
                 tv.setPadding(10, 10, 10, 10);
-                tv.setGravity(Gravity.CENTER);
-                tv.setTextSize(11f);
-                tv.setTextColor(Color.WHITE);
+                tv.setGravity(17);
+                tv.setTextSize(11.0f);
+                tv.setTextColor(-1);
                 liveCells[i] = tv;
-                liveRow.addView(tv);
+                liveRow2.addView(tv);
+                i++;
             }
-            final TableRow rowToAdd = liveRow;
-            final TextView[] cells = liveCells;
-            final String ipFinal = ip;
-            runOnUiThread(() -> {
-                liveTable.addView(rowToAdd);
-                cells[0].setText(ipFinal);
-                cells[1].setText("0");
-                cells[2].setText("0");
-                cells[3].setText("0");
-                cells[4].setText("0");
-                cells[5].setText("0");
-                cells[6].setText("0%");
-                cells[7].setText("TESTING");
+            runOnUiThread(new Runnable() {
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.lambda$pingLogic$19(liveTable, liveRow2, liveCells, ip);
+                }
             });
+            liveRow = liveRow2;
+        } else {
+            liveRow = null;
         }
-
-        try {
-            ProcessBuilder pb = new ProcessBuilder("ping", "-c", String.valueOf(totalPkts), "-i", "0.2", "-W", String.valueOf(tSec), ip);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null && !isCancelled) {
-                if (line.contains("time=")) {
-                    int idx = line.indexOf("time=");
-                    if (idx != -1) {
-                        String sub = line.substring(idx + 5).trim();
-                        String[] parts = sub.split(" ");
-                        if (parts.length > 0) {
-                            float rtt = Float.parseFloat(parts[0].trim());
-                            rttList.add(rtt);
-                            received++;
-                            sent++;
-                            if (isDeepLive && liveRow != null && (received % 5 == 0 || received == totalPkts)) {
-                                int curReceived = received;
-                                float curAvg = avg(rttList);
-                                float curMin = min(rttList);
-                                float curMax = max(rttList);
-                                float curJitter = jitter(rttList);
-                                float curLoss = ((totalPkts - curReceived) * 100f) / totalPkts;
-                                final int seq = received;
-                                final float finalRtt = rtt;
-                                runOnUiThread(() -> {
-                                    liveCells[1].setText(String.valueOf(seq));
-                                    liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
-                                    liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
-                                    liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
-                                    liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
-                                    liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
-                                    liveCells[7].setText("ALIVE");
-                                });
-                                appendDeepLog(ip + " seq=" + seq + "/" + totalPkts + " rtt=" + finalRtt + "ms");
+        int i3 = 1;
+        int consecutiveLost = 0;
+        int attempted2 = 0;
+        int consecutiveLost2 = 0;
+        while (i3 <= totalPkts && !this.isCancelled) {
+            int attempted3 = i3;
+            float rtt = -1.0f;
+            try {
+                Process p = new ProcessBuilder("ping", "-c", "1", "-W", String.valueOf(tSec), ip).redirectErrorStream(true).start();
+                try {
+                    attempted = attempted3;
+                    try {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                        while (true) {
+                            String line = reader.readLine();
+                            if (line == null) {
+                                str = str2;
+                                break;
+                            }
+                            if (!line.contains(str2)) {
+                                str2 = str2;
+                            } else {
+                                int idx = line.indexOf(str2);
+                                str = str2;
+                                try {
+                                    String sub = line.substring(idx + 5).trim();
+                                    BufferedReader reader2 = reader;
+                                    String[] parts = sub.split(" ");
+                                    if (parts.length > 0) {
+                                        break;
+                                    }
+                                    reader = reader2;
+                                    str2 = str;
+                                } catch (Exception e) {
+                                    rtt = -1.0f;
+                                }
                             }
                         }
+                        p.waitFor();
+                        p.destroy();
+                    } catch (Exception e2) {
+                        str = str2;
                     }
-                } else if (line.contains("icmp_seq")) {
-                    // شماره سکانس را استخراج می‌کنیم (برای packet loss)
-                    int seqIdx = line.indexOf("icmp_seq=");
-                    if (seqIdx != -1) {
-                        int start = seqIdx + "icmp_seq=".length();
-                        int end = start;
-                        while (end < line.length() && Character.isDigit(line.charAt(end))) end++;
-                        if (end > start) {
-                            try {
-                                int seq = Integer.parseInt(line.substring(start, end));
-                                sent = Math.max(sent, seq);
-                                // اگر خط حاوی time= نبود، یعنی lost
-                                if (!line.contains("time=")) {
-                                    lost++;
-                                    if (isDeepLive && liveRow != null && (sent % 5 == 0 || sent == totalPkts)) {
-                                        int curSent = sent;
-                                        int curReceived = received;
-                                        float curAvg = avg(rttList);
-                                        float curMin = min(rttList);
-                                        float curMax = max(rttList);
-                                        float curJitter = jitter(rttList);
-                                        float curLoss = ((curSent - curReceived) * 100f) / curSent;
-                                        runOnUiThread(() -> {
-                                            liveCells[1].setText(String.valueOf(curSent));
-                                            liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
-                                            liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
-                                            liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
-                                            liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
-                                            liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
-                                            liveCells[7].setText("ALIVE");
-                                        });
-                                        appendDeepLog(ip + " seq=" + curSent + "/" + totalPkts + " lost");
-                                    }
-                                }
-                            } catch (Exception ignored) {}
-                        }
-                    }
+                } catch (Exception e3) {
+                    str = str2;
+                    attempted = attempted3;
+                }
+            } catch (Exception e4) {
+                str = str2;
+                attempted = attempted3;
+            }
+            if (rtt >= 0.0f) {
+                rttList.add(Float.valueOf(rtt));
+                consecutiveLost2 = 0;
+            } else {
+                consecutiveLost++;
+                consecutiveLost2++;
+                if (consecutiveLost2 >= FAST_FAIL_THRESHOLD) {
+                    lost = consecutiveLost;
+                    attempted2 = attempted;
+                    break;
                 }
             }
-            process.waitFor();
-            if (sent == 0) sent = totalPkts;
-            lost = sent - received;
-            if (lost < 0) lost = 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            lost = totalPkts;
+            if (!isDeepLive || liveRow == null) {
+                lost2 = consecutiveLost;
+            } else {
+                final int curReceived = rttList.size();
+                final float curAvg = avg(rttList);
+                final float curMin = min(rttList);
+                final float curMax = max(rttList);
+                final float curJitter = jitter(rttList);
+                final float curLoss = ((i3 - curReceived) * 100.0f) / i3;
+                final int seq = i3;
+                float finalRtt = rtt;
+                lost2 = consecutiveLost;
+                runOnUiThread(new Runnable() {
+                    @Override // java.lang.Runnable
+                    public final void run() {
+                        MainActivity.lambda$pingLogic$20(liveCells, seq, curAvg, curMin, curMax, curJitter, curLoss, curReceived);
+                    }
+                });
+                appendDeepLog(ip + " seq=" + seq + "/" + totalPkts + " rtt=" + (finalRtt >= 0.0f ? finalRtt + "ms" : "lost"));
+            }
+            if (i3 < totalPkts && !this.isCancelled && consecutiveLost2 < FAST_FAIL_THRESHOLD) {
+                try {
+                    Thread.sleep(10L);
+                } catch (InterruptedException e5) {
+                    attempted2 = attempted;
+                    lost = lost2;
+                }
+            }
+            i3++;
+            attempted2 = attempted;
+            str2 = str;
+            consecutiveLost = lost2;
         }
-
-        float lossPct = sent == 0 ? 100f : (lost * 100f) / sent;
-        boolean alive = received > 0 && lossPct < 100f;
-        float avg = avg(rttList);
-        float min = min(rttList);
-        float max = max(rttList);
-        float jit = jitter(rttList);
-        return new ScanResult(ip, avg, min, max, jit, lossPct, alive, sent);
+        lost = consecutiveLost;
+        if (attempted2 == 0) {
+            f = 100.0f;
+            f2 = 100.0f;
+        } else {
+            f = 100.0f;
+            f2 = (lost * 100.0f) / attempted2;
+        }
+        float lossPct = f2;
+        boolean alive = rttList.size() > 0 && lossPct < f;
+        return new ScanResult(ip, avg(rttList), min(rttList), max(rttList), jitter(rttList), lossPct, alive, attempted2);
     }
 
-    private float avg(List<Float> list) {
-        if (list == null || list.isEmpty()) return 0;
-        float sum = 0;
-        for (float f : list) sum += f;
+private float avg(List<Float> list) {
+        if (list == null || list.isEmpty()) {
+            return 0.0f;
+        }
+        float sum = 0.0f;
+        Iterator<Float> it = list.iterator();
+        while (it.hasNext()) {
+            float f = it.next().floatValue();
+            sum += f;
+        }
         return sum / list.size();
     }
 
-    private float min(List<Float> list) {
-        if (list == null || list.isEmpty()) return 0;
-        float m = list.get(0);
-        for (float f : list) if (f < m) m = f;
-        return m;
-    }
-
-    private float max(List<Float> list) {
-        if (list == null || list.isEmpty()) return 0;
-        float m = list.get(0);
-        for (float f : list) if (f > m) m = f;
-        return m;
-    }
-
-    private float jitter(List<Float> list) {
-        if (list == null || list.size() < 2) return 0;
-        float sum = 0;
-        for (int i = 1; i < list.size(); i++) sum += Math.abs(list.get(i) - list.get(i - 1));
-        return sum / (list.size() - 1);
-    }
-
-    private void appendMainLog(ScanResult res) {
-        if (logLayout1.getChildCount() >= MAX_LOG_ITEMS) {
-            logLayout1.removeViewAt(0);
+private float min(List<Float> list) {
+        if (list == null || list.isEmpty()) {
+            return 0.0f;
         }
-        TextView tv = new TextView(this);
-        tv.setText(String.format(Locale.US, "%s | Sent:%d | Avg:%.1f | Min:%.1f | Max:%.1f | Jit:%.2f | Loss:%.0f%%",
-                res.ip, res.sent, res.avg, res.min, res.max, res.jitter, res.loss));
-        tv.setTextColor(res.alive ? Color.GREEN : Color.RED);
-        tv.setTextSize(11f);
-        tv.setPadding(0, 4, 0, 4);
-        logLayout1.addView(tv);
-        logScroll1.post(() -> logScroll1.fullScroll(View.FOCUS_DOWN));
+        float m = list.get(0).floatValue();
+        Iterator<Float> it = list.iterator();
+        while (it.hasNext()) {
+            float f = it.next().floatValue();
+            if (f < m) {
+                m = f;
+            }
+        }
+        return m;
     }
 
-    private void appendDeepLog(String msg) {
-        runOnUiThread(() -> {
-            if (logLayout2.getChildCount() >= MAX_LOG_ITEMS) {
-                logLayout2.removeViewAt(0);
+private float max(List<Float> list) {
+        if (list == null || list.isEmpty()) {
+            return 0.0f;
+        }
+        float m = list.get(0).floatValue();
+        Iterator<Float> it = list.iterator();
+        while (it.hasNext()) {
+            float f = it.next().floatValue();
+            if (f > m) {
+                m = f;
             }
-            TextView tv = new TextView(this);
-            tv.setText(msg);
-            tv.setTextColor(Color.GREEN);
-            tv.setTextSize(11f);
-            tv.setPadding(0, 2, 0, 2);
-            logLayout2.addView(tv);
-            logScroll2.post(() -> logScroll2.fullScroll(View.FOCUS_DOWN));
+        }
+        return m;
+    }
+
+private float jitter(List<Float> list) {
+        if (list == null || list.size() < 2) {
+            return 0.0f;
+        }
+        float sum = 0.0f;
+        for (int i = 1; i < list.size(); i++) {
+            sum += Math.abs(list.get(i).floatValue() - list.get(i - 1).floatValue());
+        }
+        int i2 = list.size();
+        return sum / (i2 - 1);
+    }
+
+private void appendMainLog(ScanResult res) {
+        TextView tv = new TextView(this);
+        tv.setText(String.format(Locale.US, "%s | Sent:%d | Avg:%.1f | Min:%.1f | Max:%.1f | Jit:%.2f | Loss:%.0f%%", res.f0ip, Integer.valueOf(res.sent), Float.valueOf(res.avg), Float.valueOf(res.min), Float.valueOf(res.max), Float.valueOf(res.jitter), Float.valueOf(res.loss)));
+        tv.setTextColor(res.alive ? -16711936 : -65536);
+        tv.setTextSize(11.0f);
+        tv.setPadding(0, 4, 0, 4);
+        this.logLayout1.addView(tv);
+        this.logScroll1.post(new Runnable() {
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.m3lambda$appendMainLog$21$comippulsescannerMainActivity();
+            }
         });
     }
 
-    private void addTableHeader(TableLayout table, boolean isLive) {
+private void appendDeepLog(final String msg) {
+        runOnUiThread(new Runnable() {
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.m2lambda$appendDeepLog$23$comippulsescannerMainActivity(msg);
+            }
+        });
+    }
+
+private void addTableHeader(TableLayout tableLayout, boolean isLive) {
         TableRow header = new TableRow(this);
         header.setBackgroundColor(Color.parseColor("#334155"));
-        String[] headers = isLive ? new String[]{"IP", "Sent", "Avg", "Min", "Max", "Jitter", "Loss", "Status"} :
-                new String[]{"Rank", "IP", "Sent", "Avg", "Min", "Max", "Jitter", "Loss", "Status"};
+        String[] headers = isLive ? new String[]{"IP", "Sent", "Avg", "Min", "Max", "Jitter", "Loss", "Status"} : new String[]{"Rank", "IP", "Sent", "Avg", "Min", "Max", "Jitter", "Loss", "Status"};
         for (String h : headers) {
             TextView tv = new TextView(this);
             tv.setText(h);
-            tv.setTextColor(Color.WHITE);
-            tv.setGravity(Gravity.CENTER);
+            tv.setTextColor(-1);
+            tv.setGravity(17);
             tv.setPadding(10, 10, 10, 10);
-            tv.setTextSize(11f);
-            tv.setTypeface(null, Typeface.BOLD);
+            tv.setTextSize(11.0f);
+            tv.setTypeface(null, 1);
             header.addView(tv);
         }
-        table.addView(header);
+        tableLayout.addView(header);
     }
 
-    private void addTableRow(TableLayout table, ScanResult res, int rank, boolean isLive, boolean isTop5) {
-        TableRow row = new TableRow(this);
-        row.setBackgroundColor(isTop5 ? Color.parseColor("#FFD700") : Color.parseColor("#18181B"));
-        row.setClickable(true);
-        row.setOnClickListener(v -> {
-            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-            ClipData clip = ClipData.newPlainText("IP", res.ip);
-            clipboard.setPrimaryClip(clip);
-            Toast.makeText(this, "IP Copied: " + res.ip, Toast.LENGTH_SHORT).show();
+private void addTableRow(TableLayout tableLayout, final ScanResult scanResult, int i, boolean z, boolean z2) {
+        String[] strArr;
+        TableRow tableRow = new TableRow(this);
+        tableRow.setBackgroundColor(Color.parseColor(z2 ? "#FFD700" : "#18181B"));
+        tableRow.setClickable(true);
+        tableRow.setOnClickListener(new View.OnClickListener() {
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.m0lambda$addTableRow$24$comippulsescannerMainActivity(scanResult, view);
+            }
         });
-
-        String[] values;
-        if (isLive) {
-            values = new String[]{res.ip, String.valueOf(res.sent), String.format(Locale.US, "%.1f", res.avg),
-                    String.format(Locale.US, "%.1f", res.min), String.format(Locale.US, "%.1f", res.max),
-                    String.format(Locale.US, "%.2f", res.jitter), String.format(Locale.US, "%.0f%%", res.loss),
-                    res.alive ? "ALIVE" : "DEAD"};
+        if (z) {
+            String[] strArr2 = new String[8];
+            strArr2[0] = scanResult.f0ip;
+            strArr2[1] = String.valueOf(scanResult.sent);
+            strArr2[2] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.avg));
+            strArr2[FAST_FAIL_THRESHOLD] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.min));
+            strArr2[4] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.max));
+            strArr2[5] = String.format(Locale.US, "%.2f", Float.valueOf(scanResult.jitter));
+            strArr2[6] = String.format(Locale.US, "%.0f%%", Float.valueOf(scanResult.loss));
+            strArr2[7] = scanResult.alive ? "ALIVE" : "DEAD";
+            strArr = strArr2;
         } else {
-            values = new String[]{String.valueOf(rank), res.ip, String.valueOf(res.sent), String.format(Locale.US, "%.1f", res.avg),
-                    String.format(Locale.US, "%.1f", res.min), String.format(Locale.US, "%.1f", res.max),
-                    String.format(Locale.US, "%.2f", res.jitter), String.format(Locale.US, "%.0f%%", res.loss),
-                    res.alive ? "ALIVE" : "DEAD"};
+            String[] strArr3 = new String[9];
+            strArr3[0] = String.valueOf(i);
+            strArr3[1] = scanResult.f0ip;
+            strArr3[2] = String.valueOf(scanResult.sent);
+            strArr3[FAST_FAIL_THRESHOLD] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.avg));
+            strArr3[4] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.min));
+            strArr3[5] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.max));
+            strArr3[6] = String.format(Locale.US, "%.2f", Float.valueOf(scanResult.jitter));
+            strArr3[7] = String.format(Locale.US, "%.0f%%", Float.valueOf(scanResult.loss));
+            strArr3[8] = scanResult.alive ? "ALIVE" : "DEAD";
+            strArr = strArr3;
         }
-
-        for (int i = 0; i < values.length; i++) {
-            TextView tv = new TextView(this);
-            tv.setText(values[i]);
-            tv.setTextColor(isTop5 ? Color.BLACK : Color.WHITE);
-            tv.setGravity(Gravity.CENTER);
-            tv.setPadding(10, 10, 10, 10);
-            tv.setTextSize(11f);
-            row.addView(tv);
+        for (String str : strArr) {
+            TextView textView = new TextView(this);
+            textView.setText(str);
+            textView.setTextColor(z2 ? -16777216 : -1);
+            textView.setGravity(17);
+            textView.setPadding(10, 10, 10, 10);
+            textView.setTextSize(11.0f);
+            tableRow.addView(textView);
         }
-        table.addView(row);
-
-        int ipIndex = isLive ? 0 : 1;
-        TextView ipCell = (TextView) row.getChildAt(ipIndex);
-        fetchFlag(ipCell, res.ip);
+        tableLayout.addView(tableRow);
+        fetchFlag((TextView) tableRow.getChildAt(!z ? 1 : 0), scanResult.f0ip);
     }
 
     private void fetchFlag(TextView textView, String ip) {
@@ -824,12 +873,15 @@ public class MainActivity extends Activity {
         return new String(Character.toChars(first)) + new String(Character.toChars(second));
     }
 
-    private int parseNum(EditText editText, int defaultVal) {
-        try { return Integer.parseInt(editText.getText().toString().trim()); }
-        catch (Exception e) { return defaultVal; }
+private int parseNum(EditText editText, int defaultVal) {
+        try {
+            return Integer.parseInt(editText.getText().toString().trim());
+        } catch (Exception e) {
+            return defaultVal;
+        }
     }
 
-    private List<String> parseIPList(String query) {
+private List<String> parseIPList(String query) {
         List<String> list = new ArrayList<>();
         String q = query.replace("تا", "-").trim();
         try {
@@ -839,16 +891,25 @@ public class MainActivity extends Activity {
                 int prefix = Integer.parseInt(parts[1].trim());
                 long ip = ipToLong(base);
                 int hostBits = 32 - prefix;
-                long mask = hostBits == 32 ? 0xFFFFFFFFL : (1L << hostBits) - 1;
-                long start = ip & ~mask;
+                long mask = hostBits == 32 ? 4294967295L : (1 << hostBits) - 1;
                 long end = ip | mask;
-                for (long i = start; i <= end; i++) list.add(longToIp(i));
+                long i = (~mask) & ip;
+                while (i <= end) {
+                    list.add(longToIp(i));
+                    i++;
+                    parts = parts;
+                }
             } else if (q.contains("-")) {
-                String[] parts = q.split("-");
-                long start = ipToLong(parts[0].trim());
-                long end = ipToLong(parts[1].trim());
-                if (start > end) { long tmp = start; start = end; end = tmp; }
-                for (long i = start; i <= end; i++) list.add(longToIp(i));
+                String[] parts2 = q.split("-");
+                long start = ipToLong(parts2[0].trim());
+                long end2 = ipToLong(parts2[1].trim());
+                if (start > end2) {
+                    start = end2;
+                    end2 = start;
+                }
+                for (long i2 = start; i2 <= end2; i2++) {
+                    list.add(longToIp(i2));
+                }
             } else {
                 list.add(q);
             }
