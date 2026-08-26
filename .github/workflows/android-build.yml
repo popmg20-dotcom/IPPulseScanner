@@ -6,6 +6,7 @@ on:
       - main
       - master
       - version-247-professional-evidence
+      - final-f9-debug-tab12
   workflow_dispatch:
 
 permissions:
