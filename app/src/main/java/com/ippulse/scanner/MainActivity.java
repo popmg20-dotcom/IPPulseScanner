@@ -12,6 +12,7 @@ import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -57,6 +58,9 @@ public class MainActivity extends Activity {
 
     private static final int FAST_FAIL_THRESHOLD = 3;
     private static final String HISTORY_KEY = "history";
+    private static final String VPN_PREFS = "vpn_settings";
+    private static final int REQUEST_VPN = 1001;
+    private static final int REQUEST_NOTIFICATION = 1002;
     private static final String PREFS_NAME = "ippulse_history";
     private Button btnHistory;
     private Button btnStart1;
@@ -88,6 +92,13 @@ public class MainActivity extends Activity {
     private boolean rangeScanFinished = true;
     private String[] sortOptions = {"Default", "Loss", "Jitter", "Average (Avg)", "Min (Low Ping)", "Max (High Ping)"};
     private int currentSortIndex = 0;
+
+    private String[] defaultDomains = {
+        "west-tdm.codmwest.com",
+        "west-cschannel.codm.activision.com",
+        "gcloud.codm.activision.com"
+    };
+
 
     @Override // android.app.Activity
     protected void onCreate(Bundle savedInstanceState) {
