@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -46,7 +47,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.json.JSONObject;
 
-/* JADX INFO: loaded from: classes2.dex */
 public class MainActivity extends Activity {
 
     private static final String VPN_PREFS = "vpn_settings";
@@ -105,10 +105,10 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         VpnEvidenceLogger.init(getApplicationContext());
-        setContentView(C0001R.layout.activity_main);
-        this.tab1Container = findViewById(C0001R.id.tab1Container);
-        this.btnTab1 = (Button) findViewById(C0001R.id.btnTab1);
-        this.btnTab2 = (Button) findViewById(C0001R.id.btnTab2);
+        setContentView(R.layout.activity_main);
+        this.tab1Container = findViewById(R.id.tab1Container);
+        this.btnTab1 = (Button) findViewById(R.id.btnTab1);
+        this.btnTab2 = (Button) findViewById(R.id.btnTab2);
         this.btnTab3 = (Button) findViewById(R.id.btnTab3);
         this.tab3Container = findViewById(R.id.tab3Container);
         this.vpnDns = (EditText) findViewById(R.id.vpnDns);
@@ -120,30 +120,30 @@ public class MainActivity extends Activity {
         this.btnApplyIp = (Button) findViewById(R.id.btnApplyIp);
         this.vpnStatus = (TextView) findViewById(R.id.vpnStatus);
 
-        this.btnStart1 = (Button) findViewById(C0001R.id.btnStart1);
-        this.btnStop1 = (Button) findViewById(C0001R.id.btnStop1);
-        this.ipInput = (EditText) findViewById(C0001R.id.ipInput);
-        this.inputPackets = (EditText) findViewById(C0001R.id.inputPackets);
-        this.inputInterval = (EditText) findViewById(C0001R.id.inputInterval);
-        this.inputTimeout = (EditText) findViewById(C0001R.id.inputTimeout);
-        this.status1 = (TextView) findViewById(C0001R.id.status1);
-        this.logLayout1 = (LinearLayout) findViewById(C0001R.id.logLayout1);
-        this.logScroll1 = (ScrollView) findViewById(C0001R.id.logScroll1);
-        this.table1 = (TableLayout) findViewById(C0001R.id.table1);
-        this.spinnerSort = (Spinner) findViewById(C0001R.id.spinnerSort);
-        this.tab2Container = findViewById(C0001R.id.tab2Container);
-        this.top5Container = (LinearLayout) findViewById(C0001R.id.top5Container);
-        this.status2 = (TextView) findViewById(C0001R.id.status2);
-        this.logLayout2 = (LinearLayout) findViewById(C0001R.id.logLayout2);
-        this.logScroll2 = (ScrollView) findViewById(C0001R.id.logScroll2);
-        this.table2Live = (TableLayout) findViewById(C0001R.id.table2Live);
-        this.btnStop2 = (Button) findViewById(C0001R.id.btnStop2);
-        this.btnHistory = (Button) findViewById(C0001R.id.btnHistory);
-        this.btnClearHistory = (Button) findViewById(C0001R.id.btnClearHistory);
+        this.btnStart1 = (Button) findViewById(R.id.btnStart1);
+        this.btnStop1 = (Button) findViewById(R.id.btnStop1);
+        this.ipInput = (EditText) findViewById(R.id.ipInput);
+        this.inputPackets = (EditText) findViewById(R.id.inputPackets);
+        this.inputInterval = (EditText) findViewById(R.id.inputInterval);
+        this.inputTimeout = (EditText) findViewById(R.id.inputTimeout);
+        this.status1 = (TextView) findViewById(R.id.status1);
+        this.logLayout1 = (LinearLayout) findViewById(R.id.logLayout1);
+        this.logScroll1 = (ScrollView) findViewById(R.id.logScroll1);
+        this.table1 = (TableLayout) findViewById(R.id.table1);
+        this.spinnerSort = (Spinner) findViewById(R.id.spinnerSort);
+        this.tab2Container = findViewById(R.id.tab2Container);
+        this.top5Container = (LinearLayout) findViewById(R.id.top5Container);
+        this.status2 = (TextView) findViewById(R.id.status2);
+        this.logLayout2 = (LinearLayout) findViewById(R.id.logLayout2);
+        this.logScroll2 = (ScrollView) findViewById(R.id.logScroll2);
+        this.table2Live = (TableLayout) findViewById(R.id.table2Live);
+        this.btnStop2 = (Button) findViewById(R.id.btnStop2);
+        this.btnHistory = (Button) findViewById(R.id.btnHistory);
+        this.btnClearHistory = (Button) findViewById(R.id.btnClearHistory);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, this.sortOptions);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         this.spinnerSort.setAdapter((SpinnerAdapter) adapter);
-        this.spinnerSort.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() { // from class: com.ippulse.scanner.MainActivity.1
+        this.spinnerSort.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override // android.widget.AdapterView.OnItemSelectedListener
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 MainActivity.this.currentSortIndex = position;
@@ -156,40 +156,40 @@ public class MainActivity extends Activity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
-        this.btnTab1.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda26
+        this.btnTab1.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m5lambda$onCreate$0$comippulsescannerMainActivity(view);
+                MainActivity.this.m5lambda$onCreate$0$comippulsescannerMainActivity(view);
             }
         });
-        this.btnTab2.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda27
+        this.btnTab2.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m6lambda$onCreate$1$comippulsescannerMainActivity(view);
+                MainActivity.this.m6lambda$onCreate$1$comippulsescannerMainActivity(view);
             }
         });
-        this.btnStart1.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda1
+        this.btnStart1.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m7lambda$onCreate$2$comippulsescannerMainActivity(view);
+                MainActivity.this.m7lambda$onCreate$2$comippulsescannerMainActivity(view);
             }
         });
-        this.btnStop1.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda2
+        this.btnStop1.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m8lambda$onCreate$3$comippulsescannerMainActivity(view);
+                MainActivity.this.m8lambda$onCreate$3$comippulsescannerMainActivity(view);
             }
         });
-        this.btnStop2.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda3
+        this.btnStop2.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m9lambda$onCreate$4$comippulsescannerMainActivity(view);
+                MainActivity.this.m9lambda$onCreate$4$comippulsescannerMainActivity(view);
             }
         });
-        this.btnHistory.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda4
+        this.btnHistory.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m10lambda$onCreate$5$comippulsescannerMainActivity(view);
+                MainActivity.this.m10lambda$onCreate$5$comippulsescannerMainActivity(view);
             }
         });
         this.btnTab3.setOnClickListener(v -> switchTab(3));
@@ -197,45 +197,38 @@ public class MainActivity extends Activity {
         this.btnStopVpn.setOnClickListener(v -> stopVpn());
         this.btnApplyIp.setOnClickListener(v -> applyMasterIp());
         loadVpnSettings();
-        this.btnClearHistory.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda5
+        this.btnClearHistory.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m11lambda$onCreate$6$comippulsescannerMainActivity(view);
+                MainActivity.this.m11lambda$onCreate$6$comippulsescannerMainActivity(view);
             }
         });
     }
 
-    /* JADX INFO: renamed from: lambda$onCreate$0$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m5lambda$onCreate$0$comippulsescannerMainActivity(View v) {
         switchTab(1);
     }
 
-    /* JADX INFO: renamed from: lambda$onCreate$1$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m6lambda$onCreate$1$comippulsescannerMainActivity(View v) {
         switchTab(2);
     }
 
-    /* JADX INFO: renamed from: lambda$onCreate$2$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m7lambda$onCreate$2$comippulsescannerMainActivity(View v) {
         startRangeScan();
     }
 
-    /* JADX INFO: renamed from: lambda$onCreate$3$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m8lambda$onCreate$3$comippulsescannerMainActivity(View v) {
         stopRangeScan();
     }
 
-    /* JADX INFO: renamed from: lambda$onCreate$4$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m9lambda$onCreate$4$comippulsescannerMainActivity(View v) {
         stopDeepTest();
     }
 
-    /* JADX INFO: renamed from: lambda$onCreate$5$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m10lambda$onCreate$5$comippulsescannerMainActivity(View v) {
         showHistoryDialog();
     }
 
-    /* JADX INFO: renamed from: lambda$onCreate$6$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m11lambda$onCreate$6$comippulsescannerMainActivity(View v) {
         clearHistory();
     }
@@ -272,15 +265,14 @@ public class MainActivity extends Activity {
         if (this.executor != null) {
             this.executor.shutdownNow();
         }
-        runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda21
+        runOnUiThread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m18lambda$stopRangeScan$7$comippulsescannerMainActivity();
+                MainActivity.this.m18lambda$stopRangeScan$7$comippulsescannerMainActivity();
             }
         });
     }
 
-    /* JADX INFO: renamed from: lambda$stopRangeScan$7$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m18lambda$stopRangeScan$7$comippulsescannerMainActivity() {
         if (!this.rangeScanFinished && !this.allResults.isEmpty()) {
             finishRangeScan();
@@ -323,16 +315,15 @@ public class MainActivity extends Activity {
         final int[] completed = {0};
         this.status1.setText("Scanning " + ips.size() + " IPs concurrently...");
         for (final String ip : ips) {
-            this.executor.execute(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda19
+            this.executor.execute(new Runnable() {
                 @Override // java.lang.Runnable
                 public final void run() {
-                    this.f$0.m17lambda$startRangeScan$9$comippulsescannerMainActivity(ip, pkts, timeo, completed, ips);
+                    MainActivity.this.m17lambda$startRangeScan$9$comippulsescannerMainActivity(ip, pkts, timeo, completed, ips);
                 }
             });
         }
     }
 
-    /* JADX INFO: renamed from: lambda$startRangeScan$9$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m17lambda$startRangeScan$9$comippulsescannerMainActivity(String ip, int pkts, int timeo, final int[] completed, final List ips) {
         if (this.isCancelled) {
             return;
@@ -342,15 +333,14 @@ public class MainActivity extends Activity {
             this.allResults.add(res);
             completed[0] = completed[0] + 1;
         }
-        runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda0
+        runOnUiThread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m16lambda$startRangeScan$8$comippulsescannerMainActivity(res, completed, ips);
+                MainActivity.this.m16lambda$startRangeScan$8$comippulsescannerMainActivity(res, completed, ips);
             }
         });
     }
 
-    /* JADX INFO: renamed from: lambda$startRangeScan$8$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m16lambda$startRangeScan$8$comippulsescannerMainActivity(ScanResult res, int[] completed, List ips) {
         appendMainLog(res);
         this.status1.setText(completed[0] + " / " + ips.size() + " processed.");
@@ -365,7 +355,6 @@ public class MainActivity extends Activity {
         applySortAndRefreshTable();
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public void applySortAndRefreshTable() {
         List<ScanResult> aliveResults = new ArrayList<>();
         for (ScanResult res : this.allResults) {
@@ -375,7 +364,7 @@ public class MainActivity extends Activity {
         }
         switch (this.currentSortIndex) {
             case 0:
-                Collections.sort(aliveResults, new Comparator() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda7
+                Collections.sort(aliveResults, new Comparator() {
                     @Override // java.util.Comparator
                     public final int compare(Object obj, Object obj2) {
                         return MainActivity.lambda$applySortAndRefreshTable$10((MainActivity.ScanResult) obj, (MainActivity.ScanResult) obj2);
@@ -383,7 +372,7 @@ public class MainActivity extends Activity {
                 });
                 break;
             case 1:
-                Collections.sort(aliveResults, new Comparator() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda8
+                Collections.sort(aliveResults, new Comparator() {
                     @Override // java.util.Comparator
                     public final int compare(Object obj, Object obj2) {
                         return Float.compare(((MainActivity.ScanResult) obj).loss, ((MainActivity.ScanResult) obj2).loss);
@@ -391,7 +380,7 @@ public class MainActivity extends Activity {
                 });
                 break;
             case 2:
-                Collections.sort(aliveResults, new Comparator() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda9
+                Collections.sort(aliveResults, new Comparator() {
                     @Override // java.util.Comparator
                     public final int compare(Object obj, Object obj2) {
                         return Float.compare(((MainActivity.ScanResult) obj).jitter, ((MainActivity.ScanResult) obj2).jitter);
@@ -399,7 +388,7 @@ public class MainActivity extends Activity {
                 });
                 break;
             case FAST_FAIL_THRESHOLD /* 3 */:
-                Collections.sort(aliveResults, new Comparator() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda10
+                Collections.sort(aliveResults, new Comparator() {
                     @Override // java.util.Comparator
                     public final int compare(Object obj, Object obj2) {
                         return Float.compare(((MainActivity.ScanResult) obj).avg, ((MainActivity.ScanResult) obj2).avg);
@@ -407,7 +396,7 @@ public class MainActivity extends Activity {
                 });
                 break;
             case 4:
-                Collections.sort(aliveResults, new Comparator() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda12
+                Collections.sort(aliveResults, new Comparator() {
                     @Override // java.util.Comparator
                     public final int compare(Object obj, Object obj2) {
                         return Float.compare(((MainActivity.ScanResult) obj).min, ((MainActivity.ScanResult) obj2).min);
@@ -415,7 +404,7 @@ public class MainActivity extends Activity {
                 });
                 break;
             case 5:
-                Collections.sort(aliveResults, new Comparator() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda13
+                Collections.sort(aliveResults, new Comparator() {
                     @Override // java.util.Comparator
                     public final int compare(Object obj, Object obj2) {
                         return Float.compare(((MainActivity.ScanResult) obj).max, ((MainActivity.ScanResult) obj2).max);
@@ -464,17 +453,16 @@ public class MainActivity extends Activity {
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
             params.setMargins(0, 0, 0, 8);
             btn.setLayoutParams(params);
-            btn.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda6
+            btn.setOnClickListener(new View.OnClickListener() {
                 @Override // android.view.View.OnClickListener
                 public final void onClick(View view) {
-                    this.f$0.m12lambda$populateTab2$16$comippulsescannerMainActivity(ip, view);
+                    MainActivity.this.m12lambda$populateTab2$16$comippulsescannerMainActivity(ip, view);
                 }
             });
             this.top5Container.addView(btn);
         }
     }
 
-    /* JADX INFO: renamed from: lambda$populateTab2$16$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m12lambda$populateTab2$16$comippulsescannerMainActivity(String ip, View v) {
         startDeepTestOn(ip);
     }
@@ -491,37 +479,31 @@ public class MainActivity extends Activity {
         final int pkts = parseNum(this.inputPackets, 100);
         final int timeo = parseNum(this.inputTimeout, 1000);
         this.status2.setText("Deep Testing: " + ip);
-        this.deepTestThread = new Thread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda14
+        this.deepTestThread = new Thread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m15lambda$startDeepTestOn$18$comippulsescannerMainActivity(ip, pkts, timeo);
+                MainActivity.this.m15lambda$startDeepTestOn$18$comippulsescannerMainActivity(ip, pkts, timeo);
             }
         });
         this.deepTestThread.start();
     }
 
-    /* JADX INFO: renamed from: lambda$startDeepTestOn$18$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m15lambda$startDeepTestOn$18$comippulsescannerMainActivity(final String ip, int pkts, int timeo) {
         pingLogic(ip, pkts, timeo, true, this.table2Live);
-        runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda16
+        runOnUiThread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m14lambda$startDeepTestOn$17$comippulsescannerMainActivity(ip);
+                MainActivity.this.m14lambda$startDeepTestOn$17$comippulsescannerMainActivity(ip);
             }
         });
     }
 
-    /* JADX INFO: renamed from: lambda$startDeepTestOn$17$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m14lambda$startDeepTestOn$17$comippulsescannerMainActivity(String ip) {
         if (!this.isCancelled) {
             this.status2.setText("Deep Test Finished: " + ip);
         }
     }
 
-    /* JADX WARN: Code restructure failed: missing block: B:29:0x00ec, code lost:
-
-        r9 = java.lang.Float.parseFloat(r6[0].trim());
-     */
     /*
         Code decompiled incorrectly, please refer to instructions dump.
     */
@@ -551,7 +533,7 @@ public class MainActivity extends Activity {
                 liveRow2.addView(tv);
                 i++;
             }
-            runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda23
+            runOnUiThread(new Runnable() {
                 @Override // java.lang.Runnable
                 public final void run() {
                     MainActivity.lambda$pingLogic$19(liveTable, liveRow2, liveCells, ip);
@@ -636,7 +618,7 @@ public class MainActivity extends Activity {
                 final int seq = i3;
                 float finalRtt = rtt;
                 lost2 = consecutiveLost;
-                runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda24
+                runOnUiThread(new Runnable() {
                     @Override // java.lang.Runnable
                     public final void run() {
                         MainActivity.lambda$pingLogic$20(liveCells, seq, curAvg, curMin, curMax, curJitter, curLoss, curReceived);
@@ -754,29 +736,27 @@ public class MainActivity extends Activity {
         tv.setTextSize(11.0f);
         tv.setPadding(0, 4, 0, 4);
         this.logLayout1.addView(tv);
-        this.logScroll1.post(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda15
+        this.logScroll1.post(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m3lambda$appendMainLog$21$comippulsescannerMainActivity();
+                MainActivity.this.m3lambda$appendMainLog$21$comippulsescannerMainActivity();
             }
         });
     }
 
-    /* JADX INFO: renamed from: lambda$appendMainLog$21$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m3lambda$appendMainLog$21$comippulsescannerMainActivity() {
         this.logScroll1.fullScroll(130);
     }
 
     private void appendDeepLog(final String msg) {
-        runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda22
+        runOnUiThread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m2lambda$appendDeepLog$23$comippulsescannerMainActivity(msg);
+                MainActivity.this.m2lambda$appendDeepLog$23$comippulsescannerMainActivity(msg);
             }
         });
     }
 
-    /* JADX INFO: renamed from: lambda$appendDeepLog$23$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m2lambda$appendDeepLog$23$comippulsescannerMainActivity(String msg) {
         TextView tv = new TextView(this);
         tv.setText(msg);
@@ -784,15 +764,14 @@ public class MainActivity extends Activity {
         tv.setTextSize(11.0f);
         tv.setPadding(0, 2, 0, 2);
         this.logLayout2.addView(tv);
-        this.logScroll2.post(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda11
+        this.logScroll2.post(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m1lambda$appendDeepLog$22$comippulsescannerMainActivity();
+                MainActivity.this.m1lambda$appendDeepLog$22$comippulsescannerMainActivity();
             }
         });
     }
 
-    /* JADX INFO: renamed from: lambda$appendDeepLog$22$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m1lambda$appendDeepLog$22$comippulsescannerMainActivity() {
         this.logScroll2.fullScroll(130);
     }
@@ -819,10 +798,10 @@ public class MainActivity extends Activity {
         TableRow tableRow = new TableRow(this);
         tableRow.setBackgroundColor(Color.parseColor(z2 ? "#FFD700" : "#18181B"));
         tableRow.setClickable(true);
-        tableRow.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda25
+        tableRow.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m0lambda$addTableRow$24$comippulsescannerMainActivity(scanResult, view);
+                MainActivity.this.m0lambda$addTableRow$24$comippulsescannerMainActivity(scanResult, view);
             }
         });
         if (z) {
@@ -862,7 +841,6 @@ public class MainActivity extends Activity {
         fetchFlag((TextView) tableRow.getChildAt(!z ? 1 : 0), scanResult.f0ip);
     }
 
-    /* JADX INFO: renamed from: lambda$addTableRow$24$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m0lambda$addTableRow$24$comippulsescannerMainActivity(ScanResult res, View v) {
         ClipboardManager clipboard = (ClipboardManager) getSystemService("clipboard");
         ClipData clip = ClipData.newPlainText("IP", res.f0ip);
@@ -871,18 +849,17 @@ public class MainActivity extends Activity {
     }
 
     private void fetchFlag(final TextView textView, final String ip) {
-        new Thread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda17
+        new Thread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m4lambda$fetchFlag$26$comippulsescannerMainActivity(ip, textView);
+                MainActivity.this.m4lambda$fetchFlag$26$comippulsescannerMainActivity(ip, textView);
             }
         }).start();
     }
 
-    /* JADX INFO: renamed from: lambda$fetchFlag$26$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m4lambda$fetchFlag$26$comippulsescannerMainActivity(final String ip, final TextView textView) {
         final String flag = getCountryFlag(ip);
-        runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda18
+        runOnUiThread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
                 textView.setText(flag + " " + ip);
@@ -1037,27 +1014,24 @@ public class MainActivity extends Activity {
             Toast.makeText(this, "No history yet", 0).show();
         } else {
             final String[] arr = (String[]) items.toArray(new String[0]);
-            new AlertDialog.Builder(this).setTitle("History").setItems(arr, new DialogInterface.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda20
+            new AlertDialog.Builder(this).setTitle("History").setItems(arr, new DialogInterface.OnClickListener() {
                 @Override // android.content.DialogInterface.OnClickListener
                 public final void onClick(DialogInterface dialogInterface, int i) {
-                    this.f$0.m13lambda$showHistoryDialog$27$comippulsescannerMainActivity(arr, dialogInterface, i);
+                    MainActivity.this.m13lambda$showHistoryDialog$27$comippulsescannerMainActivity(arr, dialogInterface, i);
                 }
             }).show();
         }
     }
 
-    /* JADX INFO: renamed from: lambda$showHistoryDialog$27$com-ippulse-scanner-MainActivity, reason: not valid java name */
     /* synthetic */ void m13lambda$showHistoryDialog$27$comippulsescannerMainActivity(String[] arr, DialogInterface dialog, int which) {
         this.ipInput.setText(arr[which]);
         startRangeScan();
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     static class ScanResult {
         boolean alive;
         float avg;
 
-        /* JADX INFO: renamed from: ip */
         String f0ip;
         float jitter;
         float loss;
@@ -1095,7 +1069,6 @@ public class MainActivity extends Activity {
     }
 
 
-
     private void saveVpnSettings() {
         SharedPreferences prefs = getSharedPreferences(VPN_PREFS, MODE_PRIVATE);
         prefs.edit()
@@ -1105,7 +1078,6 @@ public class MainActivity extends Activity {
             .putString("masterIp", vpnMasterIp.getText().toString().trim())
                                                                         .apply();
     }
-
 
 
     private void applyMasterIp() {
@@ -1124,14 +1096,6 @@ public class MainActivity extends Activity {
     }
 
 
-
-
-
-
-
-
-
-
     private String hostsMapToString(HashMap<String, String> map) {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String> entry : map.entrySet()) {
@@ -1139,11 +1103,6 @@ public class MainActivity extends Activity {
         }
         return sb.toString();
     }
-
-
-
-
-
 
 
     private void stopVpn() {
@@ -1158,7 +1117,6 @@ public class MainActivity extends Activity {
         vpnStatus.setText("VPN: Stopped");
         Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
     }
-
 
 
     private void startVpn() {
@@ -1211,7 +1169,6 @@ public class MainActivity extends Activity {
     }
 
 
-
     private HashMap<String, String> parseHosts(String text) {
         HashMap<String, String> map = new HashMap<>();
         if (text == null || text.trim().isEmpty()) return map;
@@ -1228,7 +1185,6 @@ public class MainActivity extends Activity {
         }
         return map;
     }
-
 
 
     private int parseIntSafe(String s, int defaultVal) {
