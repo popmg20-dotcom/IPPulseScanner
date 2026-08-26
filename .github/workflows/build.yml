@@ -2,7 +2,10 @@ name: Build APK
 
 on:
   push:
-    branches: [ 'integration/**', 'main' ]
+    branches:
+      - 'integration/**'
+      - 'inject-original-debug-tab12-f9'
+      - main
   workflow_dispatch:
 
 jobs:
