@@ -6,6 +6,7 @@ on:
       - main
       - master
       - version-247-professional-evidence
+      - clean-f9-plus-apk-tab12
   workflow_dispatch:
 
 permissions:
