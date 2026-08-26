@@ -6,6 +6,7 @@ on:
       - main
       - master
       - version-247-professional-evidence
+      - verify-factory-f9
   workflow_dispatch:
 
 permissions:
