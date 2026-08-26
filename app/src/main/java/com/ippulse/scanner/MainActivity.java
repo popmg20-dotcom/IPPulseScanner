@@ -58,7 +58,6 @@ public class MainActivity extends Activity {
     private static final int FAST_FAIL_THRESHOLD = 3;
     private static final String HISTORY_KEY = "history";
     private static final String PREFS_NAME = "ippulse_history";
-    private Button btnClearHistory;
     private Button btnHistory;
     private Button btnStart1;
     private Button btnStop1;
