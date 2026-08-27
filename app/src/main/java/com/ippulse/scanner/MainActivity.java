@@ -113,10 +113,10 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         VpnEvidenceLogger.init(getApplicationContext());
-        setContentView(C0001R.layout.activity_main);
-        this.tab1Container = findViewById(C0001R.id.tab1Container);
-        this.btnTab1 = (Button) findViewById(C0001R.id.btnTab1);
-        this.btnTab2 = (Button) findViewById(C0001R.id.btnTab2);
+        setContentView(R.layout.activity_main);
+        this.tab1Container = findViewById(R.id.tab1Container);
+        this.btnTab1 = (Button) findViewById(R.id.btnTab1);
+        this.btnTab2 = (Button) findViewById(R.id.btnTab2);
         this.btnTab3 = (Button) findViewById(R.id.btnTab3);
         this.tab3Container = findViewById(R.id.tab3Container);
         this.vpnDns = (EditText) findViewById(R.id.vpnDns);
@@ -128,26 +128,26 @@ public class MainActivity extends Activity {
         this.btnApplyIp = (Button) findViewById(R.id.btnApplyIp);
         this.vpnStatus = (TextView) findViewById(R.id.vpnStatus);
 
-        this.btnStart1 = (Button) findViewById(C0001R.id.btnStart1);
-        this.btnStop1 = (Button) findViewById(C0001R.id.btnStop1);
-        this.ipInput = (EditText) findViewById(C0001R.id.ipInput);
-        this.inputPackets = (EditText) findViewById(C0001R.id.inputPackets);
-        this.inputInterval = (EditText) findViewById(C0001R.id.inputInterval);
-        this.inputTimeout = (EditText) findViewById(C0001R.id.inputTimeout);
-        this.status1 = (TextView) findViewById(C0001R.id.status1);
-        this.logLayout1 = (LinearLayout) findViewById(C0001R.id.logLayout1);
-        this.logScroll1 = (ScrollView) findViewById(C0001R.id.logScroll1);
-        this.table1 = (TableLayout) findViewById(C0001R.id.table1);
-        this.spinnerSort = (Spinner) findViewById(C0001R.id.spinnerSort);
-        this.tab2Container = findViewById(C0001R.id.tab2Container);
-        this.top5Container = (LinearLayout) findViewById(C0001R.id.top5Container);
-        this.status2 = (TextView) findViewById(C0001R.id.status2);
-        this.logLayout2 = (LinearLayout) findViewById(C0001R.id.logLayout2);
-        this.logScroll2 = (ScrollView) findViewById(C0001R.id.logScroll2);
-        this.table2Live = (TableLayout) findViewById(C0001R.id.table2Live);
-        this.btnStop2 = (Button) findViewById(C0001R.id.btnStop2);
-        this.btnHistory = (Button) findViewById(C0001R.id.btnHistory);
-        this.btnClearHistory = (Button) findViewById(C0001R.id.btnClearHistory);
+        this.btnStart1 = (Button) findViewById(R.id.btnStart1);
+        this.btnStop1 = (Button) findViewById(R.id.btnStop1);
+        this.ipInput = (EditText) findViewById(R.id.ipInput);
+        this.inputPackets = (EditText) findViewById(R.id.inputPackets);
+        this.inputInterval = (EditText) findViewById(R.id.inputInterval);
+        this.inputTimeout = (EditText) findViewById(R.id.inputTimeout);
+        this.status1 = (TextView) findViewById(R.id.status1);
+        this.logLayout1 = (LinearLayout) findViewById(R.id.logLayout1);
+        this.logScroll1 = (ScrollView) findViewById(R.id.logScroll1);
+        this.table1 = (TableLayout) findViewById(R.id.table1);
+        this.spinnerSort = (Spinner) findViewById(R.id.spinnerSort);
+        this.tab2Container = findViewById(R.id.tab2Container);
+        this.top5Container = (LinearLayout) findViewById(R.id.top5Container);
+        this.status2 = (TextView) findViewById(R.id.status2);
+        this.logLayout2 = (LinearLayout) findViewById(R.id.logLayout2);
+        this.logScroll2 = (ScrollView) findViewById(R.id.logScroll2);
+        this.table2Live = (TableLayout) findViewById(R.id.table2Live);
+        this.btnStop2 = (Button) findViewById(R.id.btnStop2);
+        this.btnHistory = (Button) findViewById(R.id.btnHistory);
+        this.btnClearHistory = (Button) findViewById(R.id.btnClearHistory);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, this.sortOptions);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         this.spinnerSort.setAdapter((SpinnerAdapter) adapter);
@@ -167,43 +167,43 @@ public class MainActivity extends Activity {
         this.btnTab1.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda26
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m5lambda$onCreate$0$comippulsescannerMainActivity(view);
+                MainActivity.this.m5lambda$onCreate$0$comippulsescannerMainActivity(view);
             }
         });
         this.btnTab2.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda27
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m6lambda$onCreate$1$comippulsescannerMainActivity(view);
+                MainActivity.this.m6lambda$onCreate$1$comippulsescannerMainActivity(view);
             }
         });
         this.btnStart1.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda1
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m7lambda$onCreate$2$comippulsescannerMainActivity(view);
+                MainActivity.this.m7lambda$onCreate$2$comippulsescannerMainActivity(view);
             }
         });
         this.btnStop1.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda2
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m8lambda$onCreate$3$comippulsescannerMainActivity(view);
+                MainActivity.this.m8lambda$onCreate$3$comippulsescannerMainActivity(view);
             }
         });
         this.btnStop2.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda3
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m9lambda$onCreate$4$comippulsescannerMainActivity(view);
+                MainActivity.this.m9lambda$onCreate$4$comippulsescannerMainActivity(view);
             }
         });
         this.btnHistory.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda4
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m10lambda$onCreate$5$comippulsescannerMainActivity(view);
+                MainActivity.this.m10lambda$onCreate$5$comippulsescannerMainActivity(view);
             }
         });
         this.btnClearHistory.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda5
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m11lambda$onCreate$6$comippulsescannerMainActivity(view);
+                MainActivity.this.m11lambda$onCreate$6$comippulsescannerMainActivity(view);
             }
         });
 
@@ -278,7 +278,7 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda21
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m18lambda$stopRangeScan$7$comippulsescannerMainActivity();
+                MainActivity.this.m18lambda$stopRangeScan$7$comippulsescannerMainActivity();
             }
         });
     }
@@ -329,7 +329,7 @@ public class MainActivity extends Activity {
             this.executor.execute(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda19
                 @Override // java.lang.Runnable
                 public final void run() {
-                    this.f$0.m17lambda$startRangeScan$9$comippulsescannerMainActivity(ip, pkts, timeo, completed, ips);
+                    MainActivity.this.m17lambda$startRangeScan$9$comippulsescannerMainActivity(ip, pkts, timeo, completed, ips);
                 }
             });
         }
@@ -348,7 +348,7 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda0
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m16lambda$startRangeScan$8$comippulsescannerMainActivity(res, completed, ips);
+                MainActivity.this.m16lambda$startRangeScan$8$comippulsescannerMainActivity(res, completed, ips);
             }
         });
     }
@@ -470,7 +470,7 @@ public class MainActivity extends Activity {
             btn.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda6
                 @Override // android.view.View.OnClickListener
                 public final void onClick(View view) {
-                    this.f$0.m12lambda$populateTab2$16$comippulsescannerMainActivity(ip, view);
+                    MainActivity.this.m12lambda$populateTab2$16$comippulsescannerMainActivity(ip, view);
                 }
             });
             this.top5Container.addView(btn);
@@ -497,7 +497,7 @@ public class MainActivity extends Activity {
         this.deepTestThread = new Thread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda14
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m15lambda$startDeepTestOn$18$comippulsescannerMainActivity(ip, pkts, timeo);
+                MainActivity.this.m15lambda$startDeepTestOn$18$comippulsescannerMainActivity(ip, pkts, timeo);
             }
         });
         this.deepTestThread.start();
@@ -509,7 +509,7 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda16
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m14lambda$startDeepTestOn$17$comippulsescannerMainActivity(ip);
+                MainActivity.this.m14lambda$startDeepTestOn$17$comippulsescannerMainActivity(ip);
             }
         });
     }
@@ -760,7 +760,7 @@ public class MainActivity extends Activity {
         this.logScroll1.post(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda15
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m3lambda$appendMainLog$21$comippulsescannerMainActivity();
+                MainActivity.this.m3lambda$appendMainLog$21$comippulsescannerMainActivity();
             }
         });
     }
@@ -774,7 +774,7 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda22
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m2lambda$appendDeepLog$23$comippulsescannerMainActivity(msg);
+                MainActivity.this.m2lambda$appendDeepLog$23$comippulsescannerMainActivity(msg);
             }
         });
     }
@@ -790,7 +790,7 @@ public class MainActivity extends Activity {
         this.logScroll2.post(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda11
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m1lambda$appendDeepLog$22$comippulsescannerMainActivity();
+                MainActivity.this.m1lambda$appendDeepLog$22$comippulsescannerMainActivity();
             }
         });
     }
@@ -825,7 +825,7 @@ public class MainActivity extends Activity {
         tableRow.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda25
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
-                this.f$0.m0lambda$addTableRow$24$comippulsescannerMainActivity(scanResult, view);
+                MainActivity.this.m0lambda$addTableRow$24$comippulsescannerMainActivity(scanResult, view);
             }
         });
         if (z) {
@@ -877,7 +877,7 @@ public class MainActivity extends Activity {
         new Thread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda17
             @Override // java.lang.Runnable
             public final void run() {
-                this.f$0.m4lambda$fetchFlag$26$comippulsescannerMainActivity(ip, textView);
+                MainActivity.this.m4lambda$fetchFlag$26$comippulsescannerMainActivity(ip, textView);
             }
         }).start();
     }
@@ -1043,7 +1043,7 @@ public class MainActivity extends Activity {
             new AlertDialog.Builder(this).setTitle("History").setItems(arr, new DialogInterface.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda20
                 @Override // android.content.DialogInterface.OnClickListener
                 public final void onClick(DialogInterface dialogInterface, int i) {
-                    this.f$0.m13lambda$showHistoryDialog$27$comippulsescannerMainActivity(arr, dialogInterface, i);
+                    MainActivity.this.m13lambda$showHistoryDialog$27$comippulsescannerMainActivity(arr, dialogInterface, i);
                 }
             }).show();
         }
