@@ -1,0 +1,6 @@
+IPPulseScanner CI trigger
+Branch: inject-original-debug-tab12-f9
+Base commit: 03c118819e3de3a5f0d680a19e89b7c9c08b4cf0
+Generated: 2026-08-27T10:26:04+03:30
+
+No application source was modified by this trigger.
