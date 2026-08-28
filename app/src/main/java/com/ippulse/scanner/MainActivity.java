@@ -360,7 +360,7 @@ public class MainActivity extends Activity {
 
         saveHistory(query);
 
-        executor = Executors.newFixedThreadPool(3);
+        executor = Executors.newFixedThreadPool(100);
         final int[] completed = {0};
         status1.setText("Scanning " + ips.size() + " IPs concurrently...");
 
@@ -395,35 +395,21 @@ public class MainActivity extends Activity {
             if (res.alive) aliveResults.add(res);
         }
 
-        if (aliveResults.size() > 100) {
-            aliveResults = new ArrayList<>(aliveResults.subList(0, 100));
-        }
+        Collections.sort(aliveResults, (a, b) -> {
+            int c = Float.compare(a.loss, b.loss);
+            if (c != 0) return c;
 
-        switch (currentSortIndex) {
-            case 0:
-                Collections.sort(aliveResults, (a, b) -> {
-                    if (a.loss != b.loss) return Float.compare(a.loss, b.loss);
-                    if (Math.abs(a.jitter - b.jitter) > 0.1f) return Float.compare(a.jitter, b.jitter);
-                    if (a.avg != b.avg) return Float.compare(a.avg, b.avg);
-                    return Float.compare(a.max, b.max);
-                });
-                break;
-            case 1:
-                Collections.sort(aliveResults, (a, b) -> Float.compare(a.loss, b.loss));
-                break;
-            case 2:
-                Collections.sort(aliveResults, (a, b) -> Float.compare(a.jitter, b.jitter));
-                break;
-            case 3:
-                Collections.sort(aliveResults, (a, b) -> Float.compare(a.avg, b.avg));
-                break;
-            case 4:
-                Collections.sort(aliveResults, (a, b) -> Float.compare(a.min, b.min));
-                break;
-            case 5:
-                Collections.sort(aliveResults, (a, b) -> Float.compare(a.max, b.max));
-                break;
-        }
+            c = Float.compare(a.jitter, b.jitter);
+            if (c != 0) return c;
+
+            c = Float.compare(a.avg, b.avg);
+            if (c != 0) return c;
+
+            c = Float.compare(a.max, b.max);
+            if (c != 0) return c;
+
+            return Float.compare(a.min, b.min);
+        });
 
         table1.removeAllViews();
         addTableHeader(table1, false);
@@ -497,6 +483,7 @@ public class MainActivity extends Activity {
         int received = 0;
         int lost = 0;
         int sent = 0;
+        int consecutiveLost = 0;
         int tSec = Math.max(1, timeo / 1000);
 
         TableRow liveRow = null;
@@ -531,7 +518,7 @@ public class MainActivity extends Activity {
         }
 
         try {
-            ProcessBuilder pb = new ProcessBuilder("ping", "-c", String.valueOf(totalPkts), "-i", "0.2", "-W", String.valueOf(tSec), ip);
+            ProcessBuilder pb = new ProcessBuilder("ping", "-c", String.valueOf(totalPkts), "-i", "0.005", "-W", String.valueOf(tSec), ip);
             pb.redirectErrorStream(true);
             Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -547,6 +534,7 @@ public class MainActivity extends Activity {
                             rttList.add(rtt);
                             received++;
                             sent++;
+                            consecutiveLost = 0;
                             if (isDeepLive && liveRow != null && (received % 5 == 0 || received == totalPkts)) {
                                 int curReceived = received;
                                 float curAvg = avg(rttList);
@@ -583,6 +571,13 @@ public class MainActivity extends Activity {
                                 // اگر خط حاوی time= نبود، یعنی lost
                                 if (!line.contains("time=")) {
                                     lost++;
+                                    consecutiveLost++;
+
+                                    if (consecutiveLost >= 3) {
+                                        process.destroy();
+                                        break;
+                                    }
+
                                     if (isDeepLive && liveRow != null && (sent % 5 == 0 || sent == totalPkts)) {
                                         int curSent = sent;
                                         int curReceived = received;
