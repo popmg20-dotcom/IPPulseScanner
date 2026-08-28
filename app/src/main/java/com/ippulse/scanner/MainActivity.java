@@ -1,6 +1,12 @@
 package com.ippulse.scanner;
 
-import com.ippulse.scanner.VpnEvidenceLogger;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.VpnService;
+import android.os.Build;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import com.github.xfalcon.vhosts.vservice.VhostsService;
 
@@ -8,70 +14,55 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import android.content.Context;
-import android.content.Intent;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
-import android.graphics.Typeface;
-import android.net.VpnService;
-import android.os.Build;
 import android.os.Bundle;
-import android.view.Gravity;
 import android.view.View;
-import android.widget.*;
-
-import org.json.JSONObject;
-
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.TextView;
+import android.widget.Toast;
+import com.ippulse.scanner.MainActivity;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.*;
-import java.util.concurrent.*;
-import java.io.IOException;
-import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.json.JSONObject;
 
+/* JADX INFO: loaded from: classes2.dex */
 public class MainActivity extends Activity {
 
-    private static final int FAST_FAIL_THRESHOLD = 3;
-    private static final String PREFS_NAME = "ippulse_history";
-    private static final String HISTORY_KEY = "history";
+    // F9 TAB3 — EXACT SOURCE OF HOST FALCON APK
+
     private static final String VPN_PREFS = "vpn_settings";
     private static final int REQUEST_VPN = 1001;
     private static final int REQUEST_NOTIFICATION = 1002;
-    private static final int MAX_LOG_ITEMS = 50;
 
-    private View tab1Container, tab2Container, tab3Container;
-    private Button btnTab1, btnTab2, btnTab3, btnStart1, btnStop1, btnHistory, btnClearHistory;
-    private EditText ipInput, inputPackets, inputInterval, inputTimeout;
-    private TextView status1;
-    private LinearLayout logLayout1;
-    private ScrollView logScroll1;
-    private TableLayout table1;
-    private Spinner spinnerSort;
-
-    private LinearLayout top5Container, logLayout2;
-    private ScrollView logScroll2;
-    private TextView status2;
-    private TableLayout table2Live;
-    private Button btnStop2;
-    private EditText manualIpInput;
-    private Button btnManualDeepTest;
-
+    private View tab3Container;
     private Button btnStartVpn, btnStopVpn, btnApplyIp;
     private TextView vpnStatus;
     private EditText vpnDns, vpnHosts, vpnMasterIp, vpnMtu;
-
-    private ExecutorService executor;
-    private Thread deepTestThread;
-    private volatile boolean isCancelled = false;
-    private List<ScanResult> allResults = new ArrayList<>();
-    private List<String> top5IPs = new ArrayList<>();
-    private boolean rangeScanFinished = true;
-
-    private String[] sortOptions = {"Default", "Loss", "Jitter", "Average (Avg)", "Min (Low Ping)", "Max (High Ping)"};
-    private int currentSortIndex = 0;
+    private Button btnTab3;
 
     private String[] defaultDomains = {
         "west-tdm.codmwest.com",
@@ -79,681 +70,842 @@ public class MainActivity extends Activity {
         "gcloud.codm.activision.com"
     };
 
+    private static final int FAST_FAIL_THRESHOLD = 3;
+    private static final String HISTORY_KEY = "history";
+    private static final String PREFS_NAME = "ippulse_history";
+    private Button btnClearHistory;
+    private Button btnHistory;
+    private Button btnStart1;
+    private Button btnStop1;
+    private Button btnStop2;
+    private Button btnTab1;
+    private Button btnTab2;
+    private Thread deepTestThread;
+    private ExecutorService executor;
+    private EditText inputInterval;
+    private EditText inputPackets;
+    private EditText inputTimeout;
+    private EditText ipInput;
+    private LinearLayout logLayout1;
+    private LinearLayout logLayout2;
+    private ScrollView logScroll1;
+    private ScrollView logScroll2;
+    private Spinner spinnerSort;
+    private TextView status1;
+    private TextView status2;
+    private View tab1Container;
+    private View tab2Container;
+    private TableLayout table1;
+    private TableLayout table2Live;
+    private LinearLayout top5Container;
+    private volatile boolean isCancelled = false;
+    private List<ScanResult> allResults = new ArrayList();
+    private List<String> top5IPs = new ArrayList();
+    private boolean rangeScanFinished = true;
+    private String[] sortOptions = {"Default", "Loss", "Jitter", "Average (Avg)", "Min (Low Ping)", "Max (High Ping)"};
+    private int currentSortIndex = 0;
 
-
-    @Override
+    @Override // android.app.Activity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         VpnEvidenceLogger.init(getApplicationContext());
 
-
-        tab1Container = findViewById(R.id.tab1Container);
-        btnTab1 = findViewById(R.id.btnTab1);
-        btnTab2 = findViewById(R.id.btnTab2);
-        btnTab3 = findViewById(R.id.btnTab3);
-        btnStart1 = findViewById(R.id.btnStart1);
-        btnStop1 = findViewById(R.id.btnStop1);
-        ipInput = findViewById(R.id.ipInput);
-        inputPackets = findViewById(R.id.inputPackets);
-        inputInterval = findViewById(R.id.inputInterval);
-        inputTimeout = findViewById(R.id.inputTimeout);
-        status1 = findViewById(R.id.status1);
-        logLayout1 = findViewById(R.id.logLayout1);
-        logScroll1 = findViewById(R.id.logScroll1);
-        table1 = findViewById(R.id.table1);
-        spinnerSort = findViewById(R.id.spinnerSort);
-
-        tab2Container = findViewById(R.id.tab2Container);
-        top5Container = findViewById(R.id.top5Container);
-        status2 = findViewById(R.id.status2);
-        logLayout2 = findViewById(R.id.logLayout2);
-        logScroll2 = findViewById(R.id.logScroll2);
-        table2Live = findViewById(R.id.table2Live);
-        btnStop2 = findViewById(R.id.btnStop2);
-        manualIpInput = findViewById(R.id.manualIpInput);
-        btnManualDeepTest = findViewById(R.id.btnManualDeepTest);
-
-        tab3Container = findViewById(R.id.tab3Container);
-        vpnDns = findViewById(R.id.vpnDns);
-        vpnHosts = findViewById(R.id.vpnHosts);
-        vpnMasterIp = findViewById(R.id.vpnMasterIp);
-        vpnMtu = findViewById(R.id.vpnMtu);
-        btnStartVpn = findViewById(R.id.btnStartVpn);
-        btnStopVpn = findViewById(R.id.btnStopVpn);
-        btnApplyIp = findViewById(R.id.btnApplyIp);
-        vpnStatus = findViewById(R.id.vpnStatus);
-
-        btnHistory = findViewById(R.id.btnHistory);
-        btnClearHistory = findViewById(R.id.btnClearHistory);
-
+        this.btnTab3 = (Button) findViewById(R.id.btnTab3);
+        this.tab3Container = findViewById(R.id.tab3Container);
+        this.vpnDns = (EditText) findViewById(R.id.vpnDns);
+        this.vpnHosts = (EditText) findViewById(R.id.vpnHosts);
+        this.vpnMasterIp = (EditText) findViewById(R.id.vpnMasterIp);
+        this.vpnMtu = (EditText) findViewById(R.id.vpnMtu);
+        this.btnStartVpn = (Button) findViewById(R.id.btnStartVpn);
+        this.btnStopVpn = (Button) findViewById(R.id.btnStopVpn);
+        this.btnApplyIp = (Button) findViewById(R.id.btnApplyIp);
+        this.vpnStatus = (TextView) findViewById(R.id.vpnStatus);
         loadVpnSettings();
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, sortOptions);
+        this.tab1Container = findViewById(R.id.tab1Container);
+        this.btnTab1 = (Button) findViewById(R.id.btnTab1);
+        this.btnTab2 = (Button) findViewById(R.id.btnTab2);
+        this.btnStart1 = (Button) findViewById(R.id.btnStart1);
+        this.btnStop1 = (Button) findViewById(R.id.btnStop1);
+        this.ipInput = (EditText) findViewById(R.id.ipInput);
+        this.inputPackets = (EditText) findViewById(R.id.inputPackets);
+        this.inputInterval = (EditText) findViewById(R.id.inputInterval);
+        this.inputTimeout = (EditText) findViewById(R.id.inputTimeout);
+        this.status1 = (TextView) findViewById(R.id.status1);
+        this.logLayout1 = (LinearLayout) findViewById(R.id.logLayout1);
+        this.logScroll1 = (ScrollView) findViewById(R.id.logScroll1);
+        this.table1 = (TableLayout) findViewById(R.id.table1);
+        this.spinnerSort = (Spinner) findViewById(R.id.spinnerSort);
+        this.tab2Container = findViewById(R.id.tab2Container);
+        this.top5Container = (LinearLayout) findViewById(R.id.top5Container);
+        this.status2 = (TextView) findViewById(R.id.status2);
+        this.logLayout2 = (LinearLayout) findViewById(R.id.logLayout2);
+        this.logScroll2 = (ScrollView) findViewById(R.id.logScroll2);
+        this.table2Live = (TableLayout) findViewById(R.id.table2Live);
+        this.btnStop2 = (Button) findViewById(R.id.btnStop2);
+        this.btnHistory = (Button) findViewById(R.id.btnHistory);
+        this.btnClearHistory = (Button) findViewById(R.id.btnClearHistory);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, this.sortOptions);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerSort.setAdapter(adapter);
-        spinnerSort.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
+        this.spinnerSort.setAdapter((SpinnerAdapter) adapter);
+        this.spinnerSort.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() { // from class: com.ippulse.scanner.MainActivity.1
+            @Override // android.widget.AdapterView.OnItemSelectedListener
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                currentSortIndex = position;
-                if (rangeScanFinished && !allResults.isEmpty()) {
-                    applySortAndRefreshTable();
+                MainActivity.this.currentSortIndex = position;
+                if (MainActivity.this.rangeScanFinished && !MainActivity.this.allResults.isEmpty()) {
+                    MainActivity.this.applySortAndRefreshTable();
                 }
             }
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+
+            @Override // android.widget.AdapterView.OnItemSelectedListener
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+        this.btnTab1.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda26
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                this.f$0.m5lambda$onCreate$0$comippulsescannerMainActivity(view);
+            }
+        });
+        this.btnTab2.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda27
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                this.f$0.m6lambda$onCreate$1$comippulsescannerMainActivity(view);
+            }
+        });
+        this.btnStart1.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda1
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                this.f$0.m7lambda$onCreate$2$comippulsescannerMainActivity(view);
+            }
+        });
+        this.btnStop1.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda2
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                this.f$0.m8lambda$onCreate$3$comippulsescannerMainActivity(view);
+            }
+        });
+        this.btnStop2.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda3
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                this.f$0.m9lambda$onCreate$4$comippulsescannerMainActivity(view);
+            }
+        });
+        this.btnHistory.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda4
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                this.f$0.m10lambda$onCreate$5$comippulsescannerMainActivity(view);
+            }
+        });
+        this.btnClearHistory.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda5
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                this.f$0.m11lambda$onCreate$6$comippulsescannerMainActivity(view);
+            }
         });
 
-        btnTab1.setOnClickListener(v -> switchTab(1));
-        btnTab2.setOnClickListener(v -> switchTab(2));
-        btnTab3.setOnClickListener(v -> switchTab(3));
+        this.btnTab3.setOnClickListener(v -> switchTab(3));
+        this.btnStartVpn.setOnClickListener(v -> startVpn());
+        this.btnStopVpn.setOnClickListener(v -> stopVpn());
+        this.btnApplyIp.setOnClickListener(v -> applyMasterIp());
 
-        btnStart1.setOnClickListener(v -> startRangeScan());
-        btnStop1.setOnClickListener(v -> stopRangeScan());
-        btnStop2.setOnClickListener(v -> stopDeepTest());
-        btnManualDeepTest.setOnClickListener(v -> manualDeepTest());
+}
 
-        btnStartVpn.setOnClickListener(v -> startVpn());
-        btnStopVpn.setOnClickListener(v -> stopVpn());
-        btnApplyIp.setOnClickListener(v -> applyMasterIp());
+    /* JADX INFO: renamed from: lambda$onCreate$0$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m5lambda$onCreate$0$comippulsescannerMainActivity(View v) {
+        switchTab(1);
+    }
 
-        btnHistory.setOnClickListener(v -> showHistoryDialog());
-        btnClearHistory.setOnClickListener(v -> clearHistory());
+    /* JADX INFO: renamed from: lambda$onCreate$1$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m6lambda$onCreate$1$comippulsescannerMainActivity(View v) {
+        switchTab(2);
+    }
+
+    /* JADX INFO: renamed from: lambda$onCreate$2$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m7lambda$onCreate$2$comippulsescannerMainActivity(View v) {
+        startRangeScan();
+    }
+
+    /* JADX INFO: renamed from: lambda$onCreate$3$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m8lambda$onCreate$3$comippulsescannerMainActivity(View v) {
+        stopRangeScan();
+    }
+
+    /* JADX INFO: renamed from: lambda$onCreate$4$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m9lambda$onCreate$4$comippulsescannerMainActivity(View v) {
+        stopDeepTest();
+    }
+
+    /* JADX INFO: renamed from: lambda$onCreate$5$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m10lambda$onCreate$5$comippulsescannerMainActivity(View v) {
+        showHistoryDialog();
+    }
+
+    /* JADX INFO: renamed from: lambda$onCreate$6$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m11lambda$onCreate$6$comippulsescannerMainActivity(View v) {
+        clearHistory();
     }
 
     private void switchTab(int tab) {
-        tab1Container.setVisibility(tab == 1 ? View.VISIBLE : View.GONE);
-        tab2Container.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
-        tab3Container.setVisibility(tab == 3 ? View.VISIBLE : View.GONE);
-        btnTab1.setBackgroundColor(tab == 1 ? Color.parseColor("#2563EB") : Color.parseColor("#1E293B"));
-        btnTab1.setTextColor(tab == 1 ? Color.WHITE : Color.parseColor("#94A3B8"));
-        btnTab2.setBackgroundColor(tab == 2 ? Color.parseColor("#2563EB") : Color.parseColor("#1E293B"));
-        btnTab2.setTextColor(tab == 2 ? Color.WHITE : Color.parseColor("#94A3B8"));
-        btnTab3.setBackgroundColor(tab == 3 ? Color.parseColor("#2563EB") : Color.parseColor("#1E293B"));
-        btnTab3.setTextColor(tab == 3 ? Color.WHITE : Color.parseColor("#94A3B8"));
-    }
-
-    private void loadVpnSettings() {
-        SharedPreferences prefs = getSharedPreferences(VPN_PREFS, MODE_PRIVATE);
-        vpnDns.setText(prefs.getString("dns", "8.8.8.8"));
-        vpnMtu.setText(prefs.getString("mtu", "247"));
-        vpnMasterIp.setText(prefs.getString("masterIp", "109.61.42.251"));
-        vpnHosts.setText(prefs.getString("hosts", ""));
-                                                                if (vpnHosts.getText().toString().trim().isEmpty()) {
-            String defaultIp = vpnMasterIp.getText().toString().trim();
-            StringBuilder sb = new StringBuilder();
-            for (String domain : defaultDomains) {
-                sb.append(defaultIp).append(" ").append(domain).append("\n");
-            }
-            vpnHosts.setText(sb.toString().trim());
-        }
-    }
-
-    private void saveVpnSettings() {
-        SharedPreferences prefs = getSharedPreferences(VPN_PREFS, MODE_PRIVATE);
-        prefs.edit()
-            .putString("dns", vpnDns.getText().toString().trim())
-            .putString("hosts", vpnHosts.getText().toString().trim())
-            .putString("mtu", vpnMtu.getText().toString().trim())
-            .putString("masterIp", vpnMasterIp.getText().toString().trim())
-                                                                        .apply();
-    }
-
-    private void applyMasterIp() {
-        String masterIp = vpnMasterIp.getText().toString().trim();
-        if (masterIp.isEmpty()) {
-            Toast.makeText(this, "لطفاً یک IP وارد کنید", Toast.LENGTH_SHORT).show();
+        if (tab == 1) {
+            this.tab1Container.setVisibility(0);
+            this.tab2Container.setVisibility(8);
+            this.btnTab1.setBackgroundColor(Color.parseColor("#2563EB"));
+            this.btnTab1.setTextColor(-1);
+            this.btnTab2.setBackgroundColor(Color.parseColor("#1E293B"));
+            this.btnTab2.setTextColor(Color.parseColor("#94A3B8"));
             return;
         }
-        StringBuilder sb = new StringBuilder();
-        for (String domain : defaultDomains) {
-            sb.append(masterIp).append(" ").append(domain).append("\n");
-        }
-        vpnHosts.setText(sb.toString().trim());
-        saveVpnSettings();
-        Toast.makeText(this, "IP به همه دامنه‌ها اعمال شد", Toast.LENGTH_SHORT).show();
-    }
+        this.tab1Container.setVisibility(8);
+        this.tab2Container.setVisibility(0);
+        this.btnTab2.setBackgroundColor(Color.parseColor("#2563EB"));
+        this.btnTab2.setTextColor(-1);
+        this.btnTab1.setBackgroundColor(Color.parseColor("#1E293B"));
+        this.btnTab1.setTextColor(Color.parseColor("#94A3B8"));
 
-
-
-
-
-
-
-
-    private String hostsMapToString(HashMap<String, String> map) {
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            sb.append(entry.getValue()).append(" ").append(entry.getKey()).append("\n");
-        }
-        return sb.toString();
-    }
-
-
-
-
-
-    private void stopVpn() {
-        vpnStatus.setText("VPN: Stopping");
-
-        Intent intent =
-                new Intent(this, VhostsService.class)
-                        .setAction(VhostsService.ACTION_DISCONNECT);
-
-        startService(intent);
-
-        vpnStatus.setText("VPN: Stopped");
-        Toast.makeText(this, "VPN stopped", Toast.LENGTH_SHORT).show();
-    }
-
-    private void startVpn() {
-        saveVpnSettings();
-        String dns = vpnDns.getText().toString().trim();
-        HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-
-        if (Build.VERSION.SDK_INT >= 33) {
-            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQUEST_NOTIFICATION);
-                return;
-            }
-        }
-
-        Intent intent = VpnService.prepare(this);
-        if (intent != null) {
-            startActivityForResult(intent, REQUEST_VPN);
-        } else {
-            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 247);
-            startVhostsService(mtu, hostsMap);
-            vpnStatus.setText("VPN: Connected");
-            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_NOTIFICATION) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startVpn();
-            } else {
-                Toast.makeText(this, "Notification permission required for VPN", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_VPN && resultCode == RESULT_OK) {
-            HashMap<String, String> hostsMap = parseHosts(vpnHosts.getText().toString());
-            int mtu = parseIntSafe(vpnMtu.getText().toString().trim(), 247);
-            startVhostsService(mtu, hostsMap);
-            vpnStatus.setText("VPN: Connected");
-            Toast.makeText(this, "VPN started", Toast.LENGTH_SHORT).show();
-        } else if (requestCode == REQUEST_VPN) {
-            Toast.makeText(this, "VPN permission denied", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private HashMap<String, String> parseHosts(String text) {
-        HashMap<String, String> map = new HashMap<>();
-        if (text == null || text.trim().isEmpty()) return map;
-        String[] lines = text.split("\\n");
-        for (String line : lines) {
-            line = line.trim();
-            if (line.isEmpty() || line.startsWith("#")) continue;
-            String[] parts = line.split("\\s+");
-            if (parts.length >= 2) {
-                String ip = parts[0];
-                String domain = parts[1].toLowerCase();
-                map.put(domain, ip);
-            }
-        }
-        return map;
-    }
-
-    private int parseIntSafe(String s, int defaultVal) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return defaultVal; }
-    }
+        tab3Container.setVisibility(tab == 3 ? View.VISIBLE : View.GONE);
+        btnTab3.setBackgroundColor(tab == 3 ? Color.parseColor("#2563EB") : Color.parseColor("#1E293B"));
+        btnTab3.setTextColor(tab == 3 ? Color.WHITE : Color.parseColor("#94A3B8"));
+}
 
     private void stopRangeScan() {
-        isCancelled = true;
-        if (executor != null) executor.shutdownNow();
-        runOnUiThread(() -> {
-            if (!rangeScanFinished && !allResults.isEmpty()) {
-                finishRangeScan();
-            } else {
-                status1.setText("Scan stopped.");
-                btnStart1.setEnabled(true);
+        this.isCancelled = true;
+        if (this.executor != null) {
+            this.executor.shutdownNow();
+        }
+        runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda21
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.m18lambda$stopRangeScan$7$comippulsescannerMainActivity();
             }
         });
     }
 
+    /* JADX INFO: renamed from: lambda$stopRangeScan$7$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m18lambda$stopRangeScan$7$comippulsescannerMainActivity() {
+        if (!this.rangeScanFinished && !this.allResults.isEmpty()) {
+            finishRangeScan();
+        } else {
+            this.status1.setText("Scan stopped.");
+            this.btnStart1.setEnabled(true);
+        }
+    }
+
     private void stopDeepTest() {
-        isCancelled = true;
-        if (deepTestThread != null) deepTestThread.interrupt();
-        status2.setText("Deep test stopped.");
+        this.isCancelled = true;
+        if (this.deepTestThread != null) {
+            this.deepTestThread.interrupt();
+        }
+        this.status2.setText("Deep test stopped.");
     }
 
     private void startRangeScan() {
-        String query = ipInput.getText().toString().trim();
+        String query = this.ipInput.getText().toString().trim();
         if (query.isEmpty()) {
-            Toast.makeText(this, "Please enter a range or IP", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please enter a range or IP", 0).show();
             return;
         }
-        List<String> ips = parseIPList(query);
+        final List<String> ips = parseIPList(query);
         if (ips.isEmpty()) {
-            Toast.makeText(this, "Invalid range", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid range", 0).show();
             return;
         }
-
-        int pkts = parseNum(inputPackets, 100);
-        int timeo = parseNum(inputTimeout, 1000);
-
-        allResults.clear();
-        logLayout1.removeAllViews();
-        table1.removeAllViews();
-        addTableHeader(table1, false);
-        btnStart1.setEnabled(false);
-        isCancelled = false;
-        rangeScanFinished = false;
-
+        final int pkts = parseNum(this.inputPackets, 100);
+        final int timeo = parseNum(this.inputTimeout, 1000);
+        this.allResults.clear();
+        this.logLayout1.removeAllViews();
+        this.table1.removeAllViews();
+        addTableHeader(this.table1, false);
+        this.btnStart1.setEnabled(false);
+        this.isCancelled = false;
+        this.rangeScanFinished = false;
         saveHistory(query);
-
-        executor = Executors.newFixedThreadPool(100);
+        this.executor = Executors.newFixedThreadPool(80);
         final int[] completed = {0};
-        status1.setText("Scanning " + ips.size() + " IPs concurrently...");
-
-        for (String ip : ips) {
-            executor.execute(() -> {
-                if (isCancelled) return;
-                ScanResult res = pingLogic(ip, pkts, timeo, false, null);
-                synchronized (allResults) {
-                    allResults.add(res);
-                    completed[0]++;
+        this.status1.setText("Scanning " + ips.size() + " IPs concurrently...");
+        for (final String ip : ips) {
+            this.executor.execute(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda19
+                @Override // java.lang.Runnable
+                public final void run() {
+                    this.f$0.m17lambda$startRangeScan$9$comippulsescannerMainActivity(ip, pkts, timeo, completed, ips);
                 }
-                runOnUiThread(() -> {
-                    appendMainLog(res);
-                    status1.setText(completed[0] + " / " + ips.size() + " processed.");
-                    if (completed[0] >= ips.size() && !isCancelled && !rangeScanFinished) {
-                        finishRangeScan();
-                    }
-                });
             });
+        }
+    }
+
+    /* JADX INFO: renamed from: lambda$startRangeScan$9$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m17lambda$startRangeScan$9$comippulsescannerMainActivity(String ip, int pkts, int timeo, final int[] completed, final List ips) {
+        if (this.isCancelled) {
+            return;
+        }
+        final ScanResult res = pingLogic(ip, pkts, timeo, false, null);
+        synchronized (this.allResults) {
+            this.allResults.add(res);
+            completed[0] = completed[0] + 1;
+        }
+        runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda0
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.m16lambda$startRangeScan$8$comippulsescannerMainActivity(res, completed, ips);
+            }
+        });
+    }
+
+    /* JADX INFO: renamed from: lambda$startRangeScan$8$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m16lambda$startRangeScan$8$comippulsescannerMainActivity(ScanResult res, int[] completed, List ips) {
+        appendMainLog(res);
+        this.status1.setText(completed[0] + " / " + ips.size() + " processed.");
+        if (completed[0] >= ips.size() && !this.isCancelled && !this.rangeScanFinished) {
+            finishRangeScan();
         }
     }
 
     private void finishRangeScan() {
-        rangeScanFinished = true;
-        btnStart1.setEnabled(true);
+        this.rangeScanFinished = true;
+        this.btnStart1.setEnabled(true);
         applySortAndRefreshTable();
     }
 
-    private void applySortAndRefreshTable() {
+    /* JADX INFO: Access modifiers changed from: private */
+    public void applySortAndRefreshTable() {
         List<ScanResult> aliveResults = new ArrayList<>();
-        for (ScanResult res : allResults) {
-            if (res.alive) aliveResults.add(res);
+        for (ScanResult res : this.allResults) {
+            if (res.alive) {
+                aliveResults.add(res);
+            }
         }
-
-        Collections.sort(aliveResults, (a, b) -> {
-            int c = Float.compare(a.loss, b.loss);
-            if (c != 0) return c;
-
-            c = Float.compare(a.jitter, b.jitter);
-            if (c != 0) return c;
-
-            c = Float.compare(a.avg, b.avg);
-            if (c != 0) return c;
-
-            c = Float.compare(a.max, b.max);
-            if (c != 0) return c;
-
-            return Float.compare(a.min, b.min);
-        });
-
-        table1.removeAllViews();
-        addTableHeader(table1, false);
-        top5IPs.clear();
+        switch (this.currentSortIndex) {
+            case 0:
+                Collections.sort(aliveResults, new Comparator() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda7
+                    @Override // java.util.Comparator
+                    public final int compare(Object obj, Object obj2) {
+                        return MainActivity.lambda$applySortAndRefreshTable$10((MainActivity.ScanResult) obj, (MainActivity.ScanResult) obj2);
+                    }
+                });
+                break;
+            case 1:
+                Collections.sort(aliveResults, new Comparator() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda8
+                    @Override // java.util.Comparator
+                    public final int compare(Object obj, Object obj2) {
+                        return Float.compare(((MainActivity.ScanResult) obj).loss, ((MainActivity.ScanResult) obj2).loss);
+                    }
+                });
+                break;
+            case 2:
+                Collections.sort(aliveResults, new Comparator() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda9
+                    @Override // java.util.Comparator
+                    public final int compare(Object obj, Object obj2) {
+                        return Float.compare(((MainActivity.ScanResult) obj).jitter, ((MainActivity.ScanResult) obj2).jitter);
+                    }
+                });
+                break;
+            case FAST_FAIL_THRESHOLD /* 3 */:
+                Collections.sort(aliveResults, new Comparator() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda10
+                    @Override // java.util.Comparator
+                    public final int compare(Object obj, Object obj2) {
+                        return Float.compare(((MainActivity.ScanResult) obj).avg, ((MainActivity.ScanResult) obj2).avg);
+                    }
+                });
+                break;
+            case 4:
+                Collections.sort(aliveResults, new Comparator() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda12
+                    @Override // java.util.Comparator
+                    public final int compare(Object obj, Object obj2) {
+                        return Float.compare(((MainActivity.ScanResult) obj).min, ((MainActivity.ScanResult) obj2).min);
+                    }
+                });
+                break;
+            case 5:
+                Collections.sort(aliveResults, new Comparator() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda13
+                    @Override // java.util.Comparator
+                    public final int compare(Object obj, Object obj2) {
+                        return Float.compare(((MainActivity.ScanResult) obj).max, ((MainActivity.ScanResult) obj2).max);
+                    }
+                });
+                break;
+        }
+        this.table1.removeAllViews();
+        addTableHeader(this.table1, false);
+        this.top5IPs.clear();
         for (int i = 0; i < Math.min(5, aliveResults.size()); i++) {
-            top5IPs.add(aliveResults.get(i).ip);
+            this.top5IPs.add(aliveResults.get(i).ip);
         }
-
         int rank = 1;
-        for (ScanResult res : aliveResults) {
-            boolean isTop5 = top5IPs.contains(res.ip);
-            addTableRow(table1, res, rank, false, isTop5);
+        for (ScanResult res2 : aliveResults) {
+            boolean isTop5 = this.top5IPs.contains(res2.ip);
+            addTableRow(this.table1, res2, rank, false, isTop5);
             rank++;
         }
-
         populateTab2();
-        status1.setText("Sorted by: " + sortOptions[currentSortIndex]);
+        this.status1.setText("Sorted by: " + this.sortOptions[this.currentSortIndex]);
+    }
+
+    static /* synthetic */ int lambda$applySortAndRefreshTable$10(ScanResult a, ScanResult b) {
+        return a.loss != b.loss ? Float.compare(a.loss, b.loss) : Math.abs(a.jitter - b.jitter) > 0.1f ? Float.compare(a.jitter, b.jitter) : a.avg != b.avg ? Float.compare(a.avg, b.avg) : Float.compare(a.max, b.max);
     }
 
     private void populateTab2() {
-        top5Container.removeAllViews();
-        if (top5IPs.isEmpty()) {
+        this.top5Container.removeAllViews();
+        if (this.top5IPs.isEmpty()) {
             TextView tv = new TextView(this);
             tv.setText("No alive IPs found.");
             tv.setTextColor(Color.parseColor("#EF4444"));
-            tv.setGravity(Gravity.CENTER);
-            top5Container.addView(tv);
+            tv.setGravity(17);
+            this.top5Container.addView(tv);
             return;
         }
-        for (int i = 0; i < top5IPs.size(); i++) {
-            String ip = top5IPs.get(i);
+        for (int i = 0; i < this.top5IPs.size(); i++) {
+            final String ip = this.top5IPs.get(i);
             Button btn = new Button(this);
             btn.setText("🥇 Start Deep Test: " + ip);
-            btn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#FFD700")));
-            btn.setTextColor(Color.BLACK);
+            btn.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FFD700")));
+            btn.setTextColor(-16777216);
             btn.setAllCaps(false);
             btn.setPadding(0, 8, 0, 8);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
             params.setMargins(0, 0, 0, 8);
             btn.setLayoutParams(params);
-            btn.setOnClickListener(v -> startDeepTestOn(ip));
-            top5Container.addView(btn);
-        }
-    }
-
-    private void startDeepTestOn(String ip) {
-        if (deepTestThread != null && deepTestThread.isAlive()) {
-            isCancelled = true;
-            deepTestThread.interrupt();
-        }
-        isCancelled = false;
-        logLayout2.removeAllViews();
-        table2Live.removeAllViews();
-        addTableHeader(table2Live, true);
-        int pkts = parseNum(inputPackets, 100);
-        int timeo = parseNum(inputTimeout, 1000);
-        status2.setText("Deep Testing: " + ip);
-        deepTestThread = new Thread(() -> {
-            pingLogic(ip, pkts, timeo, true, table2Live);
-            runOnUiThread(() -> {
-                if (!isCancelled) status2.setText("Deep Test Finished: " + ip);
-            });
-        });
-        deepTestThread.start();
-    }
-
-    // ✅ موتور جدید: استفاده از ping پیوسته با یک فرآیند
-    private ScanResult pingLogic(String ip, int totalPkts, int timeo, boolean isDeepLive, TableLayout liveTable) {
-        List<Float> rttList = new ArrayList<>();
-        int received = 0;
-        int lost = 0;
-        int sent = 0;
-        int consecutiveLost = 0;
-        int tSec = Math.max(1, timeo / 1000);
-
-        TableRow liveRow = null;
-        TextView[] liveCells = new TextView[8];
-
-        if (isDeepLive) {
-            liveRow = new TableRow(this);
-            liveRow.setBackgroundColor(Color.parseColor("#18181B"));
-            for (int i = 0; i < 8; i++) {
-                TextView tv = new TextView(this);
-                tv.setPadding(10, 10, 10, 10);
-                tv.setGravity(Gravity.CENTER);
-                tv.setTextSize(11f);
-                tv.setTextColor(Color.WHITE);
-                liveCells[i] = tv;
-                liveRow.addView(tv);
-            }
-            final TableRow rowToAdd = liveRow;
-            final TextView[] cells = liveCells;
-            final String ipFinal = ip;
-            runOnUiThread(() -> {
-                liveTable.addView(rowToAdd);
-                cells[0].setText(ipFinal);
-                cells[1].setText("0");
-                cells[2].setText("0");
-                cells[3].setText("0");
-                cells[4].setText("0");
-                cells[5].setText("0");
-                cells[6].setText("0%");
-                cells[7].setText("TESTING");
-            });
-        }
-
-        try {
-            ProcessBuilder pb = new ProcessBuilder("ping", "-c", String.valueOf(totalPkts), "-i", "0.005", "-W", String.valueOf(tSec), ip);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null && !isCancelled) {
-                if (line.contains("time=")) {
-                    int idx = line.indexOf("time=");
-                    if (idx != -1) {
-                        String sub = line.substring(idx + 5).trim();
-                        String[] parts = sub.split(" ");
-                        if (parts.length > 0) {
-                            float rtt = Float.parseFloat(parts[0].trim());
-                            rttList.add(rtt);
-                            received++;
-                            sent++;
-                            consecutiveLost = 0;
-                            if (isDeepLive && liveRow != null && (received % 5 == 0 || received == totalPkts)) {
-                                int curReceived = received;
-                                float curAvg = avg(rttList);
-                                float curMin = min(rttList);
-                                float curMax = max(rttList);
-                                float curJitter = jitter(rttList);
-                                float curLoss = ((totalPkts - curReceived) * 100f) / totalPkts;
-                                final int seq = received;
-                                final float finalRtt = rtt;
-                                runOnUiThread(() -> {
-                                    liveCells[1].setText(String.valueOf(seq));
-                                    liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
-                                    liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
-                                    liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
-                                    liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
-                                    liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
-                                    liveCells[7].setText("ALIVE");
-                                });
-                                appendDeepLog(ip + " seq=" + seq + "/" + totalPkts + " rtt=" + finalRtt + "ms");
-                            }
-                        }
-                    }
-                } else if (line.contains("icmp_seq")) {
-                    // شماره سکانس را استخراج می‌کنیم (برای packet loss)
-                    int seqIdx = line.indexOf("icmp_seq=");
-                    if (seqIdx != -1) {
-                        int start = seqIdx + "icmp_seq=".length();
-                        int end = start;
-                        while (end < line.length() && Character.isDigit(line.charAt(end))) end++;
-                        if (end > start) {
-                            try {
-                                int seq = Integer.parseInt(line.substring(start, end));
-                                sent = Math.max(sent, seq);
-                                // اگر خط حاوی time= نبود، یعنی lost
-                                if (!line.contains("time=")) {
-                                    lost++;
-                                    consecutiveLost++;
-
-                                    if (consecutiveLost >= 3) {
-                                        process.destroy();
-                                        break;
-                                    }
-
-                                    if (isDeepLive && liveRow != null && (sent % 5 == 0 || sent == totalPkts)) {
-                                        int curSent = sent;
-                                        int curReceived = received;
-                                        float curAvg = avg(rttList);
-                                        float curMin = min(rttList);
-                                        float curMax = max(rttList);
-                                        float curJitter = jitter(rttList);
-                                        float curLoss = ((curSent - curReceived) * 100f) / curSent;
-                                        runOnUiThread(() -> {
-                                            liveCells[1].setText(String.valueOf(curSent));
-                                            liveCells[2].setText(String.format(Locale.US, "%.1f", curAvg));
-                                            liveCells[3].setText(String.format(Locale.US, "%.1f", curMin));
-                                            liveCells[4].setText(String.format(Locale.US, "%.1f", curMax));
-                                            liveCells[5].setText(String.format(Locale.US, "%.2f", curJitter));
-                                            liveCells[6].setText(String.format(Locale.US, "%.0f%%", curLoss));
-                                            liveCells[7].setText("ALIVE");
-                                        });
-                                        appendDeepLog(ip + " seq=" + curSent + "/" + totalPkts + " lost");
-                                    }
-                                }
-                            } catch (Exception ignored) {}
-                        }
-                    }
+            btn.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda6
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    this.f$0.m12lambda$populateTab2$16$comippulsescannerMainActivity(ip, view);
                 }
-            }
-            process.waitFor();
-            if (sent == 0) sent = totalPkts;
-            lost = sent - received;
-            if (lost < 0) lost = 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            lost = totalPkts;
+            });
+            this.top5Container.addView(btn);
         }
+    }
 
-        float lossPct = sent == 0 ? 100f : (lost * 100f) / sent;
-        boolean alive = received > 0 && lossPct < 100f;
-        float avg = avg(rttList);
-        float min = min(rttList);
-        float max = max(rttList);
-        float jit = jitter(rttList);
-        return new ScanResult(ip, avg, min, max, jit, lossPct, alive, sent);
+    /* JADX INFO: renamed from: lambda$populateTab2$16$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m12lambda$populateTab2$16$comippulsescannerMainActivity(String ip, View v) {
+        startDeepTestOn(ip);
+    }
+
+    private void startDeepTestOn(final String ip) {
+        if (this.deepTestThread != null && this.deepTestThread.isAlive()) {
+            this.isCancelled = true;
+            this.deepTestThread.interrupt();
+        }
+        this.isCancelled = false;
+        this.logLayout2.removeAllViews();
+        this.table2Live.removeAllViews();
+        addTableHeader(this.table2Live, true);
+        final int pkts = parseNum(this.inputPackets, 100);
+        final int timeo = parseNum(this.inputTimeout, 1000);
+        this.status2.setText("Deep Testing: " + ip);
+        this.deepTestThread = new Thread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda14
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.m15lambda$startDeepTestOn$18$comippulsescannerMainActivity(ip, pkts, timeo);
+            }
+        });
+        this.deepTestThread.start();
+    }
+
+    /* JADX INFO: renamed from: lambda$startDeepTestOn$18$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m15lambda$startDeepTestOn$18$comippulsescannerMainActivity(final String ip, int pkts, int timeo) {
+        pingLogic(ip, pkts, timeo, true, this.table2Live);
+        runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda16
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.m14lambda$startDeepTestOn$17$comippulsescannerMainActivity(ip);
+            }
+        });
+    }
+
+    /* JADX INFO: renamed from: lambda$startDeepTestOn$17$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m14lambda$startDeepTestOn$17$comippulsescannerMainActivity(String ip) {
+        if (!this.isCancelled) {
+            this.status2.setText("Deep Test Finished: " + ip);
+        }
+    }
+
+    /* JADX WARN: Code restructure failed: missing block: B:29:0x00ec, code lost:
+
+        r9 = java.lang.Float.parseFloat(r6[0].trim());
+     */
+    /*
+        Code decompiled incorrectly, please refer to instructions dump.
+        To view partially-correct add '--show-bad-code' argument
+    */
+    private ScanResult pingLogic(final String ip, int totalPkts, int timeo, boolean isDeepLive, final TableLayout liveTable) {
+        String r2 = "time=";
+        List<Float> rttList = new ArrayList();
+        int tSec = Math.max(1, timeo / 1000);
+        int r7 = 8;
+        final TextView[] liveCells = new TextView[8];
+        if (isDeepLive == false) goto L8;
+        final TableRow liveRow = new TableRow(this);
+        liveRow.setBackgroundColor(Color.parseColor("#18181B"));
+        int i = 0;
+    L5:
+        if (i >= r7) goto L7;
+        TextView tv = new TextView(this);
+        tv.setPadding(10, 10, 10, 10);
+        tv.setGravity(17);
+        tv.setTextSize(11.0f);
+        tv.setTextColor(-1);
+        liveCells[i] = tv;
+        liveRow.addView(tv);
+        i = i + 1;
+        r7 = 8;
+        goto L5
+    L7:
+        runOnUiThread(new MainActivity$$ExternalSyntheticLambda23(liveTable, liveRow, liveCells, ip));
+        TableRow liveRow2 = liveRow;
+    L9:
+        int i2 = 1;
+        int consecutiveLost = 0;
+        int attempted = 0;
+        int consecutiveLost2 = 0;
+    L11:
+        if (i2 > totalPkts) goto L72;
+        if (this.isCancelled == true) goto L72;
+        int attempted2 = i2;
+        float rtt = -1.0f;
+        Process p = new ProcessBuilder(new String[]{"ping", "-c", "1", "-W", String.valueOf(tSec), ip}).redirectErrorStream(true).start();     // Catch: Exception -> L44
+        int attempted3 = attempted2;
+        BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));     // Catch: Exception -> L39
+    L20:
+        String line = reader.readLine();     // Catch: Exception -> L39
+        if (line == null) goto L34;
+        if (line.contains(r2) == true) goto L24;
+        r2 = r2;
+        goto L20
+    L24:
+        int idx = line.indexOf(r2);     // Catch: Exception -> L39
+        String r29 = r2;
+        String sub = line.substring(idx + 5).trim();     // Catch: Exception -> L31
+        BufferedReader reader2 = reader;
+        String[] parts = sub.split(" ");     // Catch: Exception -> L31
+        if (parts.length > 0) goto L92;
+        reader = reader2;
+        r2 = r29;
+        goto L20
+    L92:
+        rtt = Float.parseFloat(parts[0].trim());     // Catch: Exception -> L37
+    L35:
+        p.waitFor();     // Catch: Exception -> L37
+        p.destroy();     // Catch: Exception -> L37
+    L48:
+        if (rtt < 0.0f) goto L50;
+        rttList.add(Float.valueOf(rtt));
+        consecutiveLost2 = 0;
+    L53:
+        if (isDeepLive == false) goto L60;
+        if (liveRow2 == null) goto L60;
+        final int curReceived = rttList.size();
+        final float curAvg = avg(rttList);
+        final float curMin = min(rttList);
+        final float curMax = max(rttList);
+        final float curJitter = jitter(rttList);
+        final float curLoss = ((i2 - curReceived) * 100.0f) / i2;
+        final int seq = i2;
+        float finalRtt = rtt;
+        int lost = consecutiveLost;
+        runOnUiThread(new MainActivity$$ExternalSyntheticLambda24(liveCells, seq, curAvg, curMin, curMax, curJitter, curLoss, curReceived));
+        StringBuilder r22 = new StringBuilder().append(ip).append(" seq=").append(seq).append("/").append(totalPkts).append(" rtt=");
+        if (finalRtt < 0.0f) goto L58;
+        String r0 = finalRtt + "ms";
+    L59:
+        appendDeepLog(r22.append(r0).toString());
+    L61:
+        if (i2 >= totalPkts) goto L71;
+        if (this.isCancelled == true) goto L71;
+        if (consecutiveLost2 >= FAST_FAIL_THRESHOLD) goto L71;
+        Thread.sleep(10);     // Catch: InterruptedException -> L69
+    L70:
+        attempted = attempted3;
+        int lost2 = lost;
+    L73:
+        if (attempted != 0) goto L75;
+        float r3 = 100.0f;
+        float r26 = 100.0f;
+    L76:
+        float lossPct = r26;
+        if (rttList.size() > 0) goto L79;
+    L81:
+        boolean alive = false;
+    L83:
+        return new ScanResult(ip, avg(rttList), min(rttList), max(rttList), jitter(rttList), lossPct, alive, attempted);
+    L79:
+        if (lossPct >= r3) goto L81;
+        alive = true;
+        goto L83
+    L75:
+        r3 = 100.0f;
+        r26 = (lost2 * 100.0f) / attempted;
+    L71:
+        i2 = i2 + 1;
+        attempted = attempted3;
+        r2 = r29;
+        consecutiveLost = lost;
+        goto L11
+    L58:
+        r0 = "lost";
+    L60:
+        lost = consecutiveLost;
+        goto L61
+    L50:
+        consecutiveLost = consecutiveLost + 1;
+        consecutiveLost2 = consecutiveLost2 + 1;
+        if (consecutiveLost2 < FAST_FAIL_THRESHOLD) goto L53;
+        lost2 = consecutiveLost;
+        attempted = attempted3;
+    L46:
+        rtt = -1.0f;
+        goto L48
+    L34:
+        r29 = r2;
+    L40:
+        r29 = r2;
+    L43:
+        r29 = r2;
+        attempted3 = attempted2;
+    L45:
+        r29 = r2;
+        attempted3 = attempted2;
+    L72:
+        lost2 = consecutiveLost;
+        goto L73
+    L8:
+        liveRow2 = null;
+        goto L9
+    }
+
+    static /* synthetic */ void lambda$pingLogic$19(TableLayout liveTable, TableRow rowToAdd, TextView[] cells, String ipFinal) {
+        liveTable.addView(rowToAdd);
+        cells[0].setText(ipFinal);
+        cells[1].setText("0");
+        cells[2].setText("0");
+        cells[FAST_FAIL_THRESHOLD].setText("0");
+        cells[4].setText("0");
+        cells[5].setText("0");
+        cells[6].setText("0%");
+        cells[7].setText("TESTING");
+    }
+
+    static /* synthetic */ void lambda$pingLogic$20(TextView[] liveCells, int seq, float curAvg, float curMin, float curMax, float curJitter, float curLoss, int curReceived) {
+        liveCells[1].setText(String.valueOf(seq));
+        liveCells[2].setText(String.format(Locale.US, "%.1f", Float.valueOf(curAvg)));
+        liveCells[FAST_FAIL_THRESHOLD].setText(String.format(Locale.US, "%.1f", Float.valueOf(curMin)));
+        liveCells[4].setText(String.format(Locale.US, "%.1f", Float.valueOf(curMax)));
+        liveCells[5].setText(String.format(Locale.US, "%.2f", Float.valueOf(curJitter)));
+        liveCells[6].setText(String.format(Locale.US, "%.0f%%", Float.valueOf(curLoss)));
+        liveCells[7].setText(curReceived > 0 ? "ALIVE" : "DEAD");
     }
 
     private float avg(List<Float> list) {
-        if (list == null || list.isEmpty()) return 0;
-        float sum = 0;
-        for (float f : list) sum += f;
+        if (list == null || list.isEmpty()) {
+            return 0.0f;
+        }
+        float sum = 0.0f;
+        Iterator<Float> it = list.iterator();
+        while (it.hasNext()) {
+            float f = it.next().floatValue();
+            sum += f;
+        }
         return sum / list.size();
     }
 
     private float min(List<Float> list) {
-        if (list == null || list.isEmpty()) return 0;
-        float m = list.get(0);
-        for (float f : list) if (f < m) m = f;
+        if (list == null || list.isEmpty()) {
+            return 0.0f;
+        }
+        float m = list.get(0).floatValue();
+        Iterator<Float> it = list.iterator();
+        while (it.hasNext()) {
+            float f = it.next().floatValue();
+            if (f < m) {
+                m = f;
+            }
+        }
         return m;
     }
 
     private float max(List<Float> list) {
-        if (list == null || list.isEmpty()) return 0;
-        float m = list.get(0);
-        for (float f : list) if (f > m) m = f;
+        if (list == null || list.isEmpty()) {
+            return 0.0f;
+        }
+        float m = list.get(0).floatValue();
+        Iterator<Float> it = list.iterator();
+        while (it.hasNext()) {
+            float f = it.next().floatValue();
+            if (f > m) {
+                m = f;
+            }
+        }
         return m;
     }
 
     private float jitter(List<Float> list) {
-        if (list == null || list.size() < 2) return 0;
-        float sum = 0;
-        for (int i = 1; i < list.size(); i++) sum += Math.abs(list.get(i) - list.get(i - 1));
-        return sum / (list.size() - 1);
+        if (list == null || list.size() < 2) {
+            return 0.0f;
+        }
+        float sum = 0.0f;
+        for (int i = 1; i < list.size(); i++) {
+            sum += Math.abs(list.get(i).floatValue() - list.get(i - 1).floatValue());
+        }
+        int i2 = list.size();
+        return sum / (i2 - 1);
     }
 
     private void appendMainLog(ScanResult res) {
-        if (logLayout1.getChildCount() >= MAX_LOG_ITEMS) {
-            logLayout1.removeViewAt(0);
-        }
         TextView tv = new TextView(this);
-        tv.setText(String.format(Locale.US, "%s | Sent:%d | Avg:%.1f | Min:%.1f | Max:%.1f | Jit:%.2f | Loss:%.0f%%",
-                res.ip, res.sent, res.avg, res.min, res.max, res.jitter, res.loss));
-        tv.setTextColor(res.alive ? Color.GREEN : Color.RED);
-        tv.setTextSize(11f);
+        tv.setText(String.format(Locale.US, "%s | Sent:%d | Avg:%.1f | Min:%.1f | Max:%.1f | Jit:%.2f | Loss:%.0f%%", res.ip, Integer.valueOf(res.sent), Float.valueOf(res.avg), Float.valueOf(res.min), Float.valueOf(res.max), Float.valueOf(res.jitter), Float.valueOf(res.loss)));
+        tv.setTextColor(res.alive ? -16711936 : -65536);
+        tv.setTextSize(11.0f);
         tv.setPadding(0, 4, 0, 4);
-        logLayout1.addView(tv);
-        logScroll1.post(() -> logScroll1.fullScroll(View.FOCUS_DOWN));
-    }
-
-    private void appendDeepLog(String msg) {
-        runOnUiThread(() -> {
-            if (logLayout2.getChildCount() >= MAX_LOG_ITEMS) {
-                logLayout2.removeViewAt(0);
+        this.logLayout1.addView(tv);
+        this.logScroll1.post(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda15
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.m3lambda$appendMainLog$21$comippulsescannerMainActivity();
             }
-            TextView tv = new TextView(this);
-            tv.setText(msg);
-            tv.setTextColor(Color.GREEN);
-            tv.setTextSize(11f);
-            tv.setPadding(0, 2, 0, 2);
-            logLayout2.addView(tv);
-            logScroll2.post(() -> logScroll2.fullScroll(View.FOCUS_DOWN));
         });
     }
 
-    private void addTableHeader(TableLayout table, boolean isLive) {
+    /* JADX INFO: renamed from: lambda$appendMainLog$21$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m3lambda$appendMainLog$21$comippulsescannerMainActivity() {
+        this.logScroll1.fullScroll(130);
+    }
+
+    private void appendDeepLog(final String msg) {
+        runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda22
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.m2lambda$appendDeepLog$23$comippulsescannerMainActivity(msg);
+            }
+        });
+    }
+
+    /* JADX INFO: renamed from: lambda$appendDeepLog$23$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m2lambda$appendDeepLog$23$comippulsescannerMainActivity(String msg) {
+        TextView tv = new TextView(this);
+        tv.setText(msg);
+        tv.setTextColor(-16711936);
+        tv.setTextSize(11.0f);
+        tv.setPadding(0, 2, 0, 2);
+        this.logLayout2.addView(tv);
+        this.logScroll2.post(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda11
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.m1lambda$appendDeepLog$22$comippulsescannerMainActivity();
+            }
+        });
+    }
+
+    /* JADX INFO: renamed from: lambda$appendDeepLog$22$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m1lambda$appendDeepLog$22$comippulsescannerMainActivity() {
+        this.logScroll2.fullScroll(130);
+    }
+
+    private void addTableHeader(TableLayout tableLayout, boolean isLive) {
         TableRow header = new TableRow(this);
         header.setBackgroundColor(Color.parseColor("#334155"));
-        String[] headers = isLive ? new String[]{"IP", "Sent", "Avg", "Min", "Max", "Jitter", "Loss", "Status"} :
-                new String[]{"Rank", "IP", "Sent", "Avg", "Min", "Max", "Jitter", "Loss", "Status"};
+        String[] headers = isLive ? new String[]{"IP", "Sent", "Avg", "Min", "Max", "Jitter", "Loss", "Status"} : new String[]{"Rank", "IP", "Sent", "Avg", "Min", "Max", "Jitter", "Loss", "Status"};
         for (String h : headers) {
             TextView tv = new TextView(this);
             tv.setText(h);
-            tv.setTextColor(Color.WHITE);
-            tv.setGravity(Gravity.CENTER);
+            tv.setTextColor(-1);
+            tv.setGravity(17);
             tv.setPadding(10, 10, 10, 10);
-            tv.setTextSize(11f);
-            tv.setTypeface(null, Typeface.BOLD);
+            tv.setTextSize(11.0f);
+            tv.setTypeface(null, 1);
             header.addView(tv);
         }
-        table.addView(header);
+        tableLayout.addView(header);
     }
 
-    private void addTableRow(TableLayout table, ScanResult res, int rank, boolean isLive, boolean isTop5) {
-        TableRow row = new TableRow(this);
-        row.setBackgroundColor(isTop5 ? Color.parseColor("#FFD700") : Color.parseColor("#18181B"));
-        row.setClickable(true);
-        row.setOnClickListener(v -> {
-            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-            ClipData clip = ClipData.newPlainText("IP", res.ip);
-            clipboard.setPrimaryClip(clip);
-            Toast.makeText(this, "IP Copied: " + res.ip, Toast.LENGTH_SHORT).show();
+    private void addTableRow(TableLayout tableLayout, final ScanResult scanResult, int i, boolean z, boolean z2) {
+        String[] strArr;
+        TableRow tableRow = new TableRow(this);
+        tableRow.setBackgroundColor(Color.parseColor(z2 ? "#FFD700" : "#18181B"));
+        tableRow.setClickable(true);
+        tableRow.setOnClickListener(new View.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda25
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                this.f$0.m0lambda$addTableRow$24$comippulsescannerMainActivity(scanResult, view);
+            }
         });
-
-        String[] values;
-        if (isLive) {
-            values = new String[]{res.ip, String.valueOf(res.sent), String.format(Locale.US, "%.1f", res.avg),
-                    String.format(Locale.US, "%.1f", res.min), String.format(Locale.US, "%.1f", res.max),
-                    String.format(Locale.US, "%.2f", res.jitter), String.format(Locale.US, "%.0f%%", res.loss),
-                    res.alive ? "ALIVE" : "DEAD"};
+        if (z) {
+            String[] strArr2 = new String[8];
+            strArr2[0] = scanResult.ip;
+            strArr2[1] = String.valueOf(scanResult.sent);
+            strArr2[2] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.avg));
+            strArr2[FAST_FAIL_THRESHOLD] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.min));
+            strArr2[4] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.max));
+            strArr2[5] = String.format(Locale.US, "%.2f", Float.valueOf(scanResult.jitter));
+            strArr2[6] = String.format(Locale.US, "%.0f%%", Float.valueOf(scanResult.loss));
+            strArr2[7] = scanResult.alive ? "ALIVE" : "DEAD";
+            strArr = strArr2;
         } else {
-            values = new String[]{String.valueOf(rank), res.ip, String.valueOf(res.sent), String.format(Locale.US, "%.1f", res.avg),
-                    String.format(Locale.US, "%.1f", res.min), String.format(Locale.US, "%.1f", res.max),
-                    String.format(Locale.US, "%.2f", res.jitter), String.format(Locale.US, "%.0f%%", res.loss),
-                    res.alive ? "ALIVE" : "DEAD"};
+            String[] strArr3 = new String[9];
+            strArr3[0] = String.valueOf(i);
+            strArr3[1] = scanResult.ip;
+            strArr3[2] = String.valueOf(scanResult.sent);
+            strArr3[FAST_FAIL_THRESHOLD] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.avg));
+            strArr3[4] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.min));
+            strArr3[5] = String.format(Locale.US, "%.1f", Float.valueOf(scanResult.max));
+            strArr3[6] = String.format(Locale.US, "%.2f", Float.valueOf(scanResult.jitter));
+            strArr3[7] = String.format(Locale.US, "%.0f%%", Float.valueOf(scanResult.loss));
+            strArr3[8] = scanResult.alive ? "ALIVE" : "DEAD";
+            strArr = strArr3;
         }
-
-        for (int i = 0; i < values.length; i++) {
-            TextView tv = new TextView(this);
-            tv.setText(values[i]);
-            tv.setTextColor(isTop5 ? Color.BLACK : Color.WHITE);
-            tv.setGravity(Gravity.CENTER);
-            tv.setPadding(10, 10, 10, 10);
-            tv.setTextSize(11f);
-            row.addView(tv);
+        for (String str : strArr) {
+            TextView textView = new TextView(this);
+            textView.setText(str);
+            textView.setTextColor(z2 ? -16777216 : -1);
+            textView.setGravity(17);
+            textView.setPadding(10, 10, 10, 10);
+            textView.setTextSize(11.0f);
+            tableRow.addView(textView);
         }
-        table.addView(row);
-
-        int ipIndex = isLive ? 0 : 1;
-        TextView ipCell = (TextView) row.getChildAt(ipIndex);
-        fetchFlag(ipCell, res.ip);
+        tableLayout.addView(tableRow);
+        fetchFlag((TextView) tableRow.getChildAt(!z ? 1 : 0), scanResult.ip);
     }
 
-    private void fetchFlag(TextView textView, String ip) {
-        new Thread(() -> {
-            String flag = getCountryFlag(ip);
-            runOnUiThread(() -> textView.setText(flag + " " + ip));
+    /* JADX INFO: renamed from: lambda$addTableRow$24$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m0lambda$addTableRow$24$comippulsescannerMainActivity(ScanResult res, View v) {
+        ClipboardManager clipboard = (ClipboardManager) getSystemService("clipboard");
+        ClipData clip = ClipData.newPlainText("IP", res.ip);
+        clipboard.setPrimaryClip(clip);
+        Toast.makeText(this, "IP Copied: " + res.ip, 0).show();
+    }
+
+    private void fetchFlag(final TextView textView, final String ip) {
+        new Thread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda17
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.m4lambda$fetchFlag$26$comippulsescannerMainActivity(ip, textView);
+            }
         }).start();
     }
 
+    /* JADX INFO: renamed from: lambda$fetchFlag$26$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m4lambda$fetchFlag$26$comippulsescannerMainActivity(final String ip, final TextView textView) {
+        final String flag = getCountryFlag(ip);
+        runOnUiThread(new Runnable() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda18
+            @Override // java.lang.Runnable
+            public final void run() {
+                textView.setText(flag + " " + ip);
+            }
+        });
+    }
+
     private String getCountryFlag(String ip) {
-        String[] urls = {
-            "http://ip-api.com/json/" + ip + "?fields=countryCode",
-            "http://ipwho.is/" + ip,
-            "https://ipinfo.io/" + ip + "/json"
-        };
-        for (String urlStr : urls) {
+        String[] urls = {"http://ip-api.com/json/" + ip + "?fields=countryCode", "http://ipwho.is/" + ip, "https://ipinfo.io/" + ip + "/json"};
+        int length = urls.length;
+        for (int i = 0; i < length; i++) {
+            String urlStr = urls[i];
             try {
                 String code = queryCountryCode(urlStr);
-                if (!code.isEmpty()) return countryCodeToFlag(code);
-            } catch (Exception ignored) {}
+                if (!code.isEmpty()) {
+                    return countryCodeToFlag(code);
+                }
+                continue;
+            } catch (Exception e) {
+            }
         }
         return "🌐";
     }
@@ -764,64 +916,45 @@ public class MainActivity extends Activity {
         conn.setReadTimeout(3000);
         BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
         StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) sb.append(line);
+        while (true) {
+            String line = reader.readLine();
+            if (line == null) {
+                break;
+            }
+            sb.append(line);
+        }
         reader.close();
         conn.disconnect();
         JSONObject json = new JSONObject(sb.toString());
         String code = json.optString("countryCode", "");
-        if (code.isEmpty()) code = json.optString("country_code", "");
-        if (code.isEmpty()) code = json.optString("country", "");
+        if (code.isEmpty()) {
+            code = json.optString("country_code", "");
+        }
+        if (code.isEmpty()) {
+            code = json.optString("country", "");
+        }
         if (code.length() != 2) {
             String countryName = code.toLowerCase();
-            if (countryName.contains("united arab")) return "AE";
-            if (countryName.contains("germany")) return "DE";
-            if (countryName.contains("iran")) return "IR";
-            if (countryName.contains("netherlands")) return "NL";
-            if (countryName.contains("france")) return "FR";
-            if (countryName.contains("singapore")) return "SG";
-            if (countryName.contains("united states")) return "US";
-            if (countryName.contains("united kingdom")) return "GB";
-            if (countryName.contains("russia")) return "RU";
-            if (countryName.contains("china")) return "CN";
-            if (countryName.contains("japan")) return "JP";
-            if (countryName.contains("south korea")) return "KR";
-            if (countryName.contains("taiwan")) return "TW";
-            if (countryName.contains("hong kong")) return "HK";
-            if (countryName.contains("india")) return "IN";
-            if (countryName.contains("brazil")) return "BR";
-            if (countryName.contains("canada")) return "CA";
-            if (countryName.contains("australia")) return "AU";
-            if (countryName.contains("italy")) return "IT";
-            if (countryName.contains("spain")) return "ES";
-            if (countryName.contains("portugal")) return "PT";
-            if (countryName.contains("sweden")) return "SE";
-            if (countryName.contains("norway")) return "NO";
-            if (countryName.contains("denmark")) return "DK";
-            if (countryName.contains("finland")) return "FI";
-            if (countryName.contains("poland")) return "PL";
-            if (countryName.contains("turkey")) return "TR";
-            if (countryName.contains("saudi")) return "SA";
-            if (countryName.contains("qatar")) return "QA";
-            if (countryName.contains("kuwait")) return "KW";
-            if (countryName.contains("bahrain")) return "BH";
-            if (countryName.contains("oman")) return "OM";
-            return "";
+            return countryName.contains("united arab") ? "AE" : countryName.contains("germany") ? "DE" : countryName.contains("iran") ? "IR" : countryName.contains("netherlands") ? "NL" : countryName.contains("france") ? "FR" : countryName.contains("singapore") ? "SG" : countryName.contains("united states") ? "US" : countryName.contains("united kingdom") ? "GB" : countryName.contains("russia") ? "RU" : countryName.contains("china") ? "CN" : countryName.contains("japan") ? "JP" : countryName.contains("south korea") ? "KR" : countryName.contains("taiwan") ? "TW" : countryName.contains("hong kong") ? "HK" : countryName.contains("india") ? "IN" : countryName.contains("brazil") ? "BR" : countryName.contains("canada") ? "CA" : countryName.contains("australia") ? "AU" : countryName.contains("italy") ? "IT" : countryName.contains("spain") ? "ES" : countryName.contains("portugal") ? "PT" : countryName.contains("sweden") ? "SE" : countryName.contains("norway") ? "NO" : countryName.contains("denmark") ? "DK" : countryName.contains("finland") ? "FI" : countryName.contains("poland") ? "PL" : countryName.contains("turkey") ? "TR" : countryName.contains("saudi") ? "SA" : countryName.contains("qatar") ? "QA" : countryName.contains("kuwait") ? "KW" : countryName.contains("bahrain") ? "BH" : countryName.contains("oman") ? "OM" : "";
         }
         return code;
     }
 
     private String countryCodeToFlag(String code) {
-        if (code == null || code.length() != 2) return "🌐";
-        int base = 0x1F1E6;
-        int first = base + (code.charAt(0) - 'A');
-        int second = base + (code.charAt(1) - 'A');
+        if (code == null || code.length() != 2) {
+            return "🌐";
+        }
+        int first = (code.charAt(0) - 'A') + 127462;
+        int second = (code.charAt(1) - 'A') + 127462;
         return new String(Character.toChars(first)) + new String(Character.toChars(second));
     }
 
     private int parseNum(EditText editText, int defaultVal) {
-        try { return Integer.parseInt(editText.getText().toString().trim()); }
-        catch (Exception e) { return defaultVal; }
+        try {
+            return Integer.parseInt(editText.getText().toString().trim());
+        } catch (Exception e) {
+            return defaultVal;
+        }
     }
 
     private List<String> parseIPList(String query) {
@@ -834,16 +967,25 @@ public class MainActivity extends Activity {
                 int prefix = Integer.parseInt(parts[1].trim());
                 long ip = ipToLong(base);
                 int hostBits = 32 - prefix;
-                long mask = hostBits == 32 ? 0xFFFFFFFFL : (1L << hostBits) - 1;
-                long start = ip & ~mask;
+                long mask = hostBits == 32 ? 4294967295L : (1 << hostBits) - 1;
                 long end = ip | mask;
-                for (long i = start; i <= end; i++) list.add(longToIp(i));
+                long i = (~mask) & ip;
+                while (i <= end) {
+                    list.add(longToIp(i));
+                    i++;
+                    parts = parts;
+                }
             } else if (q.contains("-")) {
-                String[] parts = q.split("-");
-                long start = ipToLong(parts[0].trim());
-                long end = ipToLong(parts[1].trim());
-                if (start > end) { long tmp = start; start = end; end = tmp; }
-                for (long i = start; i <= end; i++) list.add(longToIp(i));
+                String[] parts2 = q.split("-");
+                long start = ipToLong(parts2[0].trim());
+                long end2 = ipToLong(parts2[1].trim());
+                if (start > end2) {
+                    start = end2;
+                    end2 = start;
+                }
+                for (long i2 = start; i2 <= end2; i2++) {
+                    list.add(longToIp(i2));
+                }
             } else {
                 list.add(q);
             }
@@ -856,60 +998,74 @@ public class MainActivity extends Activity {
 
     private long ipToLong(String ip) {
         String[] octets = ip.trim().split("\\.");
-        if (octets.length != 4) throw new IllegalArgumentException("Invalid IP");
+        if (octets.length != 4) {
+            throw new IllegalArgumentException("Invalid IP");
+        }
         long result = 0;
         for (String octet : octets) {
             int val = Integer.parseInt(octet.trim());
-            if (val < 0 || val > 255) throw new IllegalArgumentException("Invalid octet");
-            result = (result << 8) | val;
+            if (val < 0 || val > 255) {
+                throw new IllegalArgumentException("Invalid octet");
+            }
+            result = (result << 8) | ((long) val);
         }
-        return result & 0xFFFFFFFFL;
+        return 4294967295L & result;
     }
 
     private String longToIp(long ip) {
-        return String.format(Locale.US, "%d.%d.%d.%d",
-                (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, (ip >> 8) & 0xFF, ip & 0xFF);
+        return String.format(Locale.US, "%d.%d.%d.%d", Long.valueOf((ip >> 24) & 255), Long.valueOf((ip >> 16) & 255), Long.valueOf((ip >> 8) & 255), Long.valueOf(255 & ip));
     }
 
     private void saveHistory(String entry) {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        Set<String> history = new LinkedHashSet<>(prefs.getStringSet(HISTORY_KEY, new LinkedHashSet<>()));
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, 0);
+        Set<String> history = new LinkedHashSet<>(prefs.getStringSet(HISTORY_KEY, new LinkedHashSet()));
         history.add(entry);
         prefs.edit().putStringSet(HISTORY_KEY, history).apply();
     }
 
     private Set<String> loadHistory() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        return new LinkedHashSet<>(prefs.getStringSet(HISTORY_KEY, new LinkedHashSet<>()));
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, 0);
+        return new LinkedHashSet(prefs.getStringSet(HISTORY_KEY, new LinkedHashSet()));
     }
 
     private void clearHistory() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, 0);
         prefs.edit().remove(HISTORY_KEY).apply();
-        Toast.makeText(this, "History cleared", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "History cleared", 0).show();
     }
 
     private void showHistoryDialog() {
         List<String> items = new ArrayList<>(loadHistory());
         if (items.isEmpty()) {
-            Toast.makeText(this, "No history yet", Toast.LENGTH_SHORT).show();
-            return;
+            Toast.makeText(this, "No history yet", 0).show();
+        } else {
+            final String[] arr = (String[]) items.toArray(new String[0]);
+            new AlertDialog.Builder(this).setTitle("History").setItems(arr, new DialogInterface.OnClickListener() { // from class: com.ippulse.scanner.MainActivity$$ExternalSyntheticLambda20
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i) {
+                    this.f$0.m13lambda$showHistoryDialog$27$comippulsescannerMainActivity(arr, dialogInterface, i);
+                }
+            }).show();
         }
-        String[] arr = items.toArray(new String[0]);
-        new AlertDialog.Builder(this)
-                .setTitle("History")
-                .setItems(arr, (dialog, which) -> {
-                    ipInput.setText(arr[which]);
-                    startRangeScan();
-                })
-                .show();
     }
 
-    private static class ScanResult {
-        String ip;
-        float avg, min, max, jitter, loss;
-        int sent;
+    /* JADX INFO: renamed from: lambda$showHistoryDialog$27$com-ippulse-scanner-MainActivity, reason: not valid java name */
+    /* synthetic */ void m13lambda$showHistoryDialog$27$comippulsescannerMainActivity(String[] arr, DialogInterface dialog, int which) {
+        this.ipInput.setText(arr[which]);
+        startRangeScan();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    static class ScanResult {
         boolean alive;
+        float avg;
+        String ip;
+        float jitter;
+        float loss;
+        float max;
+        float min;
+        int sent;
+
         ScanResult(String ip, float avg, float min, float max, float jitter, float loss, boolean alive, int sent) {
             this.ip = ip;
             this.avg = avg;
@@ -922,50 +1078,142 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void manualDeepTest() {
-        String ip = manualIpInput.getText().toString().trim();
-        if (ip.isEmpty()) {
-            Toast.makeText(this, "لطفاً یک IP وارد کنید", Toast.LENGTH_SHORT).show();
+
+    private void loadVpnSettings() {
+        SharedPreferences prefs = getSharedPreferences(VPN_PREFS, 0);
+        this.vpnDns.setText(prefs.getString("dns", "8.8.8.8"));
+        this.vpnMtu.setText(prefs.getString("mtu", "247"));
+        this.vpnMasterIp.setText(prefs.getString("masterIp", "109.61.42.251"));
+        this.vpnHosts.setText(prefs.getString("hosts", ""));
+        if (this.vpnHosts.getText().toString().trim().isEmpty()) {
+            String defaultIp = this.vpnMasterIp.getText().toString().trim();
+            StringBuilder sb = new StringBuilder();
+            for (String domain : this.defaultDomains) {
+                sb.append(defaultIp).append(" ").append(domain).append("\n");
+            }
+            this.vpnHosts.setText(sb.toString().trim());
+        }
+    }
+
+    private void saveVpnSettings() {
+        SharedPreferences prefs = getSharedPreferences(VPN_PREFS, 0);
+        prefs.edit().putString("dns", this.vpnDns.getText().toString().trim()).putString("hosts", this.vpnHosts.getText().toString().trim()).putString("mtu", this.vpnMtu.getText().toString().trim()).putString("masterIp", this.vpnMasterIp.getText().toString().trim()).apply();
+    }
+
+    private HashMap<String, String> parseHosts(String text) {
+        HashMap<String, String> map = new HashMap<>();
+        if (text == null || text.trim().isEmpty()) {
+            return map;
+        }
+        String[] lines = text.split("\\n");
+        for (String str : lines) {
+            String line = str.trim();
+            if (!line.isEmpty() && !line.startsWith("#")) {
+                String[] parts = line.split("\\s+");
+                if (parts.length >= 2) {
+                    String ip = parts[0];
+                    String domain = parts[1].toLowerCase();
+                    map.put(domain, ip);
+                }
+            }
+        }
+        return map;
+    }
+
+    private int parseIntSafe(String s, int defaultVal) {
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception e) {
+            return defaultVal;
+        }
+    }
+
+    private String hostsMapToString(HashMap<String, String> map) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            sb.append(entry.getValue()).append(" ").append(entry.getKey()).append("\n");
+        }
+        return sb.toString();
+    }
+
+    private void applyMasterIp() {
+        String masterIp = this.vpnMasterIp.getText().toString().trim();
+        if (masterIp.isEmpty()) {
+            Toast.makeText(this, "لطفاً یک IP وارد کنید", 0).show();
             return;
         }
-        startDeepTestOn(ip);
-    }
-    private void startVhostsService(
-        int mtu,
-        HashMap<String, String> hostsMap
-) {
-    Intent serviceIntent = new Intent(this, VhostsService.class);
-
-    serviceIntent.setAction(VhostsService.ACTION_CONNECT);
-
-    serviceIntent.putExtra("mtu", mtu);
-
-    serviceIntent.putExtra(
-        "dns",
-        vpnDns.getText().toString().trim()
-    );
-
-    StringBuilder hostsText = new StringBuilder();
-
-    for (Map.Entry<String, String> entry : hostsMap.entrySet()) {
-        hostsText
-            .append(entry.getValue())
-            .append(" ")
-            .append(entry.getKey())
-            .append("\n");
+        StringBuilder sb = new StringBuilder();
+        for (String domain : this.defaultDomains) {
+            sb.append(masterIp).append(" ").append(domain).append("\n");
+        }
+        this.vpnHosts.setText(sb.toString().trim());
+        saveVpnSettings();
+        Toast.makeText(this, "IP به همه دامنه\u200cها اعمال شد", 0).show();
     }
 
-    serviceIntent.putExtra(
-        "hosts",
-        hostsText.toString()
-    );
+    private void startVpn() {
+        saveVpnSettings();
+        this.vpnDns.getText().toString().trim();
+        HashMap<String, String> hostsMap = parseHosts(this.vpnHosts.getText().toString());
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != 0) {
+            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, REQUEST_NOTIFICATION);
+            return;
+        }
+        Intent intent = VpnService.prepare(this);
+        if (intent != null) {
+            startActivityForResult(intent, REQUEST_VPN);
+            return;
+        }
+        int mtu = parseIntSafe(this.vpnMtu.getText().toString().trim(), 247);
+        startVhostsService(mtu, hostsMap);
+        this.vpnStatus.setText("VPN: Connected");
+        Toast.makeText(this, "VPN started", 0).show();
+    }
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    private void stopVpn() {
+        this.vpnStatus.setText("VPN: Stopping");
+        Intent intent = new Intent(this, (Class<?>) VhostsService.class).setAction(VhostsService.ACTION_DISCONNECT);
+        startService(intent);
+        this.vpnStatus.setText("VPN: Stopped");
+        Toast.makeText(this, "VPN stopped", 0).show();
+    }
+
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_NOTIFICATION) {
+            if (grantResults.length > 0 && grantResults[0] == 0) {
+                startVpn();
+            } else {
+                Toast.makeText(this, "Notification permission required for VPN", 0).show();
+            }
+        }
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_VPN && resultCode == -1) {
+            HashMap<String, String> hostsMap = parseHosts(this.vpnHosts.getText().toString());
+            int mtu = parseIntSafe(this.vpnMtu.getText().toString().trim(), 247);
+            startVhostsService(mtu, hostsMap);
+            this.vpnStatus.setText("VPN: Connected");
+            Toast.makeText(this, "VPN started", 0).show();
+            return;
+        }
+        if (requestCode == REQUEST_VPN) {
+            Toast.makeText(this, "VPN permission denied", 0).show();
+        }
+    }
+
+    private void startVhostsService(int mtu, HashMap<String, String> hostsMap) {
+        Intent serviceIntent = new Intent(this, (Class<?>) VhostsService.class);
+        serviceIntent.setAction(VhostsService.ACTION_CONNECT);
+        serviceIntent.putExtra("mtu", mtu);
+        serviceIntent.putExtra("dns", this.vpnDns.getText().toString().trim());
+        StringBuilder hostsText = new StringBuilder();
+        for (Map.Entry<String, String> entry : hostsMap.entrySet()) {
+            hostsText.append(entry.getValue()).append(" ").append(entry.getKey()).append("\n");
+        }
+        serviceIntent.putExtra("hosts", hostsText.toString());
         startForegroundService(serviceIntent);
-    } else {
-        startService(serviceIntent);
     }
 }
-
-
-}// debug trigger

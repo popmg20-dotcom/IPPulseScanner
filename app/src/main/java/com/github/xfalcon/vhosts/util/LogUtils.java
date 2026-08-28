@@ -3,6 +3,7 @@ package com.github.xfalcon.vhosts.util;
 import android.util.Log;
 import com.ippulse.scanner.VpnEvidenceLogger;
 
+/* JADX INFO: loaded from: classes3.dex */
 public class LogUtils {
     private static boolean DEBUG = true;
 
@@ -11,17 +12,23 @@ public class LogUtils {
     }
 
     public static void v(String tag, String msg) {
-        if (DEBUG) Log.v(tag, msg);
+        if (DEBUG) {
+            Log.v(tag, msg);
+        }
     }
 
     public static void d(String tag, String msg) {
         VpnEvidenceLogger.d(tag, msg);
-        if (DEBUG) Log.d(tag, msg);
+        if (DEBUG) {
+            Log.d(tag, msg);
+        }
     }
 
     public static void d(String tag, String msg, Throwable tr) {
         VpnEvidenceLogger.d(tag, msg + " : " + tr.toString());
-        if (DEBUG) Log.d(tag, msg, tr);
+        if (DEBUG) {
+            Log.d(tag, msg, tr);
+        }
     }
 
     public static void i(String tag, String msg) {

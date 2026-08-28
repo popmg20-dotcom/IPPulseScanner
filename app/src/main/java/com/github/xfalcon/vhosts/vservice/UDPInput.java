@@ -1,23 +1,6 @@
-/*
-** Copyright 2015, Mohamed Naufal
-**
-** Licensed under the Apache License, Version 2.0 (the "License");
-** you may not use this file except in compliance with the License.
-** You may obtain a copy of the License at
-**
-**     http://www.apache.org/licenses/LICENSE-2.0
-**
-** Unless required by applicable law or agreed to in writing, software
-** distributed under the License is distributed on an "AS IS" BASIS,
-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-** See the License for the specific language governing permissions and
-** limitations under the License.
-*/
-
 package com.github.xfalcon.vhosts.vservice;
 
 import com.github.xfalcon.vhosts.util.LogUtils;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
@@ -28,74 +11,57 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class UDPInput implements Runnable
-{
+/* JADX INFO: loaded from: classes5.dex */
+public class UDPInput implements Runnable {
     private static final String TAG = UDPInput.class.getSimpleName();
-
+    private ConcurrentLinkedQueue<ByteBuffer> outputQueue;
     private Selector selector;
     private ReentrantLock udpSelectorLock;
-    private ConcurrentLinkedQueue<ByteBuffer> outputQueue;
 
-    public UDPInput(ConcurrentLinkedQueue<ByteBuffer> outputQueue, Selector selector, ReentrantLock udpSelectorLock)
-    {
+    public UDPInput(ConcurrentLinkedQueue<ByteBuffer> outputQueue, Selector selector, ReentrantLock udpSelectorLock) {
         this.outputQueue = outputQueue;
         this.selector = selector;
-        this.udpSelectorLock=udpSelectorLock;
+        this.udpSelectorLock = udpSelectorLock;
     }
 
-    @Override
-    public void run()
-    {
-        try
-        {
+    @Override // java.lang.Runnable
+    public void run() throws IOException {
+        try {
             LogUtils.i(TAG, "Started");
-            while (!Thread.interrupted())
-            {
-                udpSelectorLock.lock();
-                udpSelectorLock.unlock();
-                int readyChannels = selector.select();
+            while (!Thread.interrupted()) {
+                this.udpSelectorLock.lock();
+                this.udpSelectorLock.unlock();
+                int readyChannels = this.selector.select();
                 if (readyChannels == 0) {
-                    Thread.sleep(11);
-                    continue;
-                }
-                Set<SelectionKey> keys = selector.selectedKeys();
-                Iterator<SelectionKey> keyIterator = keys.iterator();
-
-                while (keyIterator.hasNext() && !Thread.interrupted())
-                {
-                    SelectionKey key = keyIterator.next();
-                    if (key.isValid() && key.isReadable())
-                    {
-                        keyIterator.remove();
-
-                        ByteBuffer receiveBuffer = ByteBufferPool.acquire();
-                        // Leave space for the header
-
-
-                        DatagramChannel inputChannel = (DatagramChannel) key.channel();
-                        Packet referencePacket = (Packet) key.attachment();
-                        receiveBuffer.position(referencePacket.IP_TRAN_SIZE);
-                        int readBytes=0;
-                        try {
-                            readBytes = inputChannel.read(receiveBuffer);
-                        }catch (Exception e){
-                            LogUtils.e(TAG, "Network read error", e);
+                    Thread.sleep(11L);
+                } else {
+                    Set<SelectionKey> keys = this.selector.selectedKeys();
+                    Iterator<SelectionKey> keyIterator = keys.iterator();
+                    while (keyIterator.hasNext() && !Thread.interrupted()) {
+                        SelectionKey key = keyIterator.next();
+                        if (key.isValid() && key.isReadable()) {
+                            keyIterator.remove();
+                            ByteBuffer receiveBuffer = ByteBufferPool.acquire();
+                            DatagramChannel inputChannel = (DatagramChannel) key.channel();
+                            Packet referencePacket = (Packet) key.attachment();
+                            receiveBuffer.position(referencePacket.IP_TRAN_SIZE);
+                            int readBytes = 0;
+                            try {
+                                readBytes = inputChannel.read(receiveBuffer);
+                            } catch (Exception e) {
+                                LogUtils.e(TAG, "Network read error", e);
+                            }
+                            referencePacket.updateUDPBuffer(receiveBuffer, readBytes);
+                            receiveBuffer.position(referencePacket.IP_TRAN_SIZE + readBytes);
+                            this.outputQueue.offer(receiveBuffer);
                         }
-                        referencePacket.updateUDPBuffer(receiveBuffer, readBytes);
-                        receiveBuffer.position(referencePacket.IP_TRAN_SIZE+ readBytes);
-                        outputQueue.offer(receiveBuffer);
-
                     }
                 }
             }
-        }
-        catch (InterruptedException e)
-        {
+        } catch (IOException e2) {
+            LogUtils.w(TAG, e2.toString(), e2);
+        } catch (InterruptedException e3) {
             LogUtils.i(TAG, "Stopping");
-        }
-        catch (IOException e)
-        {
-            LogUtils.w(TAG, e.toString(), e);
         }
     }
 }
