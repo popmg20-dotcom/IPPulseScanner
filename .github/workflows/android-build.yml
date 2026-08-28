@@ -6,6 +6,7 @@ on:
       - main
       - master
       - version-247-professional-evidence
+      - inject-f9-debug12-final
   workflow_dispatch:
 
 permissions:
